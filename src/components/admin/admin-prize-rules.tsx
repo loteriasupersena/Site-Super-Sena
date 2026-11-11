@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-type Multipliers = { unit: number; tens: number; hundreds: number; thousands: number; quina: number };
-const defaults: Multipliers = { unit: 3, tens: 30, hundreds: 300, thousands: 3000, quina: 30000 };
+type Multipliers = { unit: number; tens: number; hundreds: number; quadra: number; quina: number; sena: number };
+const defaults: Multipliers = { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 };
 const fields: Array<{ key: keyof Multipliers; label: string }> = [
   { key: "unit", label: "Unidade" },
   { key: "tens", label: "Dezena" },
-  { key: "hundreds", label: "Terno (centena)" },
-  { key: "thousands", label: "Milhar" },
+  { key: "hundreds", label: "Centena" },
+  { key: "quadra", label: "Quadra (quatro números)" },
   { key: "quina", label: "Quina (cinco números)" },
+  { key: "sena", label: "Sena (seis números)" },
 ];
 
 export function AdminPrizeRules() {
