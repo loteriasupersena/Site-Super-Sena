@@ -7,10 +7,12 @@ import { CashierPrizePayout } from "@/components/cashier/cashier-prize-payout";
 
 export const dynamic = "force-dynamic";
 
-export default async function CashierPage() {
-  const user = await requireRole("CASHIER");
+export default async function CashierPage({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
+  const params = await searchParams;
+  const appMode = params.app === "1";
+  const user = await requireRole("CASHIER", { cashierApp: appMode });
   return (
-    <AreaShell title="Área do cambista" username={user.username} compact>
+    <AreaShell title="Área do cambista" username={user.username} compact appMode={appMode}>
       <CashierSaleForm />
       <section className="cashier-info-card" aria-label="Informações do cambista">
         <CashierPrizePayout />
