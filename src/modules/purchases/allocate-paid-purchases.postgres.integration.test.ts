@@ -114,6 +114,41 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
     expect(audits).toBe(1);
   });
 
+  it("migrates a legacy five-category pending intent to the six-category allocation", async () => {
+    const now = Date.now();
+    const round = await prisma.round.create({
+      data: {
+        code: `IT-ALLOC-LEGACY-${suffix.slice(0, 10)}`,
+        startsAt: new Date(now - 60_000), cutoffAt: new Date(now + 10 * 60_000),
+        resultAt: new Date(now + 20 * 60_000), status: RoundStatus.SCHEDULED,
+      },
+    });
+    roundIds.push(round.id);
+    const purchase = await prisma.purchase.create({
+      data: {
+        status: PurchaseStatus.PENDING_PAYMENT, paymentMethod: PaymentMethod.CASH, totalCents: 100,
+        idempotencyKey: `it-alloc-legacy-${suffix}`,
+        numericIntent: { create: {
+          roundCount: 1, numbers: ["123456"],
+          allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
+          ruleVersion: "numeric-five-prize-v1",
+          ruleSnapshot: { version: "numeric-five-prize-v1", multipliers: {} },
+        } },
+      },
+    });
+    purchaseIds.push(purchase.id);
+
+    const result = await allocatePaidPurchases(prisma, 50);
+    expect(result.allocated).toBe(1);
+    const line = await prisma.numericParticipationLine.findFirstOrThrow({
+      where: { participation: { purchaseId: purchase.id } },
+    });
+    expect(line).toMatchObject({
+      unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16,
+      ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
+    });
+  });
+
   it("reproduces a stale cursor overwrite when overlapping runs checkpoint out of order", async () => {
     const testPurchases = await Promise.all([0, 1].map((index) => prisma.purchase.create({
       data: {
