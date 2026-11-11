@@ -11,11 +11,11 @@ const receipt: ThermalReceiptForEncoding = {
   customerLabel: "João da Silva",
   cashierLabel: null,
   entries: [{
-    numberValue: "00123",
+    numberValue: "001234",
     roundCode: "R-01",
     resultAt: "2026-11-05T13:00:00.000Z",
     stakeCents: 1234,
-    unitCents: 250, tensCents: 246, hundredsCents: 246, thousandsCents: 246, quinaCents: 246,
+    unitCents: 209, tensCents: 205, hundredsCents: 205, quadraCents: 205, quinaCents: 205, senaCents: 205,
   }],
 };
 
@@ -29,7 +29,9 @@ describe("encodeThermalReceipt", () => {
     expect(text).toContain("00123");
     expect(text).toContain("R$ 12,34");
     expect(text).toContain("Unidade:");
+    expect(text).toContain("Quadra:");
     expect(text).toContain("Quina:");
+    expect(text).toContain("Sena:");
     expect(text).toContain("SQ-1234567890ABCDEF");
     expect(text).toContain("Joao da Silva");
     expect(Array.from(bytes.slice(-3))).toEqual([0x0a, 0x0a, 0x0a]);
