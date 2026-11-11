@@ -171,6 +171,28 @@ describe("POST /api/internal/round-scheduler", () => {
     expect(body).toMatchObject({ ok: false, prizesSettled: 0, failures: 1 });
   });
 
+  it("returns exact paid-purchase allocation errors in errorDetails", async () => {
+    mocks.allocatePaidPurchases.mockResolvedValue({
+      checked: 2, allocated: 0, waiting: 0, failures: 2,
+      errorDetails: [
+        { purchaseId: "purchase-1", message: "first allocation failure" },
+        { purchaseId: "purchase-2", message: "second allocation failure" },
+      ],
+    });
+
+    const response = await POST(request("Bearer test-secret-long-enough"));
+    const body = await response.json();
+
+    expect(response.status).toBe(207);
+    expect(body).toMatchObject({
+      ok: false, failures: 2, paidPurchasesChecked: 2, paidPurchasesAllocated: 0,
+      errorDetails: [
+        { stage: "paid_purchase_allocation", entityId: "purchase-1", message: "first allocation failure" },
+        { stage: "paid_purchase_allocation", entityId: "purchase-2", message: "second allocation failure" },
+      ],
+    });
+  });
+
   it("reconciles pending Pix payments even when no browser is polling", async () => {
     mocks.paymentFindMany.mockResolvedValue([{ id: "payment-pending-1" }]);
     mocks.reconcilePixPaymentFromProvider.mockResolvedValue("confirmed");
