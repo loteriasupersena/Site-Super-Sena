@@ -1,8 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
 
-/** Cabeçalho compartilhado. O modo APK não oferece navegação para a página inicial. */
 export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
+  const appBrand = (
+    <div
+      role="img"
+      aria-label="Super Sena"
+      style={{
+        width: "100%",
+        minHeight: "clamp(76px, 18vw, 144px)",
+        display: "grid",
+        placeItems: "center",
+        background: "linear-gradient(120deg, #062a78, #123d8d)",
+        color: "#ffffff",
+        fontSize: "clamp(26px, 5vw, 42px)",
+        fontWeight: 900,
+        letterSpacing: ".14em",
+      }}
+    >
+      SUPER SENA
+    </div>
+  );
   const image = (
     <Image
       className="site-header-scenery-image"
@@ -20,7 +38,7 @@ export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
         <Link className="site-header-home-link" href="/" aria-label="Ir para a página inicial">
           {image}
         </Link>
-      ) : image}
+      ) : appBrand}
     </header>
   );
 }
