@@ -74,12 +74,12 @@ suite("PostgreSQL numeric round lifecycle", () => {
     const line = await prisma.numericParticipationLine.create({
       data: {
         participationId: participation.id,
-        numberValue: "12345",
+        numberValue: "123456",
         unitCents: 20,
         tensCents: 20,
         hundredsCents: 20,
-        thousandsCents: 20,
-        quinaCents: 20,
+        quadraCents: 16,
+        quinaCents: 16, senaCents: 16,
         ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
         ruleSnapshot: snapshot as Prisma.InputJsonValue,
       },
@@ -142,7 +142,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
   });
 
   it("credits a simultaneous settlement once using the saved prize rules", async () => {
-    const round = await createRound(RoundStatus.COMPLETED, "12345");
+    const round = await createRound(RoundStatus.COMPLETED, "123456");
     const { line } = await createLine(round.id, createNumericPrizeRuleSnapshot());
     const results = await Promise.all([
       settleNumericRoundPrizes(prisma, round.id),
@@ -153,7 +153,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
       where: { idempotencyKey: `numeric-prize-credit:${line.id}` },
     })).toBe(1);
     const saved = await prisma.numericParticipationLine.findUniqueOrThrow({ where: { id: line.id } });
-    expect(saved.prizeCents).toBe(400_000);
+    expect(saved.prizeCents).toBe(30_000_000;
     expect(saved.prizeCreditedAt).not.toBeNull();
     expect(await prisma.auditEvent.count({
       where: { entityType: "Round", entityId: round.id, action: "NUMERIC_ROUND_PRIZES_SETTLED_AUTOMATICALLY" },
@@ -161,10 +161,10 @@ suite("PostgreSQL numeric round lifecycle", () => {
   });
 
   it("rolls back prize and ledger writes when the saved rule snapshot is invalid", async () => {
-    const round = await createRound(RoundStatus.COMPLETED, "12345");
+    const round = await createRound(RoundStatus.COMPLETED, "123456");
     const { line, purchase } = await createLine(round.id, {
       version: "invalid-version",
-      multipliers: { unit: 5, tens: 20, hundreds: 200, thousands: 2000, quina: 20000 },
+      multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 },
     });
     await expect(settleNumericRoundPrizes(prisma, round.id)).rejects.toMatchObject({
       code: "INVALID_RULE_SNAPSHOT",
