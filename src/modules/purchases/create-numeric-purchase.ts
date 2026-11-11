@@ -87,7 +87,6 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           allocation.quadraCents * currentMultipliers.quadra,
           allocation.quinaCents * currentMultipliers.quina,
           allocation.senaCents * currentMultipliers.sena,
-          allocation.senaCents * currentMultipliers.sena,
         );
         if (!Number.isSafeInteger(maximumLinePrizeCents) || maximumLinePrizeCents > 2_147_483_647) {
           throw new PurchaseServiceError("Os multiplicadores atuais tornam o prêmio máximo maior que o limite financeiro suportado.", "INVALID_PURCHASE");
