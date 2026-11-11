@@ -1,15 +1,17 @@
 import { readNumericPrizeMultipliers, type NumericPrizeCategory } from "./numeric-prize-rules";
 import { normalizeNumber } from "../modules/numbers/normalize-number";
 
-export const NUMERIC_PRIZE_CATEGORY_LABELS: Record<NumericPrizeCategory, string> = {
+type NumericPrizeReviewCategory = Exclude<NumericPrizeCategory, "sena">;
+
+export const NUMERIC_PRIZE_CATEGORY_LABELS: Record<NumericPrizeReviewCategory, string> = {
   unit: "Unidade",
   tens: "Dezena",
   hundreds: "Centena",
-  thousands: "Milhar",
+  quadra: "Quadra",
   quina: "Quina",
 };
 
-const FIELDS: Record<NumericPrizeCategory, "unitCents" | "tensCents" | "hundredsCents" | "thousandsCents" | "quinaCents"> = {
+const FIELDS: Record<NumericPrizeReviewCategory, "unitCents" | "tensCents" | "hundredsCents" | "thousandsCents" | "quinaCents"> = {
   unit: "unitCents",
   tens: "tensCents",
   hundreds: "hundredsCents",
@@ -32,9 +34,9 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
   if (!resultNumber) return null;
   const bet = normalizeNumber(line.numberValue);
   const result = normalizeNumber(resultNumber);
-  const category: NumericPrizeCategory | null =
+  const category: NumericPrizeReviewCategory | null =
     bet === result ? "quina" :
-    bet.slice(-4) === result.slice(-4) ? "thousands" :
+    bet.slice(-4) === result.slice(-4) ? "quadra" :
     bet.slice(-3) === result.slice(-3) ? "hundreds" :
     bet.slice(-2) === result.slice(-2) ? "tens" :
     bet.slice(-1) === result.slice(-1) ? "unit" : null;
