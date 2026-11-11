@@ -20,7 +20,7 @@ function request(method = "GET", body?: unknown, origin = "https://example.test"
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
-const valid = { unit: 1, tens: 2, hundreds: 3, thousands: 4, quina: 5 };
+const valid = { unit: 1, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 };
 
 describe("admin prize rules API", () => {
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe("admin prize rules API", () => {
     const response = (await GET(request()))!;
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(await response.json()).toMatchObject({ multipliers: { unit: 5, tens: 20, hundreds: 200, thousands: 2000, quina: 20000 }, updatedAt: null });
+    expect(await response.json()).toMatchObject({ multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 }, updatedAt: null });
   });
 
   it("rejects cross-origin and invalid multiplier updates", async () => {
