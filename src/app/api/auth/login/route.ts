@@ -69,5 +69,6 @@ export async function POST(request: NextRequest) {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true, secure: secureCookie(request), sameSite: "lax", path: "/", expires: expiresAt,
   });
+  response.cookies.set(CASHIER_APP_COOKIE, "", { httpOnly: true, secure: secureCookie(request), sameSite: "lax", path: "/", expires: new Date(0) });
   return response;
 }
