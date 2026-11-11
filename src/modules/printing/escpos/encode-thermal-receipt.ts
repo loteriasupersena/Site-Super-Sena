@@ -16,6 +16,8 @@ export type EscPosProfile = {
   paperWidthMm: 58 | 80;
   /** Printable character columns measured/selected for this printer profile. */
   columns: number;
+  /** ESC/POS font selection supported by standard thermal printers. */
+  fontMode?: "A" | "B";
   /** Optional ESC t code-page selector. Omit unless verified for the printer. */
   codePageCommand?: number;
   /** Explicit Unicode-to-single-byte mapping verified for the selected printer. */
@@ -157,6 +159,7 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
   const columns = profile.columns;
   const bytes: number[] = [ESC, 0x40];
   if (profile.codePageCommand !== undefined) bytes.push(ESC, 0x74, profile.codePageCommand);
+  bytes.push(ESC, 0x4d, profile.fontMode === "B" ? 0x01 : 0x00);
   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
   bytes.push(...line("SUPER SENA", profile));
   bytes.push(ESC, 0x45, 0x00);
