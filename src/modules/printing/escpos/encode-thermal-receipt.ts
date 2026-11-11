@@ -158,7 +158,7 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
   const bytes: number[] = [ESC, 0x40];
   if (profile.codePageCommand !== undefined) bytes.push(ESC, 0x74, profile.codePageCommand);
   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...line("SUPER QUINA", profile));
+  bytes.push(...line("SUPER SENA", profile));
   bytes.push(ESC, 0x45, 0x00);
   bytes.push(...line("COMPROVANTE DE APOSTA", profile));
   bytes.push(...line(new Date(receipt.issuedAt).toISOString().slice(0, 16).replace("T", " "), profile));
