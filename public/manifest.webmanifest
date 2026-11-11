@@ -2,7 +2,7 @@
   "name": "Super Sena",
   "short_name": "Super Sena",
   "description": "Jogo numérico Super Sena",
-  "start_url": "/cashier-app-login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#062a78",
