@@ -132,7 +132,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
       drawRoundResults(prisma, round.id),
       drawRoundResults(prisma, round.id),
     ]);
-    expect(first.resultNumber).toMatch(/^\d{5}$/);
+    expect(first.resultNumber).toMatch(/^\d{6}$/);
     expect(second.resultNumber).toBe(first.resultNumber);
     expect(first.status).toBe(RoundStatus.COMPLETED);
     expect(second.status).toBe(RoundStatus.COMPLETED);
