@@ -8,7 +8,7 @@
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <application
         android:allowBackup="false"
-        android:label="Super Sena"
+        android:label="Super Sena"\n        android:icon="@drawable/ic_launcher"\n        android:roundIcon="@drawable/ic_launcher"
         android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
         <activity
