@@ -189,10 +189,10 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
       bytes.push(...line(part, profile));
     }
     bytes.push(...line("Valor: " + money(entry.stakeCents), profile));
-    if ([entry.unitCents, entry.tensCents, entry.hundredsCents, entry.thousandsCents, entry.quinaCents].some((value) => value !== undefined)) {
+    if ([entry.unitCents, entry.tensCents, entry.hundredsCents, entry.quadraCents, entry.quinaCents, entry.senaCents].some((value) => value !== undefined)) {
       bytes.push(...line("Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0), profile));
-      bytes.push(...line("Centena: " + money(entry.hundredsCents ?? 0) + " Milhar: " + money(entry.thousandsCents ?? 0), profile));
-      bytes.push(...line("Quina: " + money(entry.quinaCents ?? 0), profile));
+      bytes.push(...line("Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0), profile));
+      bytes.push(...line("Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), profile));
     }
     bytes.push(...line("-".repeat(columns), profile));
   }
