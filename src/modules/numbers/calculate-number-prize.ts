@@ -4,6 +4,8 @@ import {
 } from "../../domain/numeric-prize-rules";
 import { normalizeNumber } from "./normalize-number";
 
+type NumericSettlementCategory = Exclude<NumericPrizeCategory, "sena">;
+
 export type NumericSettlementLine = {
   numberValue: string;
   unitCents: number;
@@ -15,7 +17,7 @@ export type NumericSettlementLine = {
   ruleSnapshot: unknown;
 };
 
-const ALLOCATION_FIELD: Record<NumericPrizeCategory,
+const ALLOCATION_FIELD: Record<NumericSettlementCategory,
   "unitCents" | "tensCents" | "hundredsCents" | "thousandsCents" | "quinaCents"> = {
   unit: "unitCents",
   tens: "tensCents",
@@ -34,7 +36,7 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
   const multipliers = readNumericPrizeMultipliers(line.ruleVersion, line.ruleSnapshot);
   if (!multipliers) throw new Error("Stored numeric prize rule snapshot is invalid.");
 
-  const matches: Array<{ category: NumericPrizeCategory; matched: boolean }> = [
+  const matches: Array<{ category: NumericSettlementCategory; matched: boolean }> = [
     { category: "quina", matched: bet === drawn },
     { category: "quadra", matched: bet.slice(-4) === drawn.slice(-4) },
     { category: "hundreds", matched: bet.slice(-3) === drawn.slice(-3) },
