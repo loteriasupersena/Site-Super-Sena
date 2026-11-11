@@ -55,7 +55,7 @@ describe("POST /api/internal/round-scheduler", () => {
     mocks.settleNumericRoundPrizes.mockResolvedValue({ status: "settled", creditedLines: 0 });
     mocks.paymentUpdateMany.mockResolvedValue({ count: 1 });
     mocks.reconcilePixPaymentFromProvider.mockResolvedValue("still_pending");
-    mocks.allocatePaidPurchases.mockResolvedValue({ checked: 0, allocated: 0, waiting: 0, failures: 0 });
+    mocks.allocatePaidPurchases.mockResolvedValue({ checked: 0, allocated: 0, waiting: 0, failures: 0, errorDetails: [] });
     mocks.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({ round: { create: mocks.createRound }, auditEvent: { create: mocks.createAuditEvent } }),
     );
