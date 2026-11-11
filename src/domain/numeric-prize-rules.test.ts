@@ -24,6 +24,16 @@ describe("numeric prize rules", () => {
     expect(readNumericPrizeMultipliers("numeric-approved-v1", historical)).toEqual(historical.multipliers);
   });
 
+  it("reads snapshots written during the temporary quadra/sena naming migration", () => {
+    const legacy = {
+      version: NUMERIC_PRIZE_RULE_VERSION,
+      multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3_000, quina: 30_000, sena: 300_000 },
+    };
+    expect(readNumericPrizeMultipliers(NUMERIC_PRIZE_RULE_VERSION, legacy)).toEqual({
+      unit: 3, tens: 30, hundreds: 300, thousands: 3_000, quina: 30_000,
+    });
+  });
+
   it("rejects missing, mismatched, or malformed historical snapshots", () => {
     const valid = createNumericPrizeRuleSnapshot();
     expect(readNumericPrizeMultipliers("other", valid)).toBeNull();
