@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ loginRateLimit: { getLoginBlock: vi.fn(), reco
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { user: { findUnique: vi.fn() } },
   createSession: vi.fn(),
-  SESSION_COOKIE: "superquina_session",
+  SESSION_COOKIE: "superquina_session",\n  CASHIER_APP_COOKIE: "super_sena_cashier_app",
 }));
 vi.mock("@/lib/auth/password", () => ({ verifyPassword: vi.fn() }));
 vi.mock("@/lib/auth/login-rate-limit", () => ({
