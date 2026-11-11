@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const requestSchema = z.object({
   idempotencyKey: z.string().trim().min(16).max(200),
   repetitionCount: z.number().int().min(1).max(10),
-  numbers: z.array(z.string().regex(/^\d{5}$/)).min(1).max(100),
+  numbers: z.array(z.string().regex(/^\d{6}$/)).min(1).max(100),
   stakeCents: z.number().int().safe().min(100).max(2_000_000_000),
   paymentMethod: z.enum(["PIX", "WALLET"]).default("PIX"),
 }).strict();
