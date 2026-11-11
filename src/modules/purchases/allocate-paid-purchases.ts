@@ -15,7 +15,7 @@ const ALLOCATION_CURSOR_KEY = "paid_purchase_allocation_cursor";
 export async function allocatePaidPurchases(
   prisma: PrismaClient,
   requestedBatchSize = DEFAULT_BATCH_SIZE,
-): Promise<{ checked: number; allocated: number; waiting: number; failures: number }> {
+): Promise<{ checked: number; allocated: number; waiting: number; failures: number; errorDetails: Array<{ purchaseId: string; message: string }> }> {
   const take = Math.max(1, Math.min(MAX_BATCH_SIZE, Math.floor(requestedBatchSize) || DEFAULT_BATCH_SIZE));
   // Ensure the cursor row exists without overwriting a value another scheduler
   // execution may already have written.
@@ -32,6 +32,7 @@ export async function allocatePaidPurchases(
   let allocated = 0;
   let waiting = 0;
   let failures = 0;
+  const errorDetails: Array<{ purchaseId: string; message: string }> = [];
 
   while (checked < MAX_PURCHASES_PER_RUN) {
     const batch = await prisma.purchase.findMany({
@@ -161,10 +162,13 @@ export async function allocatePaidPurchases(
       } catch (error) {
         // Keep the purchase pending for a safe retry, but expose a concise
         // diagnostic in server logs so scheduler failures can be investigated.
+        const message = error instanceof Error ? error.message : String(error);
         console.error("[round-scheduler] paid purchase allocation failed", {
           purchaseId: item.id,
-          error: error instanceof Error ? error.message : String(error),
+          error: message,
+          stack: error instanceof Error ? error.stack : undefined,
         });
+        errorDetails.push({ purchaseId: item.id, message });
         failures += 1;
       }
     }
@@ -189,5 +193,5 @@ export async function allocatePaidPurchases(
     }
   }
 
-  return { checked, allocated, waiting, failures };
+  return { checked, allocated, waiting, failures, errorDetails };
 }
