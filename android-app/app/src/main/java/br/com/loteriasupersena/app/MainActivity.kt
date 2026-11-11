@@ -130,14 +130,24 @@ class MainActivity : ComponentActivity() {
             path == "/favicon.ico"
     }
 
-    private fun hasBluetoothPermission(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    private fun requiredBluetoothPermissions(): Array<String> = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        else -> emptyArray()
+    }
+
+    private fun hasBluetoothPermission(): Boolean = requiredBluetoothPermissions().all {
+        checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
 
     private fun requestBluetoothAndShowPrinters() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission()) {
-            permissionLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN))
-        } else showPrinterPicker()
+        val missing = requiredBluetoothPermissions().filter {
+            checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
+        else showPrinterPicker()
     }
 
     private fun showPrinterPicker() {
