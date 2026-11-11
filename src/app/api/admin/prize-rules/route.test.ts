@@ -89,7 +89,7 @@ describe("admin prize rules API", () => {
     expect(await response.json()).toMatchObject({ multipliers: valid });
     expect(mocks.settingUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { key: "numeric_prize_multipliers" },
-      create: { key: "numeric_prize_multipliers", value: JSON.stringify(valid) },
+      create: { key: "numeric_prize_multipliers", value: JSON.stringify({ unit: 1, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 }) },
     }));
     expect(mocks.settingChangeCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ settingKey: "numeric_prize_multipliers", changedById: "admin-1" }) });
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ actorId: "admin-1", action: "NUMERIC_PRIZE_MULTIPLIERS_UPDATED" }) });
