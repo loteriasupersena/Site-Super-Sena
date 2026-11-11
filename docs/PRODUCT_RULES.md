@@ -1,4 +1,4 @@
-# Regras de produto — Super Quina
+# Regras de produto — Super Sena
 
 Este documento é a fonte de referência das regras comerciais e da terminologia do jogo. Deve ser atualizado junto com as implementações e servirá de base para o futuro manual técnico.
 
@@ -6,7 +6,7 @@ Este documento é a fonte de referência das regras comerciais e da terminologia
 ## 0. Estrutura do site e navegação — decisão de produto
 
 - O site possui quatro áreas principais distintas: (1) página pública de apresentação/início; (2) área do jogador; (3) área do cambista; e (4) área do administrador. A página de apresentação é a entrada pública padrão do domínio e não substitui nem absorve as três áreas autenticadas.
-- Ao acessar o domínio pela raiz `/`, a pessoa deve chegar à página pública de apresentação do Super Quina, com explicação clara de como funciona e caminhos para entrar ou criar conta. Não encaminhar automaticamente visitantes não autenticados para o login, salvo quando tentarem acessar uma área protegida.
+- Ao acessar o domínio pela raiz `/`, a pessoa deve chegar à página pública de apresentação do Super Sena, com explicação clara de como funciona e caminhos para entrar ou criar conta. Não encaminhar automaticamente visitantes não autenticados para o login, salvo quando tentarem acessar uma área protegida.
 - As áreas de jogador, cambista e administrador continuam separadas, com permissões e funcionalidades próprias. O trabalho em uma delas não elimina nem substitui as outras.
 - Termos de uso e verificação de recibo são páginas públicas complementares, não novas áreas principais de operação. Os caminhos existentes `/termos-de-uso` e `/verificar-recibo/[receiptCode]` devem ser mantidos e integrados à navegação pública.
 - QR Code de pagamento Pix e recibo oficial devem ser apresentados no próprio fluxo/tela em que a pessoa iniciou a compra ou venda, sem redirecionamento desnecessário para uma nova página. O QR Pix deve permanecer junto do estado da cobrança e da confirmação; após pagamento confirmado e alocação concluída, o recibo deve aparecer na mesma tela, substituindo ou sucedendo o QR conforme o estado.
@@ -51,7 +51,7 @@ A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre s
 - Enquanto a API retornar estado pendente, não conclusivo, indisponível ou divergente, a compra permanece sem confirmação final e não pode gerar participações nem recibo oficial. A reconciliação deve tentar novamente de forma segura.
 - Webhook e consulta periódica/direta são mecanismos complementares de detecção e recuperação, não dois fluxos independentes de aprovação. Ambos devem convergir para um único serviço central de confirmação e uma única máquina de estados do pagamento.
 - A transição final precisa ser transacional e idempotente. Reentrega de webhook, consulta repetida, concorrência ou reinício não podem duplicar cobrança, participações, recibo, comissão ou crédito.
-- Estados finais aceitos, transições permitidas e tratamento de rejeição/cancelamento/expiração devem ser mapeados explicitamente a partir dos estados oficiais do Mercado Pago durante a implementação. O Super-Quina não oferece nem executa fluxo interno de estorno. Uma notificação externa de reembolso/chargeback serve somente para registro informativo e conciliação financeira: nunca cancela compra já confirmada, nunca desfaz participações já alocadas e nunca reverte prêmios ou comissões. A alocação continua sendo obrigatória após a confirmação autêntica do pagamento; pagamento não confirmado pelo provedor não pode gerar aposta.
+- Estados finais aceitos, transições permitidas e tratamento de rejeição/cancelamento/expiração devem ser mapeados explicitamente a partir dos estados oficiais do Mercado Pago durante a implementação. O Super Sena não oferece nem executa fluxo interno de estorno. Uma notificação externa de reembolso/chargeback serve somente para registro informativo e conciliação financeira: nunca cancela compra já confirmada, nunca desfaz participações já alocadas e nunca reverte prêmios ou comissões. A alocação continua sendo obrigatória após a confirmação autêntica do pagamento; pagamento não confirmado pelo provedor não pode gerar aposta.
 - Antes de implementar ou importar qualquer mecanismo, auditar os serviços, rotas, webhooks, scheduler e estados já existentes. Se já houver uma função equivalente, corrigir ou ampliar a implementação atual; não criar uma segunda rota, worker, máquina de estados ou mecanismo paralelo para a mesma responsabilidade.
 
 
