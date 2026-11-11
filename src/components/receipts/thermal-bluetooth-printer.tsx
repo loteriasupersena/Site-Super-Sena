@@ -7,10 +7,10 @@ import type { EscPosProfile } from "@/modules/printing/escpos/encode-thermal-rec
 
 type PaperPreset = "58-a" | "58-b" | "80-a" | "80-b" | "custom";
 const PROFILE_PRESETS: Record<Exclude<PaperPreset, "custom">, EscPosProfile> = {
-  "58-a": { paperWidthMm: 58, columns: 32, fontMode: "A", copies: 1, feedLines: 3, qrCode: true, unsupportedCharacter: "transliterate" },
-  "58-b": { paperWidthMm: 58, columns: 42, fontMode: "B", copies: 1, feedLines: 3, qrCode: true, unsupportedCharacter: "transliterate" },
-  "80-a": { paperWidthMm: 80, columns: 48, fontMode: "A", copies: 1, feedLines: 3, qrCode: true, unsupportedCharacter: "transliterate" },
-  "80-b": { paperWidthMm: 80, columns: 64, fontMode: "B", copies: 1, feedLines: 3, qrCode: true, unsupportedCharacter: "transliterate" },
+  "58-a": { paperWidthMm: 58, columns: 32, fontMode: "A", feedLines: 3, unsupportedCharacter: "transliterate" },
+  "58-b": { paperWidthMm: 58, columns: 42, fontMode: "B", feedLines: 3, unsupportedCharacter: "transliterate" },
+  "80-a": { paperWidthMm: 80, columns: 48, fontMode: "A", feedLines: 3, unsupportedCharacter: "transliterate" },
+  "80-b": { paperWidthMm: 80, columns: 64, fontMode: "B", feedLines: 3, unsupportedCharacter: "transliterate" },
 };
 const PROFILE_STORAGE_KEY = "superquina-printer-profile-v2";
 
@@ -43,7 +43,7 @@ export function ThermalBluetoothPrinter({ purchaseId }: { purchaseId?: string })
   }
 
   const selectedProfile: EscPosProfile = paperPreset === "custom"
-    ? { paperWidthMm: customWidth, columns: customColumns, fontMode: customFontMode, copies: 1, feedLines: 3, qrCode: true, unsupportedCharacter: "transliterate" }
+    ? { paperWidthMm: customWidth, columns: customColumns, fontMode: customFontMode, feedLines: 3, unsupportedCharacter: "transliterate" }
     : PROFILE_PRESETS[paperPreset];
 
   function savePaperProfile(preset: PaperPreset, width = customWidth, columns = customColumns, fontMode = customFontMode) {
