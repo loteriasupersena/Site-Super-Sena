@@ -5,7 +5,7 @@ type UserRole = "PLAYER" | "CASHIER" | "ADMIN";
 type SessionResponse = { authenticated: true; user: { role: UserRole; mustChangePassword: boolean } };
 const destinationByRole = { PLAYER: "/player", CASHIER: "/cashier", ADMIN: "/admin" } as const;
 
-export function LoginForm({ allowedRole }: { allowedRole?: UserRole } = {}) {
+export function LoginForm({ allowedRole, cashierApp = false }: { allowedRole?: UserRole; cashierApp?: boolean } = {}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,9 +17,11 @@ export function LoginForm({ allowedRole }: { allowedRole?: UserRole } = {}) {
     setError("");
     setIsSubmitting(true);
     try {
-      const login = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+      const endpoint = cashierApp ? "/api/auth/cashier-login" : "/api/auth/login";
+      const login = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
       if (!login.ok) {
-        setError(login.status === 401 ? "Usuário ou senha inválidos." : "Não foi possível entrar agora. Tente novamente.");
+        const body = await login.json().catch(() => ({})) as { error?: string };
+        setError(body.error ?? (login.status === 401 ? "Usuário ou senha inválidos." : "Não foi possível entrar agora. Tente novamente."));
         return;
       }
       const response = await fetch("/api/auth/me", { cache: "no-store" });
@@ -33,7 +35,8 @@ export function LoginForm({ allowedRole }: { allowedRole?: UserRole } = {}) {
         setError("Este aplicativo é exclusivo para cambistas. Use uma conta de cambista para entrar.");
         return;
       }
-      window.location.assign(session.user.mustChangePassword ? "/change-password" : destinationByRole[session.user.role]);
+      const appSuffix = cashierApp ? "?app=1" : "";
+      window.location.assign(session.user.mustChangePassword ? `/change-password${appSuffix}` : cashierApp ? "/cashier?app=1" : destinationByRole[session.user.role]);
     } catch {
       setError("Falha de conexão. Verifique sua internet e tente novamente.");
     } finally {
