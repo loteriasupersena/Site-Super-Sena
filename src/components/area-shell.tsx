@@ -24,7 +24,7 @@ export function AreaShell({ children, compact = false, footerContent, appMode = 
         style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 0 32px", width: "100%" }}
       >
         {footerContent}
-        <LogoutButton />
+        <LogoutButton cashierApp={appMode} />
       </footer>
     </main>
   );
