@@ -84,7 +84,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           allocation.unitCents * currentMultipliers.unit,
           allocation.tensCents * currentMultipliers.tens,
           allocation.hundredsCents * currentMultipliers.hundreds,
-          allocation.thousandsCents * currentMultipliers.quadra,
+          allocation.thousandsCents * currentMultipliers.thousands,
           allocation.quinaCents * currentMultipliers.quina,
         );
         if (!Number.isSafeInteger(maximumLinePrizeCents) || maximumLinePrizeCents > 2_147_483_647) {
