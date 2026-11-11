@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       stakeCents: line.unitCents + line.tensCents + line.hundredsCents + line.quadraCents + line.quinaCents + line.senaCents,
       unitCents: line.unitCents, tensCents: line.tensCents,
       hundredsCents: line.hundredsCents, quadraCents: line.quadraCents,
-      quinaCents: line.quinaCents, senaCents: line.senaCents, senaCents: line.senaCents,
+      quinaCents: line.quinaCents, senaCents: line.senaCents,
     })));
     return NextResponse.json({ receipt: {
       purchaseId: purchase.id, receiptCode: purchase.receiptCode, paymentStatus: "CONFIRMED",
