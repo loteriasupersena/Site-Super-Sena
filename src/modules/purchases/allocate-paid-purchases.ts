@@ -125,6 +125,7 @@ export async function allocatePaidPurchases(
           }
           const allocation = allocateNumberStake(stakePerNumberFromTotal);
           const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.quadraCents, allocation.quinaCents, allocation.senaCents];
+          const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
           const isCurrentRule = purchase.numericIntent.ruleVersion === NUMERIC_PRIZE_RULE_VERSION &&
             purchase.numericIntent.ruleSnapshot !== null &&
             typeof purchase.numericIntent.ruleSnapshot === "object" &&
