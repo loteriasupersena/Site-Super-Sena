@@ -8,7 +8,7 @@ const fields: Array<{ key: keyof Multipliers; label: string }> = [
   { key: "unit", label: "Unidade" },
   { key: "tens", label: "Dezena" },
   { key: "hundreds", label: "Terno (centena)" },
-  { key: "thousands", label: "Quadra (milhar)" },
+  { key: "thousands", label: "Milhar" },
   { key: "quina", label: "Quina (cinco números)" },
 ];
 
