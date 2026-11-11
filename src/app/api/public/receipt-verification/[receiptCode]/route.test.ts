@@ -23,10 +23,10 @@ function purchase(overrides: Record<string, unknown> = {}) {
     confirmedAt: new Date("2026-11-01T12:00:00Z"),
     payment: { status: "CONFIRMED", confirmedAt: new Date("2026-11-01T12:00:00Z") },
     participations: [{
-      round: { code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "01234", startsAt: past, resultAt: past },
+      round: { code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "001234", startsAt: past, resultAt: past },
       numericLines: [
-        { numberValue: "01234", unitCents: 0, tensCents: 0, hundredsCents: 0, thousandsCents: 0, quinaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 100, prizeCreditedAt: new Date() },
-        { numberValue: "00007", unitCents: 0, tensCents: 0, hundredsCents: 0, thousandsCents: 0, quinaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 0, prizeCreditedAt: null },
+        { numberValue: "001234", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 100, prizeCreditedAt: new Date() },
+        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 0, prizeCreditedAt: null },
       ],
     }],
     ...overrides,
@@ -68,15 +68,15 @@ describe("GET /api/public/receipt-verification/[receiptCode]", () => {
   it("preserves leading zeroes and reports winning and non-winning numbers", async () => {
     const body = await (await GET(request, context("sq-12345678"))).json();
     expect(body.valid).toBe(true);
-    expect(body.rounds[0].resultNumber).toBe("01234");
-    expect(body.rounds[0].numbers[0]).toMatchObject({ numberValue: "01234", resultStatus: "PREMIADA", prizePaid: true });
-    expect(body.rounds[0].numbers[1]).toMatchObject({ numberValue: "00007", resultStatus: "NAO_PREMIADA" });
+    expect(body.rounds[0].resultNumber).toBe("001234");
+    expect(body.rounds[0].numbers[0]).toMatchObject({ numberValue: "001234", resultStatus: "PREMIADA", prizePaid: true });
+    expect(body.rounds[0].numbers[1]).toMatchObject({ numberValue: "000007", resultStatus: "NAO_PREMIADA" });
   });
 
   it("marks rounds before their result time as awaiting the draw", async () => {
     mocks.purchaseFindUnique.mockResolvedValue(purchase({
       participations: [{ round: { code: "SQ-ROUND-02", status: "OPEN", resultNumber: null, startsAt: future, resultAt: future }, numericLines: [
-        { numberValue: "00007", unitCents: 0, tensCents: 0, hundredsCents: 0, thousandsCents: 0, quinaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
+        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
       ] }],
     }));
     const body = await (await GET(request, context())).json();
@@ -88,8 +88,8 @@ describe("GET /api/public/receipt-verification/[receiptCode]", () => {
     mocks.purchaseFindUnique.mockResolvedValue(purchase({
       participations: [
         { round: { code: "SQ-CANCEL", status: "CANCELLED", resultNumber: null, startsAt: past, resultAt: past }, numericLines: [] },
-        { round: { code: "SQ-APUR", status: "COMPLETED", resultNumber: "54321", startsAt: past, resultAt: past }, numericLines: [
-          { numberValue: "00007", unitCents: 0, tensCents: 0, hundredsCents: 0, thousandsCents: 0, quinaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
+        { round: { code: "SQ-APUR", status: "COMPLETED", resultNumber: "054321", startsAt: past, resultAt: past }, numericLines: [
+          { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
         ] },
       ],
     }));
