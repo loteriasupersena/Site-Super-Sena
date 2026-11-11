@@ -37,7 +37,7 @@ function request(body: unknown, options: { origin?: string; token?: string } = {
 const validBody = () => ({
   idempotencyKey: "idempotency-key-0001",
   repetitionCount: 1,
-  numbers: ["01234"],
+  numbers: ["012345"],
   stakeCents: 100,
   paymentMethod: "PIX",
 });
@@ -45,7 +45,7 @@ const purchase = () => ({
   id: "purchase-1", receiptCode: null, status: "PENDING_PAYMENT",
   payment: { status: "PENDING", idempotencyKey: "payment-key", providerPaymentId: null },
   totalCents: 100, currency: "BRL",
-  numericIntent: { roundCount: 1, numbers: ["01234"], allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 } },
+  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 } },
   participations: [],
 });
 
@@ -99,18 +99,18 @@ describe("POST /api/player/purchases", () => {
     expect(mocks.createNumericPurchase).not.toHaveBeenCalled();
   });
 
-  it("creates a pending numeric purchase with server-owned multipliers and five-part allocation", async () => {
+  it("creates a pending numeric purchase with server-owned multipliers and six-part allocation", async () => {
     const response = await POST(request(validBody()));
     expect(response.status).toBe(201);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.createNumericPurchase).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       playerId: "player-1", paymentMethod: "PIX", roundCount: 1,
-      numbers: ["01234"], stakeCents: 100,
+      numbers: ["012345"], stakeCents: 100,
     }));
     const body = await response.json();
     expect(body.purchase.totalCents).toBe(100);
     expect(body.purchase.participations).toEqual([]);
-    expect(body.purchase.numericIntent).toMatchObject({ repetitionCount: 1, numbers: ["01234"] });
+    expect(body.purchase.numericIntent).toMatchObject({ repetitionCount: 1, numbers: ["012345"] });
     expect(body.purchase.receiptCode).toBeNull();
     expect(body.message).toContain("Nenhum recibo foi emitido");
     expect(body.paymentActionRequired).toBe(true);
@@ -123,7 +123,7 @@ describe("POST /api/player/purchases", () => {
     const first = mocks.createNumericPurchase.mock.calls[0]![1];
     const second = mocks.createNumericPurchase.mock.calls[1]![1];
     expect(first.idempotencyKey).toBe(second.idempotencyKey);
-    expect(second.numbers).toEqual(["01234"]);
+    expect(second.numbers).toEqual(["012345"]);
   });
 
   it("does not expose internal errors for unexpected failures", async () => {
