@@ -27,10 +27,10 @@ function request(method = "GET", body?: unknown, origin = "https://example.test"
   });
 }
 const line = {
-  id: "line-123", participationId: "participation-1", numberValue: "1234", prizeCents: 1000, unitCents: 1, tensCents: 2, hundredsCents: 3, thousandsCents: 4, quinaCents: 5, ruleVersion: "v1", ruleSnapshot: {}, prizeCreditedAt: null, prizePayout: null, createdAt: new Date("2026-01-01T00:00:00Z"),
+  id: "line-123", participationId: "participation-1", numberValue: "123456", prizeCents: 1000, unitCents: 1, tensCents: 2, hundredsCents: 3, quadraCents: 4, quinaCents: 5, senaCents: 6, ruleVersion: "v1", ruleSnapshot: {}, prizeCreditedAt: null, prizePayout: null, createdAt: new Date("2026-01-01T00:00:00Z"),
   participation: {
     id: "participation-1", status: "CONFIRMED",
-    round: { id: "round-1", code: "R-01", status: "COMPLETED", resultAt: new Date("2026-01-02T00:00:00Z"), resultNumber: "1234" },
+    round: { id: "round-1", code: "R-01", status: "COMPLETED", resultAt: new Date("2026-01-02T00:00:00Z"), resultNumber: "123456" },
     purchase: { id: "purchase-1", status: "CONFIRMED", cashierId: null, currency: "BRL", createdAt: new Date("2026-01-01T00:00:00Z"), playerId: "player-1", player: { username: "player" } },
   },
 };
