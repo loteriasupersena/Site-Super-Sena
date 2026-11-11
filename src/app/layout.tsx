@@ -6,6 +6,7 @@ import { AndroidBrowserClass } from "@/components/android-browser-class";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loteriasupersena.com.br";
 
 const icon = "/images/brand/super-sena-icon.svg";
+const shareImage = "/images/brand/super-sena-icone.webp";
 const favicon = icon;
 
 export const metadata: Metadata = {
@@ -34,11 +35,13 @@ export const metadata: Metadata = {
     title: "Super Sena | Jogo Numérico",
     description: "Seja um ponto credenciado Super Sena. Solicite seu kit gratuito.",
     url: siteUrl,
+    images: [{ url: shareImage, alt: "Super Sena" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Super Sena",
     description: "Jogue cinco números e concorra a cinco categorias de prêmios.",
+    images: [shareImage],
   },
   manifest: "/manifest.webmanifest",
 };
