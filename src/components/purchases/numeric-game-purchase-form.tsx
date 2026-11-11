@@ -182,7 +182,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
 
   function addNumber() {
     const normalized = clearInput(numberInput);
-    if (!/^\d{5}$/.test(normalized)) { setError("Digite exatamente cinco algarismos, incluindo os zeros à esquerda."); return; }
+    if (!/^\d{5}$/.test(normalized)) { setError("Digite exatamente seis algarismos, incluindo os zeros à esquerda."); return; }
     setError(""); setNotice("");
     if (numbers.includes(normalized)) { setError("Esse número já foi adicionado."); return; }
     setNumbers((current) => [...current, normalized]);
@@ -216,11 +216,11 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice("");
     if (hasPendingNumber && !/^\d{5}$/.test(pendingNumber)) {
-      setError("Complete os cinco algarismos do número ou apague o campo para continuar com os números já adicionados.");
+      setError("Complete os seis algarismos do número ou apague o campo para continuar com os números já adicionados.");
       return;
     }
     const numbersToSubmit = hasPendingNumber ? [...numbers, pendingNumber] : numbers;
-    if (!numbersToSubmit.length) { setError("Digite ou gere um número de cinco algarismos para continuar."); return; }
+    if (!numbersToSubmit.length) { setError("Digite ou gere um número de seis algarismos para continuar."); return; }
     if (new Set(numbersToSubmit).size !== numbersToSubmit.length) {
       setError("Esse número já foi adicionado. Remova a repetição antes de continuar.");
       return;
@@ -291,7 +291,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
       <div className="feature-label numeric-game-heading">NOVO JOGO</div>
       <form onSubmit={submit}>
         <div className="numeric-entry-row">
-          <input id="numeric-number" aria-label="Número de cinco algarismos" disabled={Boolean(purchase)} value={numberInput}
+          <input id="numeric-number" aria-label="Número de seis algarismos" disabled={Boolean(purchase)} value={numberInput}
             onChange={(event) => setNumberInput(clearInput(event.target.value))}
             inputMode="numeric" pattern="[0-9]{5}" maxLength={5} placeholder="00000" autoComplete="off" />
           <div className="numeric-entry-actions">
@@ -359,7 +359,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
             <strong>{number}</strong> — {money(Object.values(purchase.numericIntent!.allocationCents).reduce((sum, value) => sum + value, 0))}
           </div>) : purchase.participations.flatMap((part) => part.lines.map((line, index) => <div key={part.roundId + line.numberValue + index}>
             <strong>{line.numberValue}</strong> — {money(line.totalCents)}
-            <small>Unidade {money(line.allocationCents.unit)} · Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Quadra {money(line.allocationCents.quadra)} · Quadra {money(line.allocationCents.quadra)} · Quina {money(line.allocationCents.quina)} · Sena {money(line.allocationCents.sena)}</small>
+            <small>Unidade {money(line.allocationCents.unit)} · Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Quadra {money(line.allocationCents.quadra)} · Quina {money(line.allocationCents.quina)} · Sena {money(line.allocationCents.sena)}</small>
           </div>))}
           {!reconciliationRequired && pixCheckout?.qrCodeBase64 && <div className="pix-checkout">
             <img src={"data:image/png;base64," + pixCheckout.qrCodeBase64} alt="QR Code para pagar a compra via Pix" width={240} height={240} />
