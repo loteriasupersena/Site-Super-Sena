@@ -19,7 +19,7 @@ describe("allocatePaidPurchases bounded retry cursor", () => {
 
     const result = await allocatePaidPurchases(prisma as never, 50);
 
-    expect(result).toEqual({ checked: 100, allocated: 0, waiting: 0, failures: 100 });
+    expect(result).toMatchObject({ checked: 100, allocated: 0, waiting: 0, failures: 100, errorDetails: expect.arrayContaining([{ purchaseId: expect.any(String), message: 'temporary database failure' }]) });
     expect(findMany).toHaveBeenCalledTimes(2);
     expect(updateMany).toHaveBeenLastCalledWith({
       where: { key: "paid_purchase_allocation_cursor", value: "purchase-050" },
@@ -42,7 +42,7 @@ describe("allocatePaidPurchases bounded retry cursor", () => {
 
     const result = await allocatePaidPurchases(prisma as never, 50);
 
-    expect(result).toEqual({ checked: 0, allocated: 0, waiting: 0, failures: 0 });
+    expect(result).toEqual({ checked: 0, allocated: 0, waiting: 0, failures: 0, errorDetails: [] });
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: { gt: "purchase-100" } }),
     }));
