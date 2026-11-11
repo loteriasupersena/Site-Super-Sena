@@ -37,7 +37,7 @@ export function HomeAccessFooter() {
         }}>
           <section className="home-access-dialog" role="dialog" aria-modal="true" aria-labelledby="home-access-title">
             <button className="home-access-close" type="button" onClick={() => setIsOpen(false)} aria-label="Fechar">×</button>
-            <h2 id="home-access-title">Acesse a Super Quina</h2>
+            <h2 id="home-access-title">Acesse a Super Sena</h2>
             <p>Entre na sua conta ou crie seu cadastro.</p>
             <div className="home-access-options">
               <Link href="/login" className="home-access-login">Entrar</Link>
