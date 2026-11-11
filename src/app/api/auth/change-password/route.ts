@@ -8,6 +8,7 @@ import {
   hashSessionToken,
   SESSION_COOKIE,
   SESSION_TTL_MS,
+  CASHIER_APP_COOKIE,
 } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const isCashierAppSession = Boolean(token && request.cookies.get(CASHIER_APP_COOKIE)?.value === hashSessionToken(token));
   const sessionUser = await getSessionUser(token);
   if (!sessionUser || !token) {
     return NextResponse.json({ error: "Sessão inválida ou expirada." }, { status: 401 });
@@ -98,5 +100,10 @@ export async function POST(request: NextRequest) {
     path: "/",
     expires: expiresAt,
   });
+  if (isCashierAppSession && sessionUser.role === "CASHIER") {
+    response.cookies.set(CASHIER_APP_COOKIE, hashSessionToken(nextToken), {
+      httpOnly: true, secure: secureCookie(request), sameSite: "lax", path: "/", expires: expiresAt,
+    });
+  }
   return response;
 }
