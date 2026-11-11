@@ -68,7 +68,7 @@ export async function registerNumericPrizePayout(
     numberValue: line.numberValue,
     unitCents: line.unitCents, tensCents: line.tensCents,
     hundredsCents: line.hundredsCents, quadraCents: line.quadraCents,
-    quinaCents: line.quinaCents, ruleVersion: line.ruleVersion,
+    quinaCents: line.quinaCents, senaCents: line.senaCents, ruleVersion: line.ruleVersion,
     ruleSnapshot: line.ruleSnapshot,
   }, line.participation.round.resultNumber);
   if (!prizeReview?.calculationConsistent || prizeReview.calculatedPrizeCents !== line.prizeCents) {
