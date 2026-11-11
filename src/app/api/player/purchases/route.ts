@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         lines: part.numericLines.map((line) => ({
           numberValue: line.numberValue,
           totalCents: line.unitCents + line.tensCents + line.hundredsCents + line.quadraCents + line.quinaCents + line.senaCents,
-          allocationCents: { unit: line.unitCents, tens: line.tensCents, hundreds: line.hundredsCents, quadra: line.quadraCents, quina: line.quinaCents },
+          allocationCents: { unit: line.unitCents, tens: line.tensCents, hundreds: line.hundredsCents, quadra: line.quadraCents, quina: line.quinaCents, sena: line.senaCents },
         })),
       })),
     };
