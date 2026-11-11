@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { LoginForm } from "@/components/auth/login-form";\nimport { SiteHeader } from "@/components/site-header";
+import { LoginForm } from "@/components/auth/login-form";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Acesso do Cambista | Super Sena",
