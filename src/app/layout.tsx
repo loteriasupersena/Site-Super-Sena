@@ -34,13 +34,11 @@ export const metadata: Metadata = {
     title: "Super Sena | Jogo Numérico",
     description: "Seja um ponto credenciado Super Sena. Solicite seu kit gratuito.",
     url: siteUrl,
-    images: [{ url: icon, alt: "Super Sena" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Super Sena",
     description: "Jogue cinco números e concorra a cinco categorias de prêmios.",
-    images: [icon],
   },
   manifest: "/manifest.webmanifest",
 };
