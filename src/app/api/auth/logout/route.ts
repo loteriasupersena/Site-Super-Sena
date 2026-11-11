@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
     path: "/",
     expires: new Date(0),
   });
+  response.cookies.set(CASHIER_APP_COOKIE, "", {
+    httpOnly: true, secure: request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production",
+    sameSite: "lax", path: "/", expires: new Date(0),
+  });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
