@@ -68,7 +68,7 @@ export function AdminRoundManager() {
   return <section className="feature-card" aria-labelledby="admin-rounds-heading">
     <span className="feature-label">Operação</span>
     <h2 id="admin-rounds-heading">Rodadas e resultados</h2>
-    <p>As ações são verificadas novamente no servidor. O sorteio único de cinco algarismos só fica disponível após o fechamento e no horário programado; a apuração usa o resultado oficial da rodada.</p>
+    <p>As ações são verificadas novamente no servidor. O sorteio único de seis algarismos só fica disponível após o fechamento e no horário programado; a apuração usa o resultado oficial da rodada.</p>
 
 
     <div className="form-feedback-slot" aria-live="polite">
