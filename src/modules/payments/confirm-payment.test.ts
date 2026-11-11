@@ -126,8 +126,8 @@ describe("confirmPixPayment next-valid-round allocation", () => {
         purchase: {
           status: "PENDING_PAYMENT", totalCents: 100, receiptCode: null, cashierId: null,
           numericIntent: {
-            roundCount: 1, numbers: ["00007"],
-            allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
+            roundCount: 1, numbers: ["000007"],
+            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
             ruleVersion: "numeric-v1", ruleSnapshot: { version: "numeric-v1" },
           },
         },
@@ -155,7 +155,7 @@ describe("confirmPixPayment next-valid-round allocation", () => {
     expect(createParticipation).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         purchaseId: "purchase-1", roundId: "round-next", totalCents: 100,
-        numericLines: { create: [expect.objectContaining({ numberValue: "00007", unitCents: 20 })] },
+        numericLines: { create: [expect.objectContaining({ numberValue: "000007", unitCents: 20 })] },
       }),
     }));
     expect(purchaseUpdate).toHaveBeenCalledWith(expect.objectContaining({
