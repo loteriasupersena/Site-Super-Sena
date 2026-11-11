@@ -4,7 +4,7 @@ import {
 } from "../../domain/numeric-prize-rules";
 import { normalizeNumber } from "./normalize-number";
 
-type NumericSettlementCategory = Exclude<NumericPrizeCategory, "sena">;
+type NumericSettlementCategory = NumericPrizeCategory;
 
 export type NumericSettlementLine = {
   numberValue: string;
@@ -22,13 +22,13 @@ const ALLOCATION_FIELD: Record<NumericSettlementCategory,
   unit: "unitCents",
   tens: "tensCents",
   hundreds: "hundredsCents",
-  quadra: "thousandsCents",
+  thousands: "thousandsCents",
   quina: "quinaCents",
 };
 
 /**
  * Award exactly one prize per line: the highest matching category.
- * A quina also matches quadra/terno/dezena/unidade suffixes, but only quina is paid.
+ * A quina also matches milhar/centena/dezena/unidade suffixes, but only quina is paid.
  */
 export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumber: string): number {
   const bet = normalizeNumber(line.numberValue);
@@ -38,7 +38,7 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
 
   const matches: Array<{ category: NumericSettlementCategory; matched: boolean }> = [
     { category: "quina", matched: bet === drawn },
-    { category: "quadra", matched: bet.slice(-4) === drawn.slice(-4) },
+    { category: "thousands", matched: bet.slice(-4) === drawn.slice(-4) },
     { category: "hundreds", matched: bet.slice(-3) === drawn.slice(-3) },
     { category: "tens", matched: bet.slice(-2) === drawn.slice(-2) },
     { category: "unit", matched: bet.slice(-1) === drawn.slice(-1) },
