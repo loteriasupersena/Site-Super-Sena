@@ -21,7 +21,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-              select: { numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, thousandsCents: true, quinaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } } },
+              select: { numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } } },
             },
           },
         },
@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
           try {
             calculated = calculateNumberPrizeCents({
               numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
-              hundredsCents: line.hundredsCents, thousandsCents: line.thousandsCents,
+              hundredsCents: line.hundredsCents, quadraCents: line.quadraCents, senaCents: line.senaCents,
               quinaCents: line.quinaCents, ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
             }, round.resultNumber);
           } catch { /* Never guess if saved rules are inconsistent. */ }
