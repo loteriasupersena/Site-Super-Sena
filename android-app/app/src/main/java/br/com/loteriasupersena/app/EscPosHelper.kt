@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 object EscPosHelper {
     private val esc = 0x1B.toByte()
     private val gs = 0x1D.toByte()
-    private val qrMarker = Regex("""\\[\\[QR:([^\\]]{1,512})]]""")
+    private val qrMarker = Regex("""\[\[QR:([^\]]{1,512})]]""")
 
     private fun qrCommand(value: String): ByteArray {
         val data = value.toByteArray(Charsets.UTF_8)
@@ -29,11 +29,11 @@ object EscPosHelper {
 
     fun encode(text: String): ByteArray {
         val safeText = text
-            .replace("\\u001B", "")
-            .replace("\\u001D", "")
-            .replace("\\u0000", "")
-            .replace("\\r\\n", "\\n")
-            .replace("\\r", "\\n")
+            .replace("\u001B", "")
+            .replace("\u001D", "")
+            .replace("\u0000", "")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
         val charset = runCatching { Charset.forName("IBM860") }.getOrElse { Charsets.ISO_8859_1 }
         val body = ArrayList<Byte>()
         var cursor = 0
