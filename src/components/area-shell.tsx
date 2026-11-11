@@ -11,12 +11,13 @@ type Props = {
   logoutAtBottom?: boolean;
   children: ReactNode;
   footerContent?: ReactNode;
+  appMode?: boolean;
 };
 
-export function AreaShell({ children, compact = false, footerContent }: Props) {
+export function AreaShell({ children, compact = false, footerContent, appMode = false }: Props) {
   return (
-    <main className={`area-page${compact ? " area-page-compact" : ""}`}>
-      <SiteHeader />
+    <main className={`area-page${compact ? " area-page-compact" : ""}`} data-cashier-app={appMode ? "true" : undefined}>
+      <SiteHeader linkHome={!appMode} />
       <section className={`area-content${compact ? " area-content-compact" : ""}`}>{children}</section>
       <footer
         className="area-logout-footer"
