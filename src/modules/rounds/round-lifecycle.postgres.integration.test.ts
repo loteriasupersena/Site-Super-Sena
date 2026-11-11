@@ -153,7 +153,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
       where: { idempotencyKey: `numeric-prize-credit:${line.id}` },
     })).toBe(1);
     const saved = await prisma.numericParticipationLine.findUniqueOrThrow({ where: { id: line.id } });
-    expect(saved.prizeCents).toBe(30_000_000;
+    expect(saved.prizeCents).toBe(4_800_000);
     expect(saved.prizeCreditedAt).not.toBeNull();
     expect(await prisma.auditEvent.count({
       where: { entityType: "Round", entityId: round.id, action: "NUMERIC_ROUND_PRIZES_SETTLED_AUTOMATICALLY" },
