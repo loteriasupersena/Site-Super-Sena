@@ -55,7 +55,7 @@ suite("PostgreSQL cashier settlement concurrency", () => {
     // but the purchase is not yet confirmed and must not enter a settlement.
     const sale = await createNumericPurchase(prisma, {
       idempotencyKey: `it-settlement-cash-sale-${suffix}`,
-      cashierId, paymentMethod: "CASH", roundCount: 1, numbers: ["12345"], stakeCents: 100,
+      cashierId, paymentMethod: "CASH", roundCount: 1, numbers: ["012345"], stakeCents: 100,
     });
     purchaseIds.push(sale.id);
     expect(sale.status).toBe("PENDING_PAYMENT");
