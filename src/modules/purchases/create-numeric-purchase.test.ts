@@ -62,7 +62,7 @@ describe("createNumericPurchase pending Pix intent", () => {
     expect(data).not.toHaveProperty("participations");
     expect(data.numericIntent.create).toMatchObject({
       roundCount: 2, numbers: ["000007"], ruleVersion: "numeric-six-digit-v1",
-      ruleSnapshot: { version: "numeric-six-digit-v1", multipliers: { unit: 5, tens: 20, hundreds: 200, quadra: 2000, quina: 20000, sena: 200000 } },
+      ruleSnapshot: { version: "numeric-six-digit-v1", multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 } },
     });
     expect(data.payment.create.amountCents).toBe(200);
     expect(result).toMatchObject({ status: "PENDING_PAYMENT", receiptCode: null, participations: [] });
