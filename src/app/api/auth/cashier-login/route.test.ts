@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { user: { findUnique: vi.fn() } },
-  createSession: vi.fn(),
+  createSession: vi.fn(),\n  hashSessionToken: vi.fn((token: string) => "hashed-" + token),
   SESSION_COOKIE: "superquina_session",\n  CASHIER_APP_COOKIE: "super_sena_cashier_app",
 }));
 vi.mock("@/lib/auth/password", () => ({ verifyPassword: vi.fn() }));
