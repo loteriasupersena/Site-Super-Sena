@@ -53,12 +53,13 @@ class BluetoothPrinterManager(context: Context) {
             closeSocket()
             var candidate: BluetoothSocket? = null
             try {
-                candidate = device.createRfcommSocketToServiceRecord(sppUuid)
-                candidate.connect()
+                val secureSocket = device.createRfcommSocketToServiceRecord(sppUuid)
+                candidate = secureSocket
+                secureSocket.connect()
             } catch (secureError: IOException) {
                 try { candidate?.close() } catch (_: Exception) {}
                 candidate = try {
-                    device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType).invoke(device, 1) as BluetoothSocket
+                    device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType!!).invoke(device, 1) as BluetoothSocket
                 } catch (reflectionError: Exception) {
                     throw IOException("A impressora não aceitou a conexão Bluetooth SPP.", reflectionError)
                 }
@@ -96,16 +97,16 @@ class BluetoothPrinterManager(context: Context) {
                         val adapter = BluetoothAdapter.getDefaultAdapter() ?: throw IOException("Bluetooth indisponível.")
                         val device = adapter.getRemoteDevice(address)
                         closeSocket()
-                        active = try {
+                        val newSocket: BluetoothSocket = try {
                             device.createRfcommSocketToServiceRecord(sppUuid).also { it.connect() }
                         } catch (_: IOException) {
-                            device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                                .invoke(device, 1) as BluetoothSocket
+                            (device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType!!)
+                                .invoke(device, 1) as BluetoothSocket).also { it.connect() }
                         }
-                        if (!active.isConnected) active.connect()
-                        socket = active
+                        socket = newSocket
+                        active = newSocket
                     }
-                    val output = active.getOutputStream()
+                    val output = active!!.getOutputStream()
                     var offset = 0
                     while (offset < payload.size) {
                         val count = minOf(512, payload.size - offset)
