@@ -9,7 +9,7 @@ export const NUMERIC_PRIZE_CATEGORIES = [
 export type NumericPrizeCategory = (typeof NUMERIC_PRIZE_CATEGORIES)[number];
 export type NumericPrizeMultipliers = Record<NumericPrizeCategory, number>;
 
-export const NUMERIC_PRIZE_RULE_VERSION = "numeric-approved-v1";
+export const NUMERIC_PRIZE_RULE_VERSION = "numeric-admin-v2";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
   unit: 3,
