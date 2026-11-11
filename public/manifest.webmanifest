@@ -1,8 +1,8 @@
 {
-  "name": "Super Quina",
-  "short_name": "Super Quina",
-  "description": "Jogo numérico Super Quina",
-  "start_url": "/",
+  "name": "Super Sena",
+  "short_name": "Super Sena",
+  "description": "Jogo numérico Super Sena",
+  "start_url": "/cashier-app-login",
   "scope": "/",
   "display": "standalone",
   "background_color": "#062a78",
