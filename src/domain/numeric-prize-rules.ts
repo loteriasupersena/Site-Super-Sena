@@ -1,22 +1,12 @@
-export const NUMERIC_PRIZE_CATEGORIES = [
-  "unit",
-  "tens",
-  "hundreds",
-  "thousands",
-  "quina",
-] as const;
+export const NUMERIC_PRIZE_CATEGORIES = ["unit", "tens", "hundreds", "quadra", "quina", "sena"] as const;
 
 export type NumericPrizeCategory = (typeof NUMERIC_PRIZE_CATEGORIES)[number];
 export type NumericPrizeMultipliers = Record<NumericPrizeCategory, number>;
 
-export const NUMERIC_PRIZE_RULE_VERSION = "numeric-admin-v2";
+export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v1";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
-  unit: 3,
-  tens: 30,
-  hundreds: 300,
-  thousands: 3_000,
-  quina: 30_000,
+  unit: 3, tens: 30, hundreds: 300, quadra: 3_000, quina: 30_000, sena: 300_000,
 };
 
 export const APPROVED_NUMERIC_PRIZE_MULTIPLIERS = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
@@ -33,35 +23,13 @@ export function parseNumericPrizeMultipliers(value: unknown): NumericPrizeMultip
   return parsed;
 }
 
-export function createNumericPrizeRuleSnapshot(
-  multipliers: NumericPrizeMultipliers = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS,
-): { version: string; multipliers: NumericPrizeMultipliers } {
+export function createNumericPrizeRuleSnapshot(multipliers: NumericPrizeMultipliers = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS) {
   return { version: NUMERIC_PRIZE_RULE_VERSION, multipliers: { ...multipliers } };
 }
 
-export function readNumericPrizeMultipliers(
-  ruleVersion: string,
-  snapshot: unknown,
-): NumericPrizeMultipliers | null {
-  if (snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
+export function readNumericPrizeMultipliers(ruleVersion: string, snapshot: unknown): NumericPrizeMultipliers | null {
+  if (ruleVersion !== NUMERIC_PRIZE_RULE_VERSION || snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
   const value = snapshot as Record<string, unknown>;
-  if (value.version !== ruleVersion || typeof value.version !== "string") return null;
-
-  // Purchases created during the short-lived six-category v2 migration used
-  // "quadra" for the same four-digit suffix now named "thousands". "sena"
-  // was never backed by a stored stake column and was never settled.
-  if (ruleVersion === NUMERIC_PRIZE_RULE_VERSION && value.multipliers &&
-      typeof value.multipliers === "object" && !Array.isArray(value.multipliers)) {
-    const legacy = value.multipliers as Record<string, unknown>;
-    if (legacy.thousands === undefined && legacy.quadra !== undefined) {
-      return parseNumericPrizeMultipliers({
-        unit: legacy.unit,
-        tens: legacy.tens,
-        hundreds: legacy.hundreds,
-        thousands: legacy.quadra,
-        quina: legacy.quina,
-      });
-    }
-  }
+  if (value.version !== ruleVersion) return null;
   return parseNumericPrizeMultipliers(value.multipliers);
 }
