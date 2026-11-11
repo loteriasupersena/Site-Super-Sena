@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true, secure: secureCookie(request), sameSite: "lax", path: "/", expires: expiresAt,
   });
+  response.cookies.set(CASHIER_APP_COOKIE, hashSessionToken(token), {
+    httpOnly: true, secure: secureCookie(request), sameSite: "lax", path: "/", expires: expiresAt,
+  });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
