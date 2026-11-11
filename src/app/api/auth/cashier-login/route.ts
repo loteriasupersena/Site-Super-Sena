@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyPassword } from "@/lib/auth/password";
-import { authPrisma, createSession, SESSION_COOKIE } from "@/lib/auth/session";
+import { authPrisma, createSession, hashSessionToken, SESSION_COOKIE, CASHIER_APP_COOKIE } from "@/lib/auth/session";
 import { clearLoginFailures, getLoginBlock, recordLoginFailure } from "@/lib/auth/login-rate-limit";
 
 export const runtime = "nodejs";
