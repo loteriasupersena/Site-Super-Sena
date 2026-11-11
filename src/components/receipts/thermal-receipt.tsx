@@ -94,7 +94,7 @@ export function ThermalReceipt({
       const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
       const wrapLine = (value: string): string[] => {
         if (value.startsWith("[[QR:")) return [value];
-        const words = value.split(/\\s+/).filter(Boolean);
+        const words = value.split(/\s+/).filter(Boolean);
         const result: string[] = [];
         let current = "";
         for (const word of words) {
@@ -140,7 +140,7 @@ export function ThermalReceipt({
         "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
         "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
       ].filter(Boolean).flatMap(wrapLine);
-      nativePrinter.imprimir(lines.join("\\n"));
+      nativePrinter.imprimir(lines.join("\n"));
       return;
     }
     window.print();
