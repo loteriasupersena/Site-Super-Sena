@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400 }); }
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Informe de 1 a 10 repetições, números de cinco algarismos e valores em centavos." }, { status: 400 });
+    return NextResponse.json({ error: "Informe de 1 a 10 repetições, números de seis algarismos e valores em centavos." }, { status: 400 });
   }
   try {
     const purchase = await createNumericPurchase(authPrisma, {
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
           roundId: part.roundId, totalCents: part.totalCents,
           lines: part.numericLines.map((line) => ({
             numberValue: line.numberValue,
-            totalCents: line.unitCents + line.tensCents + line.hundredsCents + line.thousandsCents + line.quinaCents,
-            allocationCents: { unit: line.unitCents, tens: line.tensCents, hundreds: line.hundredsCents, thousands: line.thousandsCents, quina: line.quinaCents },
+            totalCents: line.unitCents + line.tensCents + line.hundredsCents + line.quadraCents + line.quinaCents + line.senaCents,
+            allocationCents: { unit: line.unitCents, tens: line.tensCents, hundreds: line.hundredsCents, quadra: line.quadraCents, quina: line.quinaCents },
           })),
         })),
       },
