@@ -121,8 +121,8 @@ class MainActivity : ComponentActivity() {
         if (uri.scheme != "https" || !uri.host.equals(Uri.parse(CASHIER_WEB_URL).host, ignoreCase = true)) return false
         val path = uri.path.orEmpty()
         return path == "/cashier-app-login" ||
-            path == "/cashier" ||
-            path == "/change-password" ||
+            (path == "/cashier" && uri.getQueryParameter("app") == "1") ||
+            (path == "/change-password" && uri.getQueryParameter("app") == "1") ||
             path.startsWith("/api/") ||
             path.startsWith("/_next/") ||
             path.startsWith("/images/") ||
