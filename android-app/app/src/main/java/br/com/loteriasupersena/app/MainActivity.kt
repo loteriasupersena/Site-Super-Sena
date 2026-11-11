@@ -2,6 +2,7 @@ package br.com.loteriasupersena.app
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -11,7 +12,6 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -21,12 +21,13 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
-        // Change this one constant when the production domain changes.
-        private const val CASHIER_WEB_URL = "https://loteriasupersena.com.br/cashier-app-login"
+        // URL pública única do site. Altere somente aqui se o domínio mudar.
+        private const val SITE_URL = "https://loteriasupersena.com.br"
     }
 
     private lateinit var webView: WebView
@@ -36,14 +37,19 @@ class MainActivity : ComponentActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        if (results.values.all { it }) showPrinterPicker()
-        else toast("Permita o acesso Bluetooth para selecionar a impressora.")
+        if (results.values.all { it }) {
+            lifecycleScope.launch { printer.reconnectSaved() }
+            showPrinterMenu()
+        } else {
+            toast("Permita o Bluetooth para conectar e imprimir recibos.")
+        }
     }
 
-    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val data = result.data
-        val uris = if (result.resultCode == RESULT_OK && data != null) {
-            WebChromeClient.FileChooserParams.parseResult(result.resultCode, data)
+    private val filePicker = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uris = if (result.resultCode == RESULT_OK && result.data != null) {
+            WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
         } else null
         fileChooserCallback?.onReceiveValue(uris)
         fileChooserCallback = null
@@ -60,8 +66,10 @@ class MainActivity : ComponentActivity() {
         printer = BluetoothPrinterManager(this)
         webView = findViewById(R.id.cashierWebView)
         configureWebView()
-        findViewById<Button>(R.id.printerButton).setOnClickListener { requestBluetoothAndShowPrinters() }
-        webView.loadUrl(CASHIER_WEB_URL)
+        findViewById<FloatingActionButton>(R.id.printerButton).setOnClickListener {
+            requestBluetoothPermissions()
+        }
+        webView.loadUrl(SITE_URL)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -70,9 +78,7 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        lifecycleScope.launch {
-            if (hasBluetoothPermission()) printer.reconnectSaved()
-        }
+        requestBluetoothPermissions(autoOpenMenu = false)
     }
 
     private fun configureWebView() {
@@ -82,16 +88,19 @@ class MainActivity : ComponentActivity() {
         webView.settings.allowContentAccess = true
         webView.settings.javaScriptCanOpenWindowsAutomatically = false
         webView.settings.setSupportMultipleWindows(false)
+        webView.settings.loadsImagesAutomatically = true
         webView.addJavascriptInterface(AndroidPrinterBridge(), "AndroidPrinter")
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 view?.evaluateJavascript("document.documentElement.classList.add('is-apk','is-android');", null)
             }
+
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return true
                 return !isAllowedUrl(uri)
             }
+
             @Suppress("DEPRECATION")
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return true
@@ -107,7 +116,8 @@ class MainActivity : ComponentActivity() {
                 fileChooserCallback?.onReceiveValue(null)
                 fileChooserCallback = callback
                 return try {
-                    filePicker.launch(params?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" })
+                    filePicker.launch(params?.createIntent()
+                        ?: Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" })
                     true
                 } catch (_: Exception) {
                     fileChooserCallback = null
@@ -117,18 +127,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun isAllowedUrl(uri: Uri): Boolean {
-        if (uri.scheme != "https" || !uri.host.equals(Uri.parse(CASHIER_WEB_URL).host, ignoreCase = true)) return false
-        val path = uri.path.orEmpty()
-        return path == "/cashier-app-login" ||
-            (path == "/cashier" && uri.getQueryParameter("app") == "1") ||
-            (path == "/change-password" && uri.getQueryParameter("app") == "1") ||
-            path.startsWith("/api/") ||
-            path.startsWith("/_next/") ||
-            path.startsWith("/images/") ||
-            path == "/manifest.webmanifest" ||
-            path == "/favicon.ico"
-    }
+    private fun isAllowedUrl(uri: Uri): Boolean =
+        uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host.equals(Uri.parse(SITE_URL).host, ignoreCase = true)
 
     private fun requiredBluetoothPermissions(): Array<String> = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
@@ -139,15 +140,47 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hasBluetoothPermission(): Boolean = requiredBluetoothPermissions().all {
-        checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestBluetoothAndShowPrinters() {
+    private fun requestBluetoothPermissions(autoOpenMenu: Boolean = true) {
         val missing = requiredBluetoothPermissions().filter {
-            checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
-        if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
-        else showPrinterPicker()
+        if (missing.isNotEmpty()) {
+            permissionLauncher.launch(missing.toTypedArray())
+        } else {
+            lifecycleScope.launch { printer.reconnectSaved() }
+            if (autoOpenMenu) showPrinterMenu()
+        }
+    }
+
+    private fun showPrinterMenu() {
+        val options = arrayOf(
+            "Selecionar impressora pareada",
+            "Papel 58 mm — 32 colunas",
+            "Papel 80 mm — 48 colunas",
+            "Ver status da impressora"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Impressora Bluetooth")
+            .setItems(options) { _, index ->
+                when (index) {
+                    0 -> showPrinterPicker()
+                    1 -> {
+                        printer.setPaperColumns(32)
+                        toast("Papel configurado: 58 mm (32 colunas).")
+                    }
+                    2 -> {
+                        printer.setPaperColumns(48)
+                        toast("Papel configurado: 80 mm (48 colunas).")
+                    }
+                    3 -> toast(printer.savedPrinterName()?.let { "Impressora: $it" }
+                        ?: "Nenhuma impressora selecionada.")
+                }
+            }
+            .setNegativeButton("Fechar", null)
+            .show()
     }
 
     private fun showPrinterPicker() {
@@ -183,6 +216,7 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun imprimir(texto: String) {
             runOnUiThread {
+                toast("Imprimindo recibo...")
                 lifecycleScope.launch {
                     try {
                         val bytes = printer.printText(texto)
@@ -195,12 +229,17 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun colunas(): Int = printer.paperColumns()
+
+        @JavascriptInterface
         fun status(): String = printer.savedPrinterName() ?: "Impressora não selecionada"
     }
 
-    private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    private fun toast(message: String) =
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
     override fun onDestroy() {
+        fileChooserCallback?.onReceiveValue(null)
         webView.removeJavascriptInterface("AndroidPrinter")
         webView.destroy()
         super.onDestroy()
