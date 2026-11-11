@@ -32,6 +32,21 @@ O total da compra é:
 
 A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre simultaneamente às seis categorias: unidade, dezena, centena, quadra, quina e sena. O valor em centavos é rateado igualmente entre as seis categorias; eventual sobra de centavos é acrescentada à unidade. Exemplo: R$ 1,00 é dividido em seis partes iguais; os centavos restantes são acrescentados à unidade. A alocação é registrada separadamente por categoria para calcular o prêmio correspondente.
 
+## 2.1 Seis faixas oficiais de premiação
+
+O número apostado e o número sorteado têm exatamente seis algarismos, de `000000` a `999999`, preservando zeros à esquerda. Cada aposta concorre simultaneamente às seis faixas, considerando os algarismos finais:
+
+| Faixa | Critério de acerto | Multiplicador |
+|---|---|---:|
+| Unidade | último algarismo | 3× |
+| Dezena | últimos 2 algarismos | 30× |
+| Centena | últimos 3 algarismos | 300× |
+| Quadra | últimos 4 algarismos | 3.000× |
+| Quina | últimos 5 algarismos | 30.000× |
+| Sena | os 6 algarismos | 300.000× |
+
+Cada aposta paga somente a faixa de maior precisão acertada. Acertar Sena não acumula os valores das outras cinco faixas. O rateio do valor apostado é dividido em seis partes iguais, e qualquer sobra de centavos vai para Unidade. A configuração aplicada fica gravada no snapshot da aposta e é usada na apuração e na conferência do prêmio.
+
 ## 3. Pagamento e vínculo com rodadas
 
 - O fluxo aceita vendas de jogadores e cambistas durante a transição entre fechamento, sorteio e abertura de rodadas. O fechamento de uma rodada não bloqueia vendas globalmente: cada compra usa as próximas 1 a 10 rodadas futuras válidas da fila de 48 rodadas.
