@@ -48,6 +48,7 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
               hundredsCents: line.hundredsCents,
               quadraCents: line.quadraCents,
               quinaCents: line.quinaCents,
+              senaCents: line.senaCents,
               ruleVersion: line.ruleVersion,
               ruleSnapshot: line.ruleSnapshot,
             }, round.resultNumber);
