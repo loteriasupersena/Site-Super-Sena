@@ -6,7 +6,7 @@ function line(numberValue: string) { return { numberValue, ...allocateNumberStak
 
 describe("getNumericPrizeReview", () => {
   it("identifies the highest matching category", () => {
-    expect(getNumericPrizeReview(line("123456"), "999995")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 3, calculatedPrizeCents: 300, calculationConsistent: true });
+    expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 3, calculatedPrizeCents: 300, calculationConsistent: true });
   });
   it("identifies all six categories", () => {
     expect(getNumericPrizeReview(line("123456"), "999956")?.category).toBe("tens");
