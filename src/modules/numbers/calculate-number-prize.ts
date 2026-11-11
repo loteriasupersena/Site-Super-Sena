@@ -20,7 +20,7 @@ const ALLOCATION_FIELD: Record<NumericPrizeCategory,
   unit: "unitCents",
   tens: "tensCents",
   hundreds: "hundredsCents",
-  thousands: "thousandsCents",
+  quadra: "thousandsCents",
   quina: "quinaCents",
 };
 
@@ -36,7 +36,7 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
 
   const matches: Array<{ category: NumericPrizeCategory; matched: boolean }> = [
     { category: "quina", matched: bet === drawn },
-    { category: "thousands", matched: bet.slice(-4) === drawn.slice(-4) },
+    { category: "quadra", matched: bet.slice(-4) === drawn.slice(-4) },
     { category: "hundreds", matched: bet.slice(-3) === drawn.slice(-3) },
     { category: "tens", matched: bet.slice(-2) === drawn.slice(-2) },
     { category: "unit", matched: bet.slice(-1) === drawn.slice(-1) },
