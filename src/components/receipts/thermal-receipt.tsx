@@ -103,7 +103,7 @@ export function ThermalReceipt({
           "Quina: " + money(entry.quinaCents ?? 0), "-".repeat(32),
         ]),
         "TOTAL PAGO: " + money(totalCents), "GUARDE ESTE COMPROVANTE", receiptCode,
-        "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
+        "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),\n        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
       ].filter(Boolean);
       nativePrinter.imprimir(lines.join("\n"));
       return;
