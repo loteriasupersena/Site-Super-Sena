@@ -158,9 +158,13 @@ export async function allocatePaidPurchases(
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
         if (outcome === "allocated") allocated += 1;
         if (outcome === "waiting") waiting += 1;
-      } catch {
-        // The cursor advances; this item remains pending and will be retried
-        // after the queue wraps around on a later scheduler execution.
+      } catch (error) {
+        // Keep the purchase pending for a safe retry, but expose a concise
+        // diagnostic in server logs so scheduler failures can be investigated.
+        console.error("[round-scheduler] paid purchase allocation failed", {
+          purchaseId: item.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
         failures += 1;
       }
     }
