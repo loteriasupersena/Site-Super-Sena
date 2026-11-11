@@ -25,7 +25,7 @@ function parseStake(value: string): number | null {
   return Number.isSafeInteger(cents) && cents >= 100 && cents <= 2_000_000_000 ? cents : null;
 }
 function clearInput(value: string) {
-  return value.replace(/\D/g, "").slice(0, 5);
+  return value.replace(/\D/g, "").slice(0, 6);
 }
 
 export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
@@ -164,7 +164,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     const existing = new Set(numbers);
     let generated = "";
     do {
-      // Reject the incomplete range so every five-digit value has equal probability.
+      // Reject the incomplete range so every six-digit value has equal probability.
       const range = 0x1_0000_0000;
       const limit = Math.floor(range / 100000) * 100000;
       const sample = new Uint32Array(1);
@@ -359,7 +359,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
             <strong>{number}</strong> — {money(Object.values(purchase.numericIntent!.allocationCents).reduce((sum, value) => sum + value, 0))}
           </div>) : purchase.participations.flatMap((part) => part.lines.map((line, index) => <div key={part.roundId + line.numberValue + index}>
             <strong>{line.numberValue}</strong> — {money(line.totalCents)}
-            <small>Unidade {money(line.allocationCents.unit)} · Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Milhar {money(line.allocationCents.thousands)} · Quina {money(line.allocationCents.quina)}</small>
+            <small>Unidade {money(line.allocationCents.unit)} · Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Quadra {money(line.allocationCents.quadra)} · Quadra {money(line.allocationCents.quadra)} · Quina {money(line.allocationCents.quina)} · Sena {money(line.allocationCents.sena)}</small>
           </div>))}
           {!reconciliationRequired && pixCheckout?.qrCodeBase64 && <div className="pix-checkout">
             <img src={"data:image/png;base64," + pixCheckout.qrCodeBase64} alt="QR Code para pagar a compra via Pix" width={240} height={240} />
