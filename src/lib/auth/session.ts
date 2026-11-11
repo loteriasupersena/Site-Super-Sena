@@ -12,7 +12,7 @@ function createPrisma() {
 const prisma = globalForPrisma.authPrisma ?? createPrisma();
 if (process.env.NODE_ENV !== "production") globalForPrisma.authPrisma = prisma;
 
-export const SESSION_COOKIE = "superquina_session";
+export const SESSION_COOKIE = "superquina_session";\nexport const CASHIER_APP_COOKIE = "super_sena_cashier_app";
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 
 export function hashSessionToken(token: string): string {
