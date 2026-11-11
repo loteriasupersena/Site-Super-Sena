@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { Prisma, RoundStatus, type PrismaClient } from "@/generated/prisma/client";
 import { selectNextValidRounds } from "@/modules/payments/select-next-valid-rounds";
+import { allocateNumberStake } from "@/domain/allocate-number-stake";
+import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "@/domain/numeric-prize-rules";
 
 const DEFAULT_BATCH_SIZE = 25;
 const MAX_BATCH_SIZE = 50;
@@ -113,10 +115,30 @@ export async function allocatePaidPurchases(
             throw new Error("Paid numeric purchase intent failed integrity validation");
           }
           const numbers = numbersValue as string[];
-          const allocation = allocationValue as {
-            unitCents: number; tensCents: number; hundredsCents: number; quadraCents: number; quinaCents: number; senaCents: number;
-          };
-          const snapshot = purchase.numericIntent.ruleSnapshot as Prisma.InputJsonValue;
+          const rawAllocation = allocationValue as Record<string, unknown>;
+          const hasCurrentAllocation = ["unitCents", "tensCents", "hundredsCents", "quadraCents", "quinaCents", "senaCents"]
+            .every((key) => Number.isSafeInteger(rawAllocation[key]) && (rawAllocation[key] as number) >= 0);
+          const hasLegacyAllocation = ["unitCents", "tensCents", "hundredsCents", "thousandsCents", "quinaCents"]
+            .every((key) => Number.isSafeInteger(rawAllocation[key]) && (rawAllocation[key] as number) >= 0);
+          // Purchases created before the six-prize rollout keep their original
+          // five-field JSON intent. Re-split its total stake under the current
+          // six-category rule instead of passing obsolete fields to Prisma.
+          const legacyStakeCents = hasLegacyAllocation
+            ? (rawAllocation.unitCents as number) + (rawAllocation.tensCents as number) +
+              (rawAllocation.hundredsCents as number) + (rawAllocation.thousandsCents as number) +
+              (rawAllocation.quinaCents as number)
+            : 0;
+          const migratedLegacyIntent = !hasCurrentAllocation && hasLegacyAllocation;
+          const allocation = (migratedLegacyIntent
+            ? allocateNumberStake(legacyStakeCents)
+            : rawAllocation) as {
+              unitCents: number; tensCents: number; hundredsCents: number;
+              quadraCents: number; quinaCents: number; senaCents: number;
+            };
+          const ruleVersion = migratedLegacyIntent ? NUMERIC_PRIZE_RULE_VERSION : purchase.numericIntent.ruleVersion;
+          const snapshot = (migratedLegacyIntent
+            ? createNumericPrizeRuleSnapshot()
+            : purchase.numericIntent.ruleSnapshot) as Prisma.InputJsonValue;
           const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.quadraCents, allocation.quinaCents, allocation.senaCents];
           const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
           const perRoundCents = numbers.length * stakePerNumber;
@@ -133,7 +155,7 @@ export async function allocatePaidPurchases(
                 purchaseId: purchase.id, roundId: round.id, status: "CONFIRMED",
                 totalCents: perRoundCents, confirmedAt: decisionTime,
                 numericLines: { create: numbers.map((numberValue) => ({
-                  numberValue, ...allocation, ruleVersion: purchase.numericIntent!.ruleVersion, ruleSnapshot: snapshot,
+                  numberValue, ...allocation, ruleVersion, ruleSnapshot: snapshot,
                 })) },
               },
             });
