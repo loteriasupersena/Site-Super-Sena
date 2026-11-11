@@ -1,13 +1,13 @@
 import { readNumericPrizeMultipliers, type NumericPrizeCategory } from "./numeric-prize-rules";
 import { normalizeNumber } from "../modules/numbers/normalize-number";
 
-type NumericPrizeReviewCategory = Exclude<NumericPrizeCategory, "sena">;
+type NumericPrizeReviewCategory = NumericPrizeCategory;
 
 export const NUMERIC_PRIZE_CATEGORY_LABELS: Record<NumericPrizeReviewCategory, string> = {
   unit: "Unidade",
   tens: "Dezena",
   hundreds: "Centena",
-  quadra: "Quadra",
+  thousands: "Milhar",
   quina: "Quina",
 };
 
@@ -36,7 +36,7 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
   const result = normalizeNumber(resultNumber);
   const category: NumericPrizeReviewCategory | null =
     bet === result ? "quina" :
-    bet.slice(-4) === result.slice(-4) ? "quadra" :
+    bet.slice(-4) === result.slice(-4) ? "thousands" :
     bet.slice(-3) === result.slice(-3) ? "hundreds" :
     bet.slice(-2) === result.slice(-2) ? "tens" :
     bet.slice(-1) === result.slice(-1) ? "unit" : null;
