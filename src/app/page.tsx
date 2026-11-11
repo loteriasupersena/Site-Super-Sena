@@ -3,8 +3,8 @@ import Image from "next/image";
 import { HomeAccess, HomeAccessFooter } from "@/components/home-access";
 
 export const metadata: Metadata = {
-  title: "Super Quina | Página Inicial Oficial",
-  description: "Página inicial oficial da Super Quina. Conheça como funciona o jogo, veja as informações e acesse sua conta quando desejar.",
+  title: "Super Sena | Página Inicial Oficial",
+  description: "Página inicial oficial da Super Sena. Conheça como funciona o jogo, veja as informações e acesse sua conta quando desejar.",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
 };
@@ -17,7 +17,7 @@ export default function HomePage() {
         <figure className="home-how-infographic numeric-game-infographic">
           <Image
             src="/images/brand/super-quina-inicio.webp"
-            alt="Como funciona o jogo Super Quina"
+            alt="Como funciona o jogo Super Sena"
             className="home-how-infographic-image"
             width={1200}
             height={1200}
@@ -29,7 +29,7 @@ export default function HomePage() {
             href="https://wa.me/5577991601217?text=Quero%20ser%20um%20cambista%20credenciado%20da%20Super%20Quina."
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Solicitar o kit gratuito da Super Quina pelo WhatsApp"
+            aria-label="Solicitar o kit gratuito da Super Sena pelo WhatsApp"
           />
         </figure>
 
