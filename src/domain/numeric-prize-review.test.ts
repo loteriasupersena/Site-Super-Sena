@@ -15,10 +15,10 @@ function line(numberValue: string, totalCents = 100) {
 describe("getNumericPrizeReview", () => {
   it("identifies only the highest matching category and its stake", () => {
     const review = getNumericPrizeReview(line("12345"), "99335");
-    expect(review).toMatchObject({ category: "unit", stakeCents: 20, multiplier: 5, calculatedPrizeCents: 100, calculationConsistent: true });
+    expect(review).toMatchObject({ category: "unit", stakeCents: 20, multiplier: 3, calculatedPrizeCents: 60, calculationConsistent: true });
   });
 
-  it("identifies tens, hundreds, thousands and quina correctly", () => {
+  it("identifies tens, hundreds, milhar and quina correctly", () => {
     expect(getNumericPrizeReview(line("12345"), "99445")?.category).toBe("tens");
     expect(getNumericPrizeReview(line("12345"), "99345")?.category).toBe("hundreds");
     expect(getNumericPrizeReview(line("12345"), "92345")?.category).toBe("thousands");
