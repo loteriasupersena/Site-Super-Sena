@@ -9,13 +9,28 @@ export interface SuperQuinaPrinterBridge {
   disconnect(): Promise<{ disconnected: boolean }>;
   getConnectionState(): Promise<{ connected: boolean; deviceId?: string; name?: string }>;
 }
-import { registerPlugin, Capacitor } from "@capacitor/core";
 
-const SuperQuinaPrinter = registerPlugin<SuperQuinaPrinterBridge>("SuperQuinaPrinter");
-
-export function getSuperQuinaPrinter(): SuperQuinaPrinterBridge {
-  if (typeof window === "undefined" || !Capacitor.isNativePlatform()) {
-    throw new Error("A impressão Bluetooth está disponível somente no aplicativo Android Super Quina instalado.");
+declare global {
+  interface Window {
+    AndroidPrinter?: { imprimir: (text: string) => void; status?: () => string };
   }
-  return SuperQuinaPrinter;
+}
+
+const unsupported = async (): Promise<never> => {
+  throw new Error("A configuração Bluetooth é controlada pelo aplicativo Super Sena. Use o botão Impressora do aplicativo.");
+};
+
+/** Compatibility surface for the legacy settings component; Capacitor is no longer used. */
+export function getSuperQuinaPrinter(): SuperQuinaPrinterBridge {
+  if (typeof window === "undefined" || !window.AndroidPrinter) {
+    throw new Error("A impressão Bluetooth está disponível somente no aplicativo Super Sena.");
+  }
+  return {
+    openBluetoothSettings: unsupported,
+    listPairedDevices: unsupported,
+    connect: unsupported,
+    send: unsupported,
+    disconnect: unsupported,
+    getConnectionState: unsupported,
+  };
 }
