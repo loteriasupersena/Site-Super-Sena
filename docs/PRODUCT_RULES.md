@@ -16,13 +16,13 @@ Este documento é a fonte de referência das regras comerciais e da terminologia
 ## 1. Conceitos oficiais
 
 - **Jogo** e **jogada** são sinônimos: representam uma compra completa formada pela escolha de um conjunto de números e sua contratação/pagamento.
-- **Número** é uma sequência individual de exatamente cinco algarismos, de `00000` a `99999`. Zeros à esquerda são significativos.
-- Um jogo pode conter um ou vários números de cinco algarismos, respeitando os limites técnicos da aplicação.
+- **Número** é uma sequência individual de exatamente seis algarismos, de `000000` a `999999`. Zeros à esquerda são significativos.
+- Um jogo pode conter um ou vários números de seis algarismos, respeitando os limites técnicos da aplicação.
 - **Repetições** representam quantas vezes o jogo completo será realizado em rodadas consecutivas/próximas rodadas válidas. O jogador escolhe de 1 a 10 repetições.
-- Em cada repetição, todos os números do jogo são mantidos. Exemplo: um jogo com cinco números e dez repetições gera dez participações em rodadas distintas, cada uma contendo os mesmos cinco números.
+- Em cada repetição, todos os números do jogo são mantidos. Exemplo: um jogo com seis números e dez repetições gera dez participações em rodadas distintas, cada uma contendo os mesmos seis números.
 - **Rodada** é o evento de sorteio ao qual uma repetição é vinculada. A seleção das rodadas é automática pelo sistema; o jogador e o cambista não escolhem rodadas.
 - O sistema mantém uma fila móvel de **48 rodadas futuras**, com sorteios de 30 em 30 minutos, cobrindo as próximas 24 horas. A cada execução do scheduler, horários ausentes são repostos para preservar essa janela.
-- **Categorias de premiação** são unidade, dezena, centena, milhar e quina. Elas não são números nem jogos.
+- **Categorias de premiação** são unidade, dezena, centena, quadra, quina e sena. Elas não são números nem jogos.
 
 ## 2. Cálculo do valor
 
@@ -30,7 +30,7 @@ O total da compra é:
 
 `valor por número em cada rodada × quantidade de números × quantidade de repetições`
 
-A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre simultaneamente às cinco categorias: unidade, dezena, centena, milhar e quina. O valor em centavos é rateado igualmente entre as cinco categorias; eventual sobra de centavos é acrescentada à unidade. Exemplo: R$ 1,00 resulta em 20 centavos para cada categoria. A alocação é registrada separadamente por categoria para calcular o prêmio correspondente.
+A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre simultaneamente às seis categorias: unidade, dezena, centena, quadra, quina e sena. O valor em centavos é rateado igualmente entre as seis categorias; eventual sobra de centavos é acrescentada à unidade. Exemplo: R$ 1,00 é dividido em seis partes iguais; os centavos restantes são acrescentados à unidade. A alocação é registrada separadamente por categoria para calcular o prêmio correspondente.
 
 ## 3. Pagamento e vínculo com rodadas
 
