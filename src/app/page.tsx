@@ -16,7 +16,7 @@ export default function HomePage() {
       <main className="home-entry">
         <figure className="home-how-infographic numeric-game-infographic">
           <Image
-            src="/images/brand/super-quina-inicio.webp"
+            src="/images/brand/super-sena-inicio .webp"
             alt="Como funciona o jogo Super Sena"
             className="home-how-infographic-image"
             width={1200}
@@ -26,7 +26,7 @@ export default function HomePage() {
           />
           <a
             className="home-kit-whatsapp-link"
-            href="https://wa.me/5577991601217?text=Quero%20ser%20um%20cambista%20credenciado%20da%20Super%20Quina."
+            href="https://wa.me/5577991601217?text=Quero%20ser%20um%20cambista%20credenciado%20da%20Super%20Sena."
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Solicitar o kit gratuito da Super Sena pelo WhatsApp"
