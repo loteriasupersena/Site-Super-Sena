@@ -77,8 +77,8 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
         numericIntent: {
           create: {
             roundCount: 1,
-            numbers: ["12345"],
-            allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
+            numbers: ["123456"],
+            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
             ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
             ruleSnapshot: createNumericPrizeRuleSnapshot(),
           },
@@ -124,7 +124,7 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
         numericIntent: {
           create: {
             roundCount: 1,
-            numbers: ["12345"],
+            numbers: ["123456"],
             allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
             ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
             ruleSnapshot: createNumericPrizeRuleSnapshot(),
