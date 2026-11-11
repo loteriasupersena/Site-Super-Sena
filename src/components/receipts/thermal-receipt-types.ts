@@ -6,6 +6,7 @@ export type ThermalReceiptEntry = {
   unitCents?: number;
   tensCents?: number;
   hundredsCents?: number;
-  thousandsCents?: number;
+  quadraCents?: number;
+  senaCents?: number;
   quinaCents?: number;
 };
