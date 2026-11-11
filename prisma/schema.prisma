@@ -163,7 +163,7 @@ model Round {
   cutoffAt        DateTime
   resultAt        DateTime
   status          RoundStatus               @default(SCHEDULED)
-  /// Five-digit result for numeric rounds, stored as text to preserve leading zeroes.
+  /// Six-digit result for numeric rounds, stored as text to preserve leading zeroes.
   resultNumber    String?
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
@@ -241,8 +241,9 @@ model NumericParticipationLine {
   unitCents        Int
   tensCents        Int
   hundredsCents    Int
-  thousandsCents   Int
+  quadraCents      Int
   quinaCents       Int
+  senaCents        Int
   ruleVersion      String
   ruleSnapshot     Json
   prizeCents       Int?
