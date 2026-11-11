@@ -2,35 +2,22 @@ import { describe, expect, it } from "vitest";
 import { allocateNumberStake } from "./allocate-number-stake";
 import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "./numeric-prize-rules";
 import { getNumericPrizeReview } from "./numeric-prize-review";
-
-function line(numberValue: string, totalCents = 100) {
-  return {
-    numberValue,
-    ...allocateNumberStake(totalCents),
-    ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
-    ruleSnapshot: createNumericPrizeRuleSnapshot(),
-  };
-}
+function line(numberValue: string) { return { numberValue, ...allocateNumberStake(600), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() }; }
 
 describe("getNumericPrizeReview", () => {
-  it("identifies only the highest matching category and its stake", () => {
-    const review = getNumericPrizeReview(line("12345"), "99335");
-    expect(review).toMatchObject({ category: "unit", stakeCents: 20, multiplier: 3, calculatedPrizeCents: 60, calculationConsistent: true });
+  it("identifies the highest matching category", () => {
+    expect(getNumericPrizeReview(line("123456"), "999995")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 3, calculatedPrizeCents: 300, calculationConsistent: true });
   });
-
-  it("identifies tens, hundreds, milhar and quina correctly", () => {
-    expect(getNumericPrizeReview(line("12345"), "99445")?.category).toBe("tens");
-    expect(getNumericPrizeReview(line("12345"), "99345")?.category).toBe("hundreds");
-    expect(getNumericPrizeReview(line("12345"), "92345")?.category).toBe("thousands");
-    expect(getNumericPrizeReview(line("12345"), "12345")?.category).toBe("quina");
+  it("identifies all six categories", () => {
+    expect(getNumericPrizeReview(line("123456"), "999956")?.category).toBe("tens");
+    expect(getNumericPrizeReview(line("123456"), "999456")?.category).toBe("hundreds");
+    expect(getNumericPrizeReview(line("123456"), "993456")?.category).toBe("quadra");
+    expect(getNumericPrizeReview(line("123456"), "923456")?.category).toBe("quina");
+    expect(getNumericPrizeReview(line("123456"), "123456")?.category).toBe("sena");
   });
-
   it("returns null when there is no match or no result", () => {
-    expect(getNumericPrizeReview(line("12345"), "99336")).toBeNull();
-    expect(getNumericPrizeReview(line("12345"), null)).toBeNull();
+    expect(getNumericPrizeReview(line("123456"), "999994")).toBeNull();
+    expect(getNumericPrizeReview(line("123456"), null)).toBeNull();
   });
-
-  it("marks invalid historical rule snapshots as inconsistent", () => {
-    expect(getNumericPrizeReview({ ...line("12345"), ruleSnapshot: null }, "99335")?.calculationConsistent).toBe(false);
-  });
+  it("marks invalid snapshots as inconsistent", () => expect(getNumericPrizeReview({ ...line("123456"), ruleSnapshot: null }, "999995")?.calculationConsistent).toBe(false));
 });
