@@ -1,10 +1,10 @@
-name: Build Super Sena Cashier APK
+name: Build Unified Super Sena APK
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - site-super-sena
+      - main
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: super-sena-cashier-apk-${{ github.ref }}
+  group: unified-super-sena-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build debug APK
-        working-directory: android-app
+        working-directory: ./android-app
         run: gradle assembleDebug
 
       - name: Upload APK
