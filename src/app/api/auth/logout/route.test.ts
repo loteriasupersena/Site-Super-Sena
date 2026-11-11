@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 vi.mock("@/lib/auth/session", () => ({
   revokeSession: vi.fn(),
   SESSION_COOKIE: "superquina_session",
+  CASHIER_APP_COOKIE: "super_sena_cashier_app",
 }));
 import { POST } from "./route";
 import { revokeSession } from "@/lib/auth/session";
