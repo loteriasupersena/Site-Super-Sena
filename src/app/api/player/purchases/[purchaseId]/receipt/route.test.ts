@@ -13,8 +13,8 @@ const confirmedPurchase = () => ({
   participations: [{
     round: { code: "JN-20261101-1230", resultAt: new Date("2026-11-01T12:30:00.000Z") },
     numericLines: [
-      { numberValue: "00007", unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
-      { numberValue: "12345", unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
+      { numberValue: "000007", unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
+      { numberValue: "012345", unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
     ],
   }],
 });
@@ -49,7 +49,7 @@ describe("GET purchase receipt", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store, private");
     expect(await response.json()).toMatchObject({ receipt: { receiptCode: "SQ-12345678", totalCents: 200, entries: [
-      { numberValue: "00007", stakeCents: 100 }, { numberValue: "12345", stakeCents: 100 },
+      { numberValue: "000007", stakeCents: 100 }, { numberValue: "012345", stakeCents: 100 },
     ] } });
   });
 });
