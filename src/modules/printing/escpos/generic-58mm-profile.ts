@@ -20,7 +20,6 @@ export const GENERIC_58MM_SPP_PROFILE_FONT_A: Readonly<EscPosProfile> = {
 export const GENERIC_58MM_SPP_PROFILE_FONT_B: Readonly<EscPosProfile> = {
   paperWidthMm: 58,
   columns: 42,
-  copies: 1,
   unsupportedCharacter: "transliterate",
   feedLines: 3,
 };
