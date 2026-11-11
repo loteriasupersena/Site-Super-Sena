@@ -27,7 +27,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         // Change this one constant when the production domain changes.
         private const val CASHIER_WEB_URL = "https://loteriasupersena.com.br/cashier-app-login"
-        private const val TRUSTED_HOST = "loteriasupersena.com.br"
     }
 
     private lateinit var webView: WebView
@@ -85,6 +84,10 @@ class MainActivity : ComponentActivity() {
         webView.settings.setSupportMultipleWindows(false)
         webView.addJavascriptInterface(AndroidPrinterBridge(), "AndroidPrinter")
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                view?.evaluateJavascript("document.documentElement.classList.add('is-apk','is-android');", null)
+            }
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return true
                 return !isAllowedUrl(uri)
@@ -115,7 +118,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun isAllowedUrl(uri: Uri): Boolean {
-        if (uri.scheme != "https" || !uri.host.equals(TRUSTED_HOST, ignoreCase = true)) return false
+        if (uri.scheme != "https" || !uri.host.equals(Uri.parse(CASHIER_WEB_URL).host, ignoreCase = true)) return false
         val path = uri.path.orEmpty()
         return path == "/cashier-app-login" ||
             path == "/cashier" ||
