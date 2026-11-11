@@ -5,7 +5,7 @@ import type { EscPosProfile } from "./encode-thermal-receipt";
  * over Bluetooth Classic SPP. The user's self-test identifies the reference
  * unit as OY-580IP (Bluetooth name KPrinter_4765).
  *
- * Font A/B column counts remain initial presets until measured on the unit.
+ * Font A/B column counts are conservative starting presets; validate per device.
  * The printer self-test reports default code page 3 (PC860); we intentionally
  * leave ESC t unset so the printer retains its verified factory default.
  */
