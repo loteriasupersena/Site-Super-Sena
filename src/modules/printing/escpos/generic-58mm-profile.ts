@@ -12,7 +12,6 @@ import type { EscPosProfile } from "./encode-thermal-receipt";
 export const GENERIC_58MM_SPP_PROFILE_FONT_A: Readonly<EscPosProfile> = {
   paperWidthMm: 58,
   columns: 32,
-  copies: 1,
   unsupportedCharacter: "transliterate",
   feedLines: 3,
   qrCode: true,
