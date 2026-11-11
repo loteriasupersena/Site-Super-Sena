@@ -5,10 +5,10 @@ import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "../.
 function makeLine(overrides: Record<string, unknown> = {}) {
   return {
     id: "line-12345678",
-    numberValue: "01234",
-    prizeCents: 5000,
+    numberValue: "012349",
+    prizeCents: 3000,
     prizeCreditedAt: null,
-    unitCents: 1000, tensCents: 0, hundredsCents: 0, thousandsCents: 0, quinaCents: 0,
+    unitCents: 1000, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0,
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
@@ -22,7 +22,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
         status: "CONFIRMED",
         confirmedAt: new Date("2026-11-06T12:00:00.000Z"),
       },
-      round: { id: "round-123", code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "99314" },
+      round: { id: "round-123", code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "993319" },
     },
     ...overrides,
   };
@@ -31,7 +31,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
 function setup(line = makeLine()) {
   const payoutCreate = vi.fn().mockResolvedValue({
     id: "payout-123", participationLineId: "line-12345678",
-    channel: "PLATFORM_PIX", amountCents: 5000,
+    channel: "PLATFORM_PIX", amountCents: 3000,
     paidAt: new Date("2026-11-06T12:30:00.000Z"), reference: null,
   });
   const auditCreate = vi.fn().mockResolvedValue({});
@@ -50,7 +50,7 @@ describe("registerNumericPrizePayout", () => {
     const result = await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
     });
-    expect(result.amountCents).toBe(5000);
+    expect(result.amountCents).toBe(3000);
     expect(payoutCreate).toHaveBeenCalledOnce();
     expect(auditCreate).toHaveBeenCalledOnce();
   });
@@ -74,7 +74,7 @@ describe("registerNumericPrizePayout", () => {
           cashierId: null, playerId: "player-123",
           status: "CONFIRMED", confirmedAt: new Date(),
         },
-        round: { id: "round-123", code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "99314" },
+        round: { id: "round-123", code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "993319" },
       },
     }));
     await expect(registerNumericPrizePayout(tx as never, {
