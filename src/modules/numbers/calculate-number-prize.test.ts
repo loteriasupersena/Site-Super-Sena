@@ -15,15 +15,15 @@ function line(numberValue: string) {
 describe("calculateNumberPrizeCents", () => {
   it("pays only the highest matching category when lower suffixes also match", () => {
     // Final three digits match; unit and tens are included in the match but not paid separately.
-    expect(calculateNumberPrizeCents(line("12345"), "99345")).toBe(20 * 500);
+    expect(calculateNumberPrizeCents(line("12345"), "99345")).toBe(20 * 300);
   });
 
   it("pays only quina on an exact five-digit match", () => {
-    expect(calculateNumberPrizeCents(line("01234"), "01234")).toBe(20 * 50_000);
+    expect(calculateNumberPrizeCents(line("01234"), "01234")).toBe(20 * 30_000);
   });
 
-  it("pays only quadra when the final four digits match", () => {
-    expect(calculateNumberPrizeCents(line("12345"), "92345")).toBe(20 * 5_000);
+  it("pays only milhar when the final four digits match", () => {
+    expect(calculateNumberPrizeCents(line("12345"), "92345")).toBe(20 * 3_000);
   });
 
   it("pays only terno when the final three digits match", () => {
@@ -31,11 +31,11 @@ describe("calculateNumberPrizeCents", () => {
   });
 
   it("pays only dezena when only the final two digits match", () => {
-    expect(calculateNumberPrizeCents(line("12345"), "99445")).toBe(20 * 50);
+    expect(calculateNumberPrizeCents(line("12345"), "99445")).toBe(20 * 30);
   });
 
   it("pays only unidade when only the final digit matches", () => {
-    expect(calculateNumberPrizeCents(line("12345"), "99335")).toBe(20 * 5);
+    expect(calculateNumberPrizeCents(line("12345"), "99335")).toBe(20 * 3);
   });
 
   it("returns zero when no suffix matches", () => {
