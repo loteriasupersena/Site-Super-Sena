@@ -19,5 +19,5 @@ describe("getNumericPrizeReview", () => {
     expect(getNumericPrizeReview(line("123456"), "999994")).toBeNull();
     expect(getNumericPrizeReview(line("123456"), null)).toBeNull();
   });
-  it("marks invalid snapshots as inconsistent", () => expect(getNumericPrizeReview({ ...line("123456"), ruleSnapshot: null }, "999995")?.calculationConsistent).toBe(false));
+  it("marks invalid snapshots as inconsistent", () => expect(getNumericPrizeReview({ ...line("123456"), ruleSnapshot: null }, "999996")?.calculationConsistent).toBe(false));
 });
