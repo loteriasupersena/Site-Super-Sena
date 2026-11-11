@@ -1,4 +1,4 @@
-name: Super Quina quality checks
+name: Super Sena quality checks
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: super-quina-quality-${{ github.ref }}
+  group: super-sena-quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
