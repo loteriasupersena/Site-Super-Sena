@@ -106,7 +106,7 @@ export function ThermalReceipt({
     <div className="thermal-receipt-print-root">
       <article id={`thermal-receipt-${receiptCode}`} className="thermal-receipt" aria-label={`Recibo ${receiptCode}`}>
         <header className="thermal-receipt-header">
-          <strong className="thermal-receipt-brand">SUPER QUINA</strong>
+          <strong className="thermal-receipt-brand">SUPER SENA</strong>
           <span>COMPROVANTE DE APOSTA</span>
           <span>{date}</span>
           <span className="thermal-receipt-payment">{paymentLabel}</span>
@@ -138,7 +138,7 @@ export function ThermalReceipt({
                 <strong>{entry.numberValue}</strong>
                 <strong>{money(entry.stakeCents)}</strong>
               </div>
-              <span>Repetição {repetitionNumbers[index]} · Jogo Super Quina</span>
+              <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
               <span>Unidade: {money(entry.unitCents ?? 0)} · Dezena: {money(entry.tensCents ?? 0)}</span>
               <span>Centena: {money(entry.hundredsCents ?? 0)} · Milhar: {money(entry.thousandsCents ?? 0)}</span>
               <span>Quina: {money(entry.quinaCents ?? 0)}</span>
