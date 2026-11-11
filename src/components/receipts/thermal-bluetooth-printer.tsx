@@ -150,7 +150,7 @@ export function ThermalBluetoothPrinter({ purchaseId }: { purchaseId?: string })
       const testBytes = new Uint8Array([
         0x1b, 0x40, 0x1b, 0x4d, selectedProfile.fontMode === "B" ? 0x01 : 0x00,
         0x1b, 0x61, 0x01, 0x1b, 0x45, 0x01,
-        ...Array.from("SUPER QUINA", (char) => char.charCodeAt(0)), 0x0a,
+        ...Array.from("SUPER SENA", (char) => char.charCodeAt(0)), 0x0a,
         0x1b, 0x45, 0x00,
         ...Array.from("TESTE DE IMPRESSAO", (char) => char.charCodeAt(0)), 0x0a,
         ...Array.from(`PAPEL ${selectedProfile.paperWidthMm} MM - ${selectedProfile.columns} COLUNAS`, (char) => char.charCodeAt(0)), 0x0a,
