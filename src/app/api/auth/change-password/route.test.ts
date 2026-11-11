@@ -17,7 +17,8 @@ vi.mock("@/lib/auth/session", () => ({
   authPrisma: { user: { findUnique: mocks.findUnique }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser,
   hashSessionToken: mocks.hashSessionToken,
-  SESSION_COOKIE: "superquina_session",\n  CASHIER_APP_COOKIE: "super_sena_cashier_app",
+  SESSION_COOKIE: "superquina_session",
+  CASHIER_APP_COOKIE: "super_sena_cashier_app",
   SESSION_TTL_MS: 43_200_000,
 }));
 vi.mock("@/lib/auth/password", () => ({
