@@ -98,6 +98,13 @@ export async function POST(request: NextRequest) {
   let paidPurchasesChecked = 0;
   let paidPurchasesAllocated = 0;
   let paidPurchasesWaiting = 0;
+  const errorDetails: Array<{ stage: string; message: string; entityId?: string }> = [];
+  const recordFailure = (stage: string, error: unknown, entityId?: string) => {
+    const message = error instanceof Error ? error.message : String(error);
+    errorDetails.push({ stage, message, ...(entityId ? { entityId } : {}) });
+    console.error('[round-scheduler] stage failed', { stage, entityId, error: message, stack: error instanceof Error ? error.stack : undefined });
+    failures += 1;
+  };
 
   // Maintain 48 upcoming 30-minute numeric rounds, covering the next 24 hours.
   // This endpoint still runs every minute for precise opening, cutoff, draw and Pix reconciliation.
@@ -133,7 +140,7 @@ export async function POST(request: NextRequest) {
       existingResultTimes.add(resultAt.getTime());
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
-      failures += 1;
+      recordFailure('round_creation', error, code);
     }
   }
 
@@ -145,8 +152,9 @@ export async function POST(request: NextRequest) {
     paidPurchasesAllocated = allocation.allocated;
     paidPurchasesWaiting = allocation.waiting;
     failures += allocation.failures;
-  } catch {
-    failures += 1;
+    errorDetails.push(...allocation.errorDetails.map((detail) => ({ stage: 'paid_purchase_allocation', message: detail.message, entityId: detail.purchaseId })));
+  } catch (error) {
+    recordFailure('paid_purchase_allocation_batch', error);
   }
 
   // Reconcile pending Pix orders independently of the browser. Closing the QR modal
@@ -178,8 +186,8 @@ export async function POST(request: NextRequest) {
       const outcome = await reconcilePixPaymentFromProvider(authPrisma, payment.id);
       if (outcome === "confirmed" || outcome === "already_confirmed") pixConfirmed += 1;
       if (outcome === "late_or_unavailable") pixNeedsReconciliation += 1;
-    } catch {
-      failures += 1;
+    } catch (error) {
+      recordFailure('pix_reconciliation', error, payment.id);
     }
   }
 
@@ -189,7 +197,7 @@ export async function POST(request: NextRequest) {
     select: { id: true }, orderBy: { cutoffAt: "asc" }, take: 100,
   });
   for (const round of dueToClose) {
-    try { await closeRound(authPrisma, round.id); closed += 1; } catch { failures += 1; }
+    try { await closeRound(authPrisma, round.id); closed += 1; } catch (error) { recordFailure('round_closure', error, round.id); }
   }
 
   const dueToOpen = await authPrisma.round.findMany({
@@ -197,7 +205,7 @@ export async function POST(request: NextRequest) {
     select: { id: true }, orderBy: { startsAt: "asc" }, take: 100,
   });
   for (const round of dueToOpen) {
-    try { await openRound(authPrisma, round.id); } catch { failures += 1; }
+    try { await openRound(authPrisma, round.id); } catch (error) { recordFailure('round_opening', error, round.id); }
   }
 
   const dueToDraw = await authPrisma.round.findMany({
@@ -205,7 +213,7 @@ export async function POST(request: NextRequest) {
     select: { id: true }, orderBy: { resultAt: "asc" }, take: 100,
   });
   for (const round of dueToDraw) {
-    try { await drawRoundResults(authPrisma, round.id); drawn += 1; } catch { failures += 1; }
+    try { await drawRoundResults(authPrisma, round.id); drawn += 1; } catch (error) { recordFailure('round_draw', error, round.id); }
   }
 
   // Retry every completed round without a successful automatic settlement audit.
@@ -229,15 +237,15 @@ export async function POST(request: NextRequest) {
     try {
       await settleNumericRoundPrizes(authPrisma, round.id);
       prizesSettled += 1;
-    } catch {
-      failures += 1;
+    } catch (error) {
+      recordFailure('prize_settlement', error, round.id);
     }
   }
 
   return NextResponse.json({
     ok: failures === 0, created, closed, drawn, prizesSettled, failures, timeZone: TIME_ZONE,
     pixChecked, pixConfirmed, pixNeedsReconciliation,
-    paidPurchasesChecked, paidPurchasesAllocated, paidPurchasesWaiting,
+    paidPurchasesChecked, paidPurchasesAllocated, paidPurchasesWaiting, errorDetails,
   }, {
     status: failures === 0 ? 200 : 207, headers: { "Cache-Control": "no-store" },
   });
