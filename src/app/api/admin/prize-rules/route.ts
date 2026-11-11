@@ -10,7 +10,8 @@ const schema = z.object({
   unit: z.number().int().min(0).max(1_000_000),
   tens: z.number().int().min(0).max(1_000_000),
   hundreds: z.number().int().min(0).max(1_000_000),
-  thousands: z.number().int().min(0).max(1_000_000),
+  quadra: z.number().int().min(0).max(1_000_000),
+  sena: z.number().int().min(0).max(1_000_000),
   quina: z.number().int().min(0).max(1_000_000),
 }).strict();
 
