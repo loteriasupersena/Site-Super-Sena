@@ -4,8 +4,8 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Criar conta | Super Quina",
-  description: "Crie sua conta de jogador na Super Quina.",
+  title: "Criar conta | Super Sena",
+  description: "Crie sua conta de jogador na Super Sena.",
 };
 
 export default function RegisterPage() {
