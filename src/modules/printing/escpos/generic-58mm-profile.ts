@@ -14,7 +14,6 @@ export const GENERIC_58MM_SPP_PROFILE_FONT_A: Readonly<EscPosProfile> = {
   columns: 32,
   unsupportedCharacter: "transliterate",
   feedLines: 3,
-  qrCode: true,
 };
 
 export const GENERIC_58MM_SPP_PROFILE_FONT_B: Readonly<EscPosProfile> = {
