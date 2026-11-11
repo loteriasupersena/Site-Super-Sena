@@ -63,7 +63,7 @@ class BluetoothPrinterManager(context: Context) {
                 } catch (reflectionError: Exception) {
                     throw IOException("A impressora não aceitou a conexão Bluetooth SPP.", reflectionError)
                 }
-                candidate.connect()
+                candidate!!.connect()
             }
             socket = candidate
             selectedAddress = device.address
