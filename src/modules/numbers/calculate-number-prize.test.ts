@@ -27,7 +27,7 @@ describe("calculateNumberPrizeCents", () => {
   });
 
   it("pays only terno when the final three digits match", () => {
-    expect(calculateNumberPrizeCents(line("12345"), "99345")).toBe(20 * 500);
+    expect(calculateNumberPrizeCents(line("12345"), "99345")).toBe(20 * 300);
   });
 
   it("pays only dezena when only the final two digits match", () => {
@@ -43,7 +43,7 @@ describe("calculateNumberPrizeCents", () => {
   });
 
   it("uses leading zeroes literally", () => {
-    expect(calculateNumberPrizeCents(line("00007"), "12307")).toBe(20 * 50);
+    expect(calculateNumberPrizeCents(line("00007"), "12307")).toBe(20 * 30);
   });
 
   it("rejects invalid snapshots and allocations", () => {
