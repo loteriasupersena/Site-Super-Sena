@@ -166,14 +166,14 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     do {
       // Reject the incomplete range so every six-digit value has equal probability.
       const range = 0x1_0000_0000;
-      const limit = Math.floor(range / 100000) * 100000;
+      const limit = Math.floor(range / 1_000_000) * 1_000_000;
       const sample = new Uint32Array(1);
       let value: number;
       do {
         crypto.getRandomValues(sample);
         value = sample[0]!;
       } while (value >= limit);
-      generated = String(value % 100000).padStart(5, "0");
+      generated = String(value % 1_000_000).padStart(6, "0");
     } while (existing.has(generated));
     setNumberInput(generated);
     setError("");
