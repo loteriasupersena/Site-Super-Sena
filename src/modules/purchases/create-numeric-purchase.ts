@@ -24,12 +24,12 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
   const roundCount = input.roundCount ?? input.roundIds?.length ?? 0;
   if (!Number.isInteger(roundCount) || roundCount < 1 || roundCount > 10) throw new PurchaseServiceError("Choose between 1 and 10 upcoming rounds", "INVALID_PURCHASE");
   if (input.roundIds && (input.roundIds.length !== roundCount || new Set(input.roundIds).size !== input.roundIds.length)) throw new PurchaseServiceError("Invalid round count", "INVALID_PURCHASE");
-  if (!Array.isArray(input.numbers) || input.numbers.length < 1 || input.numbers.length > 100) throw new PurchaseServiceError("Enter at least one five-digit number", "INVALID_PURCHASE");
+  if (!Array.isArray(input.numbers) || input.numbers.length < 1 || input.numbers.length > 100) throw new PurchaseServiceError("Enter at least one six-digit number", "INVALID_PURCHASE");
   if (!Number.isSafeInteger(input.stakeCents) || input.stakeCents < 100 || input.stakeCents > 2_000_000_000) throw new PurchaseServiceError("Each number must have a stake of at least R$1.00", "INVALID_PURCHASE");
 
   let numbers: string[];
   try { numbers = input.numbers.map(normalizeNumber); }
-  catch { throw new PurchaseServiceError("Every entry must contain exactly five digits from 00000 to 99999", "INVALID_PURCHASE"); }
+  catch { throw new PurchaseServiceError("Every entry must contain exactly six digits from 000000 to 999999", "INVALID_PURCHASE"); }
 
   const paymentMethod = input.paymentMethod === "CASH" ? PaymentMethod.CASH : input.paymentMethod === "WALLET" ? PaymentMethod.WALLET : PaymentMethod.PIX;
   if (paymentMethod === PaymentMethod.CASH && (!input.cashierId || input.playerId)) throw new PurchaseServiceError("Cash sales must be created by an authenticated cashier", "INVALID_ACTOR");
@@ -62,7 +62,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
             : existing.participations.length === roundCount &&
               existing.participations.every((part) => part.numericLines.length === numbers.length) &&
               existing.participations.flatMap((part) => part.numericLines.map((line) => line.numberValue + "|" +
-                (line.unitCents + line.tensCents + line.hundredsCents + line.thousandsCents + line.quinaCents)))
+                (line.unitCents + line.tensCents + line.hundredsCents + line.quadraCents + line.quinaCents + line.senaCents)))
                 .sort().join("\n") === Array.from({ length: roundCount }, () => numbers.map((n) => n + "|" + input.stakeCents))
                 .flat().sort().join("\n");
           if (!sameOwner || !sameIntent) throw new PurchaseServiceError("The idempotency key was already used for a different purchase", "IDEMPOTENCY_CONFLICT");
@@ -84,8 +84,10 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           allocation.unitCents * currentMultipliers.unit,
           allocation.tensCents * currentMultipliers.tens,
           allocation.hundredsCents * currentMultipliers.hundreds,
-          allocation.thousandsCents * currentMultipliers.thousands,
+          allocation.quadraCents * currentMultipliers.quadra,
           allocation.quinaCents * currentMultipliers.quina,
+          allocation.senaCents * currentMultipliers.sena,
+          allocation.senaCents * currentMultipliers.sena,
         );
         if (!Number.isSafeInteger(maximumLinePrizeCents) || maximumLinePrizeCents > 2_147_483_647) {
           throw new PurchaseServiceError("Os multiplicadores atuais tornam o prêmio máximo maior que o limite financeiro suportado.", "INVALID_PURCHASE");
