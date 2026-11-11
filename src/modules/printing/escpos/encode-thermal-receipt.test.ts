@@ -35,6 +35,11 @@ describe("encodeThermalReceipt", () => {
     expect(Array.from(bytes.slice(-3))).toEqual([0x0a, 0x0a, 0x0a]);
   });
 
+  it("selects the configured ESC/POS font mode", () => {
+    const bytes = encodeThermalReceipt(receipt, { ...profile, fontMode: "B" });
+    expect(Array.from(bytes.slice(2, 5))).toEqual([0x1b, 0x4d, 0x01]);
+  });
+
   it("uses an explicitly configured character map and code page", () => {
     const bytes = encodeThermalReceipt(receipt, {
       ...profile,
