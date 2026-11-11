@@ -56,7 +56,7 @@ export async function printOfficialPurchaseReceipt(input: {
   try {
     state = await printer.getConnectionState();
   } catch {
-    throw new Error("Não foi possível verificar a conexão Bluetooth. Abra o Super Quina no aplicativo e conecte a impressora.");
+    throw new Error("Não foi possível verificar a conexão Bluetooth. Abra o Super Sena no aplicativo e conecte a impressora.");
   }
   if (!state.connected || state.deviceId !== input.deviceId) {
     throw new Error("Conecte a impressora selecionada antes de imprimir.");
