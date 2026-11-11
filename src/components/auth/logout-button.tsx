@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 
-export function LogoutButton() {
+export function LogoutButton({ cashierApp = false }: { cashierApp?: boolean }) {
   const [busy, setBusy] = useState(false);
   async function logout() {
     if (busy) return;
     setBusy(true);
     try { await fetch("/api/auth/logout", { method: "POST" }); }
-    finally { window.location.assign("/login"); }
+    finally { window.location.assign(cashierApp ? "/cashier-app-login" : "/login"); }
   }
   return <button className="logout-button" type="button" onClick={logout} disabled={busy}>{busy ? "Saindo..." : "Sair"}</button>;
 }
