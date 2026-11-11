@@ -6,19 +6,22 @@ import { SiteHeader } from "@/components/site-header";
 import { getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Alterar senha | Joga Placas" };
+export const metadata: Metadata = { title: "Alterar senha | Super Sena" };
 
-export default async function ChangePasswordPage() {
+export default async function ChangePasswordPage({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
+  const params = await searchParams;
+  const cashierApp = params.app === "1";
   const cookieStore = await cookies();
   const user = await getSessionUser(cookieStore.get(SESSION_COOKIE)?.value);
-  if (!user) redirect("/login");
+  if (!user) redirect(cashierApp ? "/cashier-app-login" : "/login");
+  if (cashierApp && user.role !== "CASHIER") redirect("/cashier-app-login");
   if (!user.mustChangePassword) {
-    const destination = user.role === "ADMIN" ? "/admin" : user.role === "CASHIER" ? "/cashier" : "/player";
+    const destination = cashierApp ? "/cashier?app=1" : user.role === "ADMIN" ? "/admin" : user.role === "CASHIER" ? "/cashier" : "/player";
     redirect(destination);
   }
-  return <main className="auth-layout"><SiteHeader /><section className="auth-card" aria-labelledby="change-password-title">
+  return <main className="auth-layout"><SiteHeader linkHome={!cashierApp} /><section className="auth-card" aria-labelledby="change-password-title">
     <p className="eyebrow">Segurança da conta</p><h1 id="change-password-title">Atualize sua senha</h1>
     <p className="auth-description">Sua conta exige uma nova senha antes de continuar. Use pelo menos 6 caracteres.</p>
-    <ChangePasswordForm />
+    <ChangePasswordForm cashierApp={cashierApp} />
   </section></main>;
 }
