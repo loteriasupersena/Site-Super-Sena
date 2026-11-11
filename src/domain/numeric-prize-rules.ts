@@ -46,5 +46,22 @@ export function readNumericPrizeMultipliers(
   if (snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
   const value = snapshot as Record<string, unknown>;
   if (value.version !== ruleVersion || typeof value.version !== "string") return null;
+
+  // Purchases created during the short-lived six-category v2 migration used
+  // "quadra" for the same four-digit suffix now named "thousands". "sena"
+  // was never backed by a stored stake column and was never settled.
+  if (ruleVersion === NUMERIC_PRIZE_RULE_VERSION && value.multipliers &&
+      typeof value.multipliers === "object" && !Array.isArray(value.multipliers)) {
+    const legacy = value.multipliers as Record<string, unknown>;
+    if (legacy.thousands === undefined && legacy.quadra !== undefined) {
+      return parseNumericPrizeMultipliers({
+        unit: legacy.unit,
+        tens: legacy.tens,
+        hundreds: legacy.hundreds,
+        thousands: legacy.quadra,
+        quina: legacy.quina,
+      });
+    }
+  }
   return parseNumericPrizeMultipliers(value.multipliers);
 }
