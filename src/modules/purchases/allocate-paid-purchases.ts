@@ -113,10 +113,10 @@ export async function allocatePaidPurchases(
           }
           const numbers = numbersValue as string[];
           const allocation = allocationValue as {
-            unitCents: number; tensCents: number; hundredsCents: number; thousandsCents: number; quinaCents: number;
+            unitCents: number; tensCents: number; hundredsCents: number; quadraCents: number; quinaCents: number; senaCents: number;
           };
           const snapshot = purchase.numericIntent.ruleSnapshot as Prisma.InputJsonValue;
-          const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.thousandsCents, allocation.quinaCents];
+          const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.quadraCents, allocation.quinaCents, allocation.senaCents];
           const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
           const perRoundCents = numbers.length * stakePerNumber;
           if (numbers.some((value) => typeof value !== "string" || !/^\d{5}$/.test(value)) ||
