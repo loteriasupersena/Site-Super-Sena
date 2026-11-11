@@ -133,8 +133,8 @@ export function ThermalReceipt({
           entry.numberValue, "Repetição " + repetitionNumbers[index], "Rodada " + entry.roundCode,
           "Sorteio: " + drawDateTime(entry.resultAt), "Valor: " + money(entry.stakeCents),
           "Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0),
-          "Centena: " + money(entry.hundredsCents ?? 0) + " Milhar: " + money(entry.quadraCents ?? 0),
-          "Quina: " + money(entry.quinaCents ?? 0), "-".repeat(columns),
+          "Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0),
+          "Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), "-".repeat(columns),
         ]),
         "TOTAL PAGO: " + money(totalCents), center("GUARDE ESTE COMPROVANTE"), receiptCode,
         "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
@@ -200,7 +200,7 @@ export function ThermalReceipt({
               </div>
               <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
               <span>Unidade: {money(entry.unitCents ?? 0)} · Dezena: {money(entry.tensCents ?? 0)}</span>
-              <span>Centena: {money(entry.hundredsCents ?? 0)} · Milhar: {money(entry.quadraCents ?? 0)}</span>
+              <span>Centena: {money(entry.hundredsCents ?? 0)} · Quadra: {money(entry.quadraCents ?? 0)}</span>
               <span>Quina: {money(entry.quinaCents ?? 0)} · Sena: {money(entry.senaCents ?? 0)}</span>
               <strong className="thermal-receipt-draw-time">Sorteio: {drawDateTime(entry.resultAt)}</strong>
               <span>Rodada {entry.roundCode}</span>
