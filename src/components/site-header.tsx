@@ -1,25 +1,19 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
   const brand = (
-    <div
-      role="img"
-      aria-label="Super Sena"
-      style={{
-        width: "100%",
-        minHeight: "clamp(76px, 18vw, 144px)",
-        display: "grid",
-        placeItems: "center",
-        background: "linear-gradient(120deg, #062a78, #123d8d)",
-        color: "#ffffff",
-        fontSize: "clamp(26px, 5vw, 42px)",
-        fontWeight: 900,
-        letterSpacing: ".14em",
-      }}
-    >
-      SUPER SENA
-    </div>
+    <Image
+      src="/images/brand/super-sena-header.webp"
+      alt="Super Sena"
+      className="site-header-scenery-image"
+      width={1920}
+      height={360}
+      priority
+      sizes="100vw"
+    />
   );
+
   return (
     <header className="site-header site-header-scenery" aria-label="Cabeçalho Super Sena">
       {linkHome ? (
