@@ -114,7 +114,6 @@ export async function allocatePaidPurchases(
             throw new Error("Paid numeric purchase intent failed integrity validation");
           }
           const numbers = numbersValue as string[];
-          const rawAllocation = allocationValue as Record<string, unknown>;
           // Derive the per-number stake from the immutable purchase total.
           // This safely migrates any pending intent written with an older
           // allocation shape (including older category property names) while
@@ -135,8 +134,6 @@ export async function allocatePaidPurchases(
           const snapshot = (isCurrentRule
             ? purchase.numericIntent.ruleSnapshot
             : createNumericPrizeRuleSnapshot()) as Prisma.InputJsonValue;
-          const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.quadraCents, allocation.quinaCents, allocation.senaCents];
-          const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
           const perRoundCents = numbers.length * stakePerNumber;
           if (numbers.some((value) => typeof value !== "string" || !/^\d{6}$/.test(value)) ||
               allocationValues.some((value) => !Number.isSafeInteger(value) || value < 0) ||
