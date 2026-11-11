@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revokeSession, SESSION_COOKIE } from "@/lib/auth/session";
+import { revokeSession, SESSION_COOKIE, CASHIER_APP_COOKIE } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
