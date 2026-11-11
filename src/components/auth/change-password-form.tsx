@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useState } from "react";
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ cashierApp = false }: { cashierApp?: boolean }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,7 +28,7 @@ export function ChangePasswordForm() {
         setError(body.error ?? "Não foi possível alterar a senha.");
         return;
       }
-      window.location.assign("/login");
+      window.location.assign(cashierApp ? "/cashier?app=1" : "/login");
     } catch {
       setError("Falha de conexão. Tente novamente.");
     } finally {
