@@ -1,16 +1,22 @@
 # Super Sena
 
-Aplicação web de apostas numéricas com sorteios de cinco algarismos, de 00000 a 99999.
+Aplicação web de apostas numéricas com sorteios de seis algarismos, de `000000` a `999999`, preservando zeros à esquerda.
 
-Inclui áreas do jogador, cambista e administrador; apostas numéricas; Pix via Mercado Pago; carteira; vendas em dinheiro; comissões; recibos digitais e térmicos; consulta pública por QR Code; agendador de rodadas e apuração idempotente.
+Inclui áreas pública, jogador, cambista e administrador; apostas numéricas; Pix via Mercado Pago; carteira; vendas em dinheiro; comissões; recibos digitais e térmicos; consulta pública por QR Code; agendador de rodadas e apuração idempotente.
 
-Branch de trabalho atual: `site-super-sena`.
+O produto utiliza banco de dados próprio. Não importar nem manter histórico, cadastros, apostas, vendas, sorteios, resultados, prêmios, saldos ou comissões do sistema de placas.
 
-O Super Sena é um produto novo, com banco de dados próprio e vazio. Não importar nem manter histórico, cadastros, apostas, vendas, sorteios, resultados, prêmios, saldos ou comissões do sistema de placas.
+## Regras vigentes
 
-A estrutura técnica existente é apenas uma base de código a ser aproveitada seletivamente. As regras do produto e os fluxos serão definidos para o Super Sena, sem seguir manuais ou processos do sistema anterior.
+A especificação funcional está em [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) e as regras comerciais detalhadas em [docs/PRODUCT_RULES.md](docs/PRODUCT_RULES.md). Em caso de divergência, validar a regra com o responsável pelo produto antes de alterar a implementação.
 
+## Configuração e operação
+
+- Copie `.env.example` apenas como referência; nunca publique credenciais reais.
+- Em produção, configure as variáveis no painel do serviço e use a URL PostgreSQL fornecida pelo provedor.
+- Consulte [docs/HYDRO-PRODUCTION-CHECKLIST.md](docs/HYDRO-PRODUCTION-CHECKLIST.md) antes de iniciar ou atualizar o serviço.
+- O deploy executa `prisma migrate deploy` antes de iniciar o servidor. O banco precisa estar acessível e a variável `DATABASE_URL` válida.
 
 ## APK Android do cambista
 
-O aplicativo nativo está em `android-app/`. Ele abre somente o login do cambista e usa Bluetooth Classic SPP para impressão térmica. Consulte `android-app/README.md` para configurar o domínio e gerar o APK. O build automático fica em `.github/workflows/build-unified-apk.yml`.
+O aplicativo nativo está em `android-app/`. O APK será tratado em uma etapa separada; as correções desta auditoria não alteram arquivos Android nem workflows de APK.
