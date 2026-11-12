@@ -1,0 +1,16 @@
+/* Página inicial Android: dimensiona a arte pela altura útil da tela.
+   Em aparelhos baixos, a imagem encolhe proporcionalmente para manter Entrar visível.
+   Em telas maiores, continua limitada pela largura disponível. */
+@media screen and (max-width: 600px) {
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic img {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: calc(100vh - var(--site-header-height, 100px) - 92px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100svh - var(--site-header-height, 100px) - 92px - env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+}
