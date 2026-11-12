@@ -90,6 +90,10 @@ class BluetoothPrinterManager(context: Context) {
             val payload = EscPosHelper.encode(text)
             var lastError: IOException? = null
             repeat(2) { attempt ->
+                // A retry is safe only before the first write. Once any bytes may
+                // have reached the printer, retrying the whole receipt can print
+                // a duplicate or a second partial receipt.
+                var transmissionStarted = false
                 try {
                     var active = socket
                     if (active == null || !active.isConnected) {
@@ -110,6 +114,7 @@ class BluetoothPrinterManager(context: Context) {
                     var offset = 0
                     while (offset < payload.size) {
                         val count = minOf(512, payload.size - offset)
+                        transmissionStarted = true
                         output.write(payload, offset, count)
                         output.flush()
                         offset += count
@@ -118,7 +123,18 @@ class BluetoothPrinterManager(context: Context) {
                 } catch (error: IOException) {
                     lastError = error
                     closeSocket()
-                    if (attempt == 0) delay(800)
+                    if (attempt == 0 && !transmissionStarted) {
+                        delay(800)
+                    } else {
+                        throw IOException(
+                            if (transmissionStarted) {
+                                "A conexão falhou durante o envio. Verifique o papel antes de tentar imprimir novamente."
+                            } else {
+                                error.message ?: "Falha na impressão."
+                            },
+                            error
+                        )
+                    }
                 }
             }
             throw lastError ?: IOException("Falha ao imprimir.")
