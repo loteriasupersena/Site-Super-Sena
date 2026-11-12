@@ -2897,3 +2897,76 @@ html.is-android .home-page.home-page-compact {
   .home-page-compact .home-entry > .home-access-footer { min-height: 40px; }
   .home-page-compact .home-footer-access { min-height: 36px; }
 }
+
+
+/* Área do jogador: menus de consulta agrupados em um único cartão compacto. */
+.player-menu-card {
+  width: 100%;
+  max-width: 100%;
+  margin: 18px 0 0;
+  padding: 4px 14px;
+  overflow: hidden;
+  border: 2px solid #3f65ff;
+  border-radius: 28px;
+  background: #111a28;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+}
+.player-menu-card > .player-collapsible-section {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #354052;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.player-menu-card > .player-collapsible-section:last-child { border-bottom: 0; }
+.player-menu-card > .player-collapsible-section > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 2px;
+  min-height: 104px;
+  margin: 0;
+  padding: 14px 8px;
+  list-style: none;
+  cursor: pointer;
+}
+.player-menu-card > .player-collapsible-section > summary::-webkit-details-marker { display: none; }
+.player-menu-card > .player-collapsible-section > summary::after {
+  content: "⌄";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #59d5f2;
+  font-size: 2.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.player-menu-card .player-collapsible-label,
+.player-menu-card .player-collapsible-title,
+.player-menu-card .player-collapsible-hint {
+  grid-column: 1;
+  margin: 0;
+}
+.player-menu-card .player-collapsible-label {
+  color: #59d5f2;
+  font-size: .9rem;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.player-menu-card .player-collapsible-title {
+  color: #f4f6fb;
+  font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+  font-weight: 850;
+  line-height: 1.2;
+}
+.player-menu-card .player-collapsible-hint { display: none; }
+.player-menu-card > .player-collapsible-section[open] > summary { border-bottom: 1px solid #354052; }
+.player-menu-card > .player-collapsible-section > :not(summary) { margin: 0; padding: 14px 8px 18px; }
+@media (max-width: 600px) {
+  .player-menu-card { margin-top: 14px; padding: 2px 12px; border-radius: 24px; }
+  .player-menu-card > .player-collapsible-section > summary { min-height: 96px; padding: 12px 6px; }
+}
