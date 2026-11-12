@@ -119,6 +119,7 @@ export function ThermalReceipt({
       "",
       "CODIGO DO RECIBO",
       receiptCode,
+      "[[QR]]",
       cashierLabel ? "CAMBISTA: " + cashierLabel : "",
       customerLabel ? "CLIENTE: " + customerLabel : "",
       "--------------------------------",
