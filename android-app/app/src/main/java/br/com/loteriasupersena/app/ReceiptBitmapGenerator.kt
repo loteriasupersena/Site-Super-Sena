@@ -144,7 +144,7 @@ object ReceiptBitmapGenerator {
         divider()
 
         details.forEach(::drawLine)
-        bitmap
+        return bitmap
     }
 
     private fun wrap(text: String, paint: Paint, maxWidth: Float): List<String> {
