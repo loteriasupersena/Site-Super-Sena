@@ -785,7 +785,9 @@ p, .intro, .auth-description, .area-description, .feature-card p,
  .receipt-modal{padding:16px!important}
  .receipt-modal .thermal-receipt-print-root{width:100%;padding:0 4px}
  .receipt-modal .thermal-receipt{padding:4mm 4mm}
- .receipt-modal .thermal-receipt-code-row{grid-template-columns:minmax(0,1fr) 68px;gap:6px}
+ .receipt-modal .thermal-receipt-code-row{grid-template-columns:68px minmax(0,1fr);gap:6px}.receipt-modal .thermal-receipt-qr,.receipt-modal .thermal-receipt-qr-placeholder{width:68px!important;height:68px!important;max-width:68px!important;justify-self:start}
+ .thermal-receipt-print-root .thermal-receipt-code-row{grid-template-columns:68px minmax(0,1fr)!important;gap:6px!important}
+ .thermal-receipt-print-root .thermal-receipt-qr,.thermal-receipt-print-root .thermal-receipt-qr-placeholder{width:68px!important;height:68px!important;max-width:68px!important;justify-self:start!important}
 }
 /* PDF/A4: position receipt at the top of the page and keep the complete receipt together.
    The downloaded HTML keeps the dedicated 58 mm thermal-paper layout. */
