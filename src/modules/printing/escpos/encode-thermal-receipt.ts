@@ -176,8 +176,7 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
   }
   bytes.push(...line("-".repeat(columns), profile));
 
-  const seenRounds = new Set<string>();
-  let repetitionNumber = 0;
+  const roundEntries = new Map<string, ThermalReceiptEntry>();
   for (const entry of receipt.entries) {
     if (typeof entry.numberValue !== "string" || entry.numberValue.length < 1 || entry.numberValue.length > 40) {
       throw new Error("Invalid entry number");
@@ -188,15 +187,17 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
     for (const part of wrap(entry.numberValue, columns)) bytes.push(...line(part, profile));
     for (const part of padPair("", money(entry.stakeCents), columns)) bytes.push(...line(part, profile));
     bytes.push(...line("-".repeat(columns), profile));
-    if (!seenRounds.has(entry.roundCode)) {
-      seenRounds.add(entry.roundCode);
-      repetitionNumber += 1;
-      bytes.push(...line("Repetição " + repetitionNumber + " · Jogo Super Sena", profile));
-      for (const part of wrap("Sorteio: " + new Date(entry.resultAt).toISOString().slice(0, 16).replace("T", " "), columns)) {
-        bytes.push(...line(part, profile));
-      }
-      for (const part of wrap("Rodada " + entry.roundCode, columns)) bytes.push(...line(part, profile));
+    if (!roundEntries.has(entry.roundCode)) roundEntries.set(entry.roundCode, entry);
+  }
+
+  let repetitionNumber = 0;
+  for (const entry of roundEntries.values()) {
+    repetitionNumber += 1;
+    bytes.push(...line("Repetição " + repetitionNumber + " · Jogo Super Sena", profile));
+    for (const part of wrap("Sorteio: " + new Date(entry.resultAt).toISOString().slice(0, 16).replace("T", " "), columns)) {
+      bytes.push(...line(part, profile));
     }
+    for (const part of wrap("Rodada " + entry.roundCode, columns)) bytes.push(...line(part, profile));
   }
 
   for (const part of wrap("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", columns)) {
