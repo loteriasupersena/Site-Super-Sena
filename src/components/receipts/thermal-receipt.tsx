@@ -49,7 +49,7 @@ export function ThermalReceipt({
   entries,
   customerLabel,
   cashierLabel,
-  paymentLabel = "Pagamento confirmado",
+  paymentLabel = "Dinheiro recebido",
   qrCodeDataUrl,
   onClose,
 }: ThermalReceiptProps) {
