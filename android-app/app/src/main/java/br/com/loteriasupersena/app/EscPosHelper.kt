@@ -39,12 +39,18 @@ object EscPosHelper {
         output.write("SUPER SENA\n".toByteArray(charset))
         output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
         output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0))
-        output.write(text.substringAfter("COMPROVANTE DE APOSTA\n", text).toByteArray(charset))
-        output.write(byteArrayOf(esc, '!'.code.toByte(), 0))
-        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 1))
+        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        val body = text.substringAfter("COMPROVANTE DE APOSTA\n", text)
+        val qrMarker = "[[QR]]"
+        val qrPosition = body.indexOf(qrMarker)
+        val beforeQr = if (qrPosition >= 0) body.substring(0, qrPosition) else body
+        val afterQr = if (qrPosition >= 0) body.substring(qrPosition + qrMarker.length).trimStart() else ""
+        output.write(beforeQr.toByteArray(charset))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'a'.code.toByte(), 2))
         output.write(qrRaster(qrPayload))
-        output.write(byteArrayOf(0x0A, 0x0A, esc, 'a'.code.toByte(), 0, esc, 'd'.code.toByte(), 4))
+        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        output.write(afterQr.toByteArray(charset))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
         return output.toByteArray()
     }
 
