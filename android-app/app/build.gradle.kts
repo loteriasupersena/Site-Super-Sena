@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,6 +22,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+}
+
+
+val generatedBrandRes = layout.buildDirectory.dir("generated/brand-res")
+
+android.sourceSets.getByName("main").res.srcDir(generatedBrandRes)
+
+val generateBrandLauncherIcon by tasks.registering {
+    val sourceSvg = file("../../public/images/brand/super-sena-icon.svg")
+    val outputPng = generatedBrandRes.map { it.file("drawable-nodpi/cambista_super_sena_icon.png") }
+    inputs.file(sourceSvg)
+    outputs.file(outputPng)
+    doLast {
+        val svgText = sourceSvg.readText()
+        val encodedPng = Regex("data:image/png;base64,([A-Za-z0-9+/=]+)")
+            .find(svgText)?.groupValues?.get(1)
+            ?: error("Não foi possível localizar a imagem PNG da marca Super Sena.")
+        val target = outputPng.get().asFile
+        target.parentFile.mkdirs()
+        target.writeBytes(Base64.getDecoder().decode(encodedPng))
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(generateBrandLauncherIcon)
 }
 
 dependencies {
