@@ -35,8 +35,7 @@ object EscPosHelper {
         val output = ByteArrayOutputStream(raster.size + 32)
         output.write(byteArrayOf(
             esc, 0x40,                         // Inicializa a impressora
-            esc, 'a'.code.toByte(), 0,        // Alinhamento à esquerda
-            esc, '3'.code.toByte(), 24        // Espaçamento de linha padrão
+            esc, 'a'.code.toByte(), 0         // Alinhamento à esquerda
         ))
         output.write(byteArrayOf(
             gs, 'v'.code.toByte(), '0'.code.toByte(), 0,
