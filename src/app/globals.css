@@ -2897,3 +2897,46 @@ html.is-android .home-page.home-page-compact {
   .home-page-compact .home-entry > .home-access-footer { min-height: 40px; }
   .home-page-compact .home-footer-access { min-height: 36px; }
 }
+
+
+/* Área do jogador: os três menus compartilham um único cartão compacto. */
+.player-menu-card {
+  width: 100%;
+  margin: 16px 0;
+  overflow: hidden;
+  border: 1px solid var(--border, #2b3546);
+  border-radius: 18px;
+  background: var(--surface, #141b26);
+}
+.player-menu-card > .player-collapsible-section {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.player-menu-card > .player-collapsible-section + .player-collapsible-section {
+  border-top: 1px solid var(--border, #2b3546);
+}
+.player-menu-card > .player-collapsible-section > summary {
+  min-height: 78px;
+  padding: 13px 48px 13px 16px;
+  gap: 3px;
+}
+.player-menu-card .player-collapsible-hint {
+  display: none;
+}
+.player-menu-card > .player-collapsible-section[open] > section.feature-card {
+  border-top: 1px solid var(--border, #2b3546);
+}
+@media (max-width: 600px) {
+  .player-menu-card {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+  }
+  .player-menu-card > .player-collapsible-section > summary {
+    min-height: 76px;
+    padding: 12px 44px 12px 14px;
+  }
+}
