@@ -20,27 +20,27 @@ import java.util.Locale
  */
 object ReceiptBitmapGenerator {
     private const val WIDTH = 384
-    private const val MARGIN = 12f
+    private const val MARGIN = 2f
     private const val RIGHT = WIDTH - MARGIN
     private const val CONTENT_WIDTH = WIDTH - 2 * MARGIN
-    private const val QR_SIZE = 130
+    private const val QR_SIZE = 116
     private const val MAX_BITMAP_HEIGHT = 60_000
 
-    private val receiptTypeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+    private val receiptTypeface = Typeface.DEFAULT_BOLD
 
     private data class TextLine(
         val text: String,
-        val size: Float = 18f,
+        val size: Float = 20f,
         val centered: Boolean = false,
         val gapAfter: Float = 0f
     )
 
     private fun paint(size: Float): Paint = Paint().apply {
         color = Color.BLACK
-        textSize = size.coerceAtLeast(18f)
+        textSize = size.coerceAtLeast(19f)
         typeface = receiptTypeface
         style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 0.55f
+        strokeWidth = 0.9f
         strokeJoin = Paint.Join.ROUND
         isAntiAlias = false
         isFilterBitmap = false
@@ -98,33 +98,33 @@ object ReceiptBitmapGenerator {
         fun money(cents: Int): String = currency.format(cents / 100.0)
 
         val header = listOf(
-            TextLine("SUPER SENA", 30f, true, 2f),
-            TextLine("COMPROVANTE DE APOSTA", 22f, true, 2f),
-            TextLine(data.optString("issuedAtLabel"), 22f, true, 2f),
-            TextLine(data.optString("paymentLabel", "Dinheiro recebido"), 22f, true, 8f)
+            TextLine("SUPER SENA", 32f, true, 2f),
+            TextLine("COMPROVANTE DE APOSTA", 28f, true, 2f),
+            TextLine(data.optString("issuedAtLabel"), 24f, true, 2f),
+            TextLine(data.optString("paymentLabel", "Dinheiro recebido"), 26f, true, 8f)
         )
         val footer = listOf(
-            TextLine("GUARDE ESTE COMPROVANTE", 22f, true, 5f),
-            TextLine("Consulte o resultado pelo código do recibo.", 18f, true, 3f),
-            TextLine("Este recibo comprova o pagamento e contém suas apostas.", 18f, true, 5f),
-            TextLine(code, 22f, true, 8f)
+            TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 5f),
+            TextLine("Consulte o resultado pelo código do recibo.", 20f, true, 3f),
+            TextLine("Este recibo comprova o pagamento e contém suas apostas.", 20f, true, 5f),
+            TextLine(code, 26f, true, 8f)
         )
 
         val cashier = data.optString("cashierName").ifBlank { "—" }
         val infoLines = mutableListOf(
-            TextLine("CAMBISTA: $cashier", 22f, false, 8f),
-            TextLine("APOSTAS", 28f, false, 6f)
+            TextLine("CAMBISTA: $cashier", 26f, false, 8f),
+            TextLine("APOSTAS", 32f, false, 6f)
         )
         val betRows = mutableListOf<Pair<String, String>>()
         for (index in 0 until entries.length()) {
             val item = entries.getJSONObject(index)
             betRows += item.optString("numberValue") to money(item.optInt("stakeCents"))
-            infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena")
-            infoLines += TextLine("Unidade: ${money(item.optInt("unitCents"))} · Dezena: ${money(item.optInt("tensCents"))}")
-            infoLines += TextLine("Centena: ${money(item.optInt("hundredsCents"))} · Quadra: ${money(item.optInt("quadraCents"))}")
-            infoLines += TextLine("Quina: ${money(item.optInt("quinaCents"))} · Sena: ${money(item.optInt("senaCents"))}")
-            infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 18f, false, 1f)
-            infoLines += TextLine("Rodada ${item.optString("roundCode")}", 18f, false, 8f)
+            infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena", 22f)
+            infoLines += TextLine("Unidade: ${money(item.optInt("unitCents"))} · Dezena: ${money(item.optInt("tensCents"))}", 22f, false, 2f)
+            infoLines += TextLine("Centena: ${money(item.optInt("hundredsCents"))} · Quadra: ${money(item.optInt("quadraCents"))}", 20f, false, 2f)
+            infoLines += TextLine("Quina: ${money(item.optInt("quinaCents"))} · Sena: ${money(item.optInt("senaCents"))}", 20f, false, 2f)
+            infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 22f, false, 2f)
+            infoLines += TextLine("Rodada ${item.optString("roundCode")}", 22f, false, 10f)
         }
 
         val qr = createQr(qrPayload)
@@ -165,13 +165,14 @@ object ReceiptBitmapGenerator {
         val qrTop = y
         val qrLeft = RIGHT - QR_SIZE
         val qrPaint = Paint().apply {
+            color = Color.BLACK
             isAntiAlias = false
             isFilterBitmap = false
             isDither = false
         }
         canvas.drawBitmap(qr, qrLeft, qrTop, qrPaint)
-        drawLine(TextLine("CÓDIGO DO RECIBO", 18f), qrLeft - MARGIN * 2)
-        val codePaint = paint(18f)
+        drawLine(TextLine("CÓDIGO DO RECIBO", 22f), qrLeft - MARGIN * 2)
+        val codePaint = paint(22f)
         wrap(code, codePaint, qrLeft - MARGIN * 2).forEach { text ->
             y += codePaint.textSize
             canvas.drawText(text, MARGIN, y, codePaint)
@@ -183,7 +184,7 @@ object ReceiptBitmapGenerator {
 
         infoLines.take(2).forEach(::drawLine)
         betRows.forEach { (number, stake) ->
-            val p = paint(28f)
+            val p = paint(32f)
             y += p.textSize
             canvas.drawText(number, MARGIN, y, p)
             canvas.drawText(stake, RIGHT - p.measureText(stake), y, p)
@@ -191,7 +192,7 @@ object ReceiptBitmapGenerator {
         }
         infoLines.drop(2).forEach(::drawLine)
 
-        val totalPaint = paint(28f)
+        val totalPaint = paint(32f)
         val total = money(data.optInt("totalCents"))
         y += totalPaint.textSize
         canvas.drawText("TOTAL PAGO", MARGIN, y, totalPaint)
