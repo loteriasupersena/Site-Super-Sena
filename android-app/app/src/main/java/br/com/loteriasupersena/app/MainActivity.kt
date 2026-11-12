@@ -266,14 +266,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun renderAndPrintReceipt(html: String) {
+    private fun renderAndPrintReceipt(html: String, widthCssPx: Int) {
         if (html.length !in 1..MAX_RECEIPT_HTML_LENGTH || !html.contains("<html", ignoreCase = true)) {
             toast("Conteúdo do recibo inválido.")
             return
         }
 
         val columns = printer.paperColumns()
-        val cssWidth = if (columns == 48) 302 else 219 // 80 mm / 58 mm at 96 CSS dpi
+        val cssWidth = widthCssPx.coerceIn(180, 1000)
         val density = resources.displayMetrics.density
         val viewWidth = (cssWidth * density).toInt().coerceAtLeast(cssWidth)
         val root = findViewById<FrameLayout>(android.R.id.content)
@@ -346,8 +346,8 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
-        fun imprimirHtml(html: String) {
-            runOnUiThread { renderAndPrintReceipt(html) }
+        fun imprimirHtml(html: String, widthPx: Int) {
+            runOnUiThread { renderAndPrintReceipt(html, widthPx) }
         }
 
         @JavascriptInterface
