@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import html2canvas from "html2canvas";
 
 import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
@@ -104,61 +103,46 @@ export function ThermalReceipt({
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
 
   async function printReceipt() {
-    const article = document.getElementById("thermal-receipt-" + receiptCode);
-    if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; imprimirImagemBase64?: (base64: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimirRecibo?: (text: string, qrPayload: string) => void };
     }).AndroidPrinter;
-    if (nativePrinter?.imprimirImagemBase64) {
-      const qrImage = article.querySelector("img");
-      if (qrImage && !qrImage.complete) {
-        await new Promise<void>((resolve) => {
-          qrImage.addEventListener("load", () => resolve(), { once: true });
-          qrImage.addEventListener("error", () => resolve(), { once: true });
-        });
-      }
-
-      const canvas = await html2canvas(article, {
-        backgroundColor: "#FFFFFF",
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDocument) => {
-          const clonedReceipt = clonedDocument.getElementById("thermal-receipt-" + receiptCode);
-          if (!clonedReceipt) return;
-          clonedReceipt.style.setProperty("background", "#FFFFFF", "important");
-          clonedReceipt.style.setProperty("background-color", "#FFFFFF", "important");
-          clonedReceipt.style.setProperty("color", "#000000", "important");
-          clonedReceipt.querySelectorAll<HTMLElement>("*").forEach((element) => {
-            element.style.setProperty("color", "#000000", "important");
-            element.style.setProperty("border-color", "#000000", "important");
-            element.style.setProperty("box-shadow", "none", "important");
-            if (element.tagName !== "IMG") {
-              element.style.setProperty("background-color", "#FFFFFF", "important");
-              element.style.setProperty("background-image", "none", "important");
-            }
-          });
-        },
-      });
-
-      const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
-      if (!pngBase64) throw new Error("Não foi possível gerar a imagem PNG do recibo.");
-      nativePrinter.imprimirImagemBase64(pngBase64);
+    if (!nativePrinter?.imprimirRecibo) {
+      window.print();
       return;
     }
-
-    // Compatibility with earlier APK builds.
-    if (nativePrinter?.imprimirHtml) {
-      nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
-      return;
-    }
-    if (nativePrinter?.imprimir) {
-      nativePrinter.imprimir("COMPROVANTE " + receiptCode + "\nUse a versão atualizada do aplicativo para impressão gráfica.");
-      return;
-    }
-    window.print();
+    const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
+    const lines = [
+      "SUPER SENA",
+      "COMPROVANTE DE APOSTA",
+      date,
+      paymentLabel,
+      "",
+      "CODIGO DO RECIBO",
+      receiptCode,
+      "[[QR]]",
+      cashierLabel ? "CAMBISTA: " + cashierLabel : "",
+      customerLabel ? "CLIENTE: " + customerLabel : "",
+      "--------------------------------",
+      "APOSTAS",
+      ...entries.flatMap((entry, index) => [
+        entry.numberValue + "                 " + money(entry.stakeCents),
+        "Repeticao " + repetitionNumbers[index] + " - Jogo Super Sena",
+        "Unidade: " + money(entry.unitCents ?? 0) + "  Dezena: " + money(entry.tensCents ?? 0),
+        "Centena: " + money(entry.hundredsCents ?? 0) + "  Quadra: " + money(entry.quadraCents ?? 0),
+        "Quina: " + money(entry.quinaCents ?? 0) + "  Sena: " + money(entry.senaCents ?? 0),
+        "Sorteio: " + drawDateTime(entry.resultAt),
+        "Rodada " + entry.roundCode,
+        "--------------------------------",
+      ]),
+      "TOTAL PAGO: " + money(totalCents),
+      "",
+      "GUARDE ESTE COMPROVANTE",
+      "Consulte o resultado pelo codigo do recibo.",
+      "Este recibo comprova o pagamento e contem suas apostas.",
+      receiptCode,
+    ].filter(Boolean).join("\n");
+    nativePrinter.imprimirRecibo(lines, verificationUrl);
   }
-
 
   function downloadReceipt() {
     const article = document.getElementById("thermal-receipt-" + receiptCode);

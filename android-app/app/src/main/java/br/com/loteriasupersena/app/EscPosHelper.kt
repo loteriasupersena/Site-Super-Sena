@@ -1,150 +1,91 @@
 package br.com.loteriasupersena.app
 
-import android.graphics.Bitmap
 import java.io.ByteArrayOutputStream
+import java.nio.charset.Charset
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
-import java.nio.charset.Charset
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import java.util.EnumMap
 
 /**
- * Converts receipt text into ESC/POS bytes.
- *
- * The website sends QR payloads as [[QR:https://...]]. We rasterize the QR
- * instead of relying on a printer's optional native QR command support.
+ * Native text + high-resolution QR raster for 58 mm ESC/POS printers.
+ * Text stays as printer characters; only the QR symbol is rasterized.
  */
 object EscPosHelper {
     private val esc = 0x1B.toByte()
     private val gs = 0x1D.toByte()
-    private val qrMarker = Regex("""\[\[QR:([^\]\r\n]{1,1024})\]\]""")
+    private const val QR_DOTS = 240
+    private const val COLUMNS = 32
 
-    private const val QR_SIZE = 160
-    private const val MAX_QR_PAYLOAD_BYTES = 1024
-
-    private fun qrRasterCommand(value: String): ByteArray {
-        val payload = value.trim()
-        require(payload.isNotEmpty()) { "QR Code vazio." }
-        require(payload.toByteArray(Charsets.UTF_8).size <= MAX_QR_PAYLOAD_BYTES) {
-            "Conteúdo do QR Code excede o limite."
+    fun encodeReceipt(text: String, qrPayload: String, columns: Int): ByteArray {
+        require(columns == COLUMNS) { "Este aplicativo utiliza exclusivamente papel de 58 mm." }
+        require(text.isNotBlank() && text.length <= 30000) { "Texto do recibo inválido." }
+        require(qrPayload.startsWith("https://") && qrPayload.toByteArray(Charsets.UTF_8).size <= 1024) {
+            "Endereço do QR Code inválido."
         }
-
-        val hints = EnumMap<EncodeHintType, Any>(EncodeHintType::class.java).apply {
-            put(EncodeHintType.MARGIN, 1)
-            put(EncodeHintType.ERROR_CORRECTION, com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M)
-        }
-        val matrix = QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, QR_SIZE, QR_SIZE, hints)
-        val width = matrix.width
-        val height = matrix.height
-        val bytesPerRow = (width + 7) / 8
-        val output = ArrayList<Byte>(8 + bytesPerRow * height + 4)
-
-        // Center the raster QR on common 58 mm (384-dot) and 80 mm heads.
-        output.add(esc)
-        output.add('a'.code.toByte())
-        output.add(1)
-
-        // GS v 0: bit-image mode, width in bytes and height in dots.
-        output.add(gs)
-        output.add('v'.code.toByte())
-        output.add('0'.code.toByte())
-        output.add(0)
-        output.add((bytesPerRow and 0xFF).toByte())
-        output.add(((bytesPerRow shr 8) and 0xFF).toByte())
-        output.add((height and 0xFF).toByte())
-        output.add(((height shr 8) and 0xFF).toByte())
-
-        for (y in 0 until height) {
-            for (byteX in 0 until bytesPerRow) {
-                var packed = 0
-                for (bit in 0..7) {
-                    val x = byteX * 8 + bit
-                    if (x < width && matrix[x, y]) packed = packed or (0x80 shr bit)
-                }
-                output.add(packed.toByte())
-            }
-        }
-
-        output.add(0x0A)
-        output.add(esc)
-        output.add('a'.code.toByte())
-        output.add(0)
-        return output.toByteArray()
-    }
-
-    /**
-     * Rasterizes the exact HTML receipt rendered by the cashier app.
-     * 32 columns map to a 384-dot 58 mm head; 48 columns to 576-dot 80 mm.
-     */
-    fun encodeBitmap(source: Bitmap, columns: Int): ByteArray {
-        require(columns == 32) { "Este aplicativo utiliza exclusivamente papel de 58 mm." }
-        require(source.width > 0 && source.height > 0) { "Imagem do recibo inválida." }
-
-        val targetWidth = 384
-        val targetHeight = ((source.height.toLong() * targetWidth) / source.width)
-            .coerceIn(1L, 60000L).toInt()
-        val scaled = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, true)
-        val bytesPerRow = (targetWidth + 7) / 8
-        val raster = ByteArray(bytesPerRow * targetHeight)
-
-        for (y in 0 until targetHeight) {
-            for (byteX in 0 until bytesPerRow) {
-                var packed = 0
-                for (bit in 0..7) {
-                    val x = byteX * 8 + bit
-                    if (x < targetWidth) {
-                        val pixel = scaled.getPixel(x, y)
-                        val red = (pixel shr 16) and 0xFF
-                        val green = (pixel shr 8) and 0xFF
-                        val blue = pixel and 0xFF
-                        val luminance = (red * 299 + green * 587 + blue * 114) / 1000
-                        if (luminance < 180) packed = packed or (0x80 shr bit)
-                    }
-                }
-                raster[y * bytesPerRow + byteX] = packed.toByte()
-            }
-        }
-
-        val output = ByteArrayOutputStream(raster.size + 32)
-        output.write(byteArrayOf(
-            esc, 0x40,             // initialize
-            esc, 'a'.code.toByte(), 1, // center image
-            gs, 'v'.code.toByte(), '0'.code.toByte(), 0,
-            (bytesPerRow and 0xFF).toByte(),
-            ((bytesPerRow shr 8) and 0xFF).toByte(),
-            (targetHeight and 0xFF).toByte(),
-            ((targetHeight shr 8) and 0xFF).toByte()
-        ))
-        output.write(raster)
-        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, 'd'.code.toByte(), 4))
-        if (scaled !== source) scaled.recycle()
-        return output.toByteArray()
-    }
-
-    fun encode(text: String): ByteArray {
-        val safeText = text
-            .replace("\u001B", "")
-            .replace("\u001D", "")
-            .replace("\u0000", "")
-            .replace("\r\n", "\n")
-            .replace("\r", "\n")
 
         val charset = runCatching { Charset.forName("CP860") }
             .getOrElse { Charset.forName("IBM860") }
-        val body = ArrayList<Byte>()
-        var cursor = 0
-        val matches = qrMarker.findAll(safeText).toList()
+        val output = ByteArrayOutputStream()
+        output.write(byteArrayOf(
+            esc, 0x40,
+            gs, 'L'.code.toByte(), 8, 0,
+            gs, 'W'.code.toByte(), 0x70, 0x01,
+            esc, 'a'.code.toByte(), 0,
+            esc, 'E'.code.toByte(), 1,
+            esc, 'M'.code.toByte(), 0
+        ))
+        // Header: larger and bold, while preserving the 58 mm line width.
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x30))
+        output.write("SUPER SENA\n".toByteArray(charset))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x10))
+        output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
+        // Body: double-height + bold for legibility; normal width avoids clipping.
+        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x10))
+        val body = text.substringAfter("COMPROVANTE DE APOSTA\n", text)
+        val qrMarker = "[[QR]]"
+        val qrPosition = body.indexOf(qrMarker)
+        val beforeQr = if (qrPosition >= 0) body.substring(0, qrPosition) else body
+        val afterQr = if (qrPosition >= 0) body.substring(qrPosition + qrMarker.length).trimStart() else ""
+        output.write(beforeQr.toByteArray(charset))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'a'.code.toByte(), 2))
+        output.write(qrRaster(qrPayload))
+        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        output.write(afterQr.toByteArray(charset))
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
+        return output.toByteArray()
+    }
 
-        for (match in matches) {
-            body.addAll(safeText.substring(cursor, match.range.first).toByteArray(charset).toList())
-            body.addAll(qrRasterCommand(match.groupValues[1]).toList())
-            cursor = match.range.last + 1
+    private fun qrRaster(value: String): ByteArray {
+        val hints = EnumMap<EncodeHintType, Any>(EncodeHintType::class.java).apply {
+            put(EncodeHintType.MARGIN, 2)
+            put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M)
         }
-        body.addAll(safeText.substring(cursor).toByteArray(charset).toList())
-
-        // Keep the printer's configured/default code page (PC860 on the reference unit).
-        val header = byteArrayOf(esc, 0x40)
-        val footer = byteArrayOf(0x0A, esc, 0x64, 0x04)
-        return header + body.toByteArray() + footer
+        val matrix = QRCodeWriter().encode(value, BarcodeFormat.QR_CODE, QR_DOTS, QR_DOTS, hints)
+        val width = matrix.width
+        val height = matrix.height
+        val bytesPerRow = (width + 7) / 8
+        val raster = ByteArray(bytesPerRow * height)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (matrix[x, y]) {
+                    val index = y * bytesPerRow + x / 8
+                    raster[index] = (raster[index].toInt() or (0x80 shr (x % 8))).toByte()
+                }
+            }
+        }
+        val out = ByteArrayOutputStream(raster.size + 16)
+        out.write(byteArrayOf(
+            esc, 'a'.code.toByte(), 1,
+            gs, 'v'.code.toByte(), '0'.code.toByte(), 0,
+            (bytesPerRow and 0xFF).toByte(),
+            ((bytesPerRow shr 8) and 0xFF).toByte(),
+            (height and 0xFF).toByte(),
+            ((height shr 8) and 0xFF).toByte()
+        ))
+        out.write(raster)
+        out.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0))
+        return out.toByteArray()
     }
 }
