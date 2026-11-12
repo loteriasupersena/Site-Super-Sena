@@ -310,7 +310,7 @@ class MainActivity : ComponentActivity() {
                         bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                             ?: throw IllegalArgumentException("Não foi possível decodificar o recibo.")
                         toast("Imprimindo recibo com layout original...")
-                        val sent = printer.printBitmap(bitmap, 380)
+                        val sent = printer.printBitmap(bitmap, 384)
                         toast("Recibo enviado à impressora ($sent bytes).")
                     } catch (error: Exception) {
                         toast(error.message ?: "Falha na impressão gráfica.")
