@@ -3480,3 +3480,87 @@ html.is-android {
     padding-left: 16px !important;
   }
 }
+
+
+/* Página inicial Android: respeita a proporção original do infográfico.
+   Evita que 100dvh/100% force a arte a crescer e empurre o botão Entrar para fora da tela.
+   iPhone, iPad e desktop permanecem com o layout atual. */
+@media screen and (max-width: 600px) {
+  html.is-android .home-page.home-page-compact {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: calc(100vh - var(--site-header-height)) !important;
+    max-height: none !important;
+    margin-top: var(--site-header-height) !important;
+    overflow: visible !important;
+  }
+
+  html.is-android .home-page.home-page-compact > .home-entry {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    padding: 0 10px max(16px, env(safe-area-inset-bottom, 0px)) !important;
+    overflow: visible !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic {
+    display: block !important;
+    flex: 0 0 auto !important;
+    align-self: stretch !important;
+    justify-self: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-access-footer {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    margin: 8px 0 0 !important;
+    padding: 0 !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-footer-access {
+    width: min(100%, 230px) !important;
+    min-width: 146px !important;
+    min-height: 44px !important;
+    max-height: 48px !important;
+    margin: 0 auto !important;
+    padding: 6px 20px !important;
+    font-size: 1rem !important;
+  }
+}
