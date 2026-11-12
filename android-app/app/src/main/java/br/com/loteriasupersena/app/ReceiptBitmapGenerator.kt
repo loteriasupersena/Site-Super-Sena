@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -52,7 +51,7 @@ object ReceiptBitmapGenerator {
 
         val code = data.getString("receiptCode")
         val cashier = data.optString("cashierName").ifBlank { "—" }
-        val qr = createQr(qrPayload, 116)
+        val qr = createQr(qrPayload, 132)
         val details = mutableListOf<TextLine>()
         details += TextLine("CAMBISTA: $cashier", 17f, true, false, 8f)
         details += TextLine("APOSTAS", 22f, true, false, 7f)
@@ -98,7 +97,7 @@ object ReceiptBitmapGenerator {
 
         val headerHeight = lines.sumOf { measureHeight(it).toDouble() }.toFloat()
         val detailsHeight = details.sumOf { measureHeight(it).toDouble() }.toFloat()
-        val codeAreaHeight = 138f
+        val codeAreaHeight = 154f
         val dividersAndSpacing = 54f
         val height = (MARGIN * 2 + headerHeight + codeAreaHeight + detailsHeight + dividersAndSpacing).toInt().coerceAtLeast(500)
         val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
