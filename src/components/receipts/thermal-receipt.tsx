@@ -108,19 +108,11 @@ export function ThermalReceipt({
     const nativePrinter = (window as Window & {
       AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
     }).AndroidPrinter;
-    if (nativePrinter?.imprimirHtml) {
-      const qrImage = article.querySelector("img");
-      if (qrImage && !qrImage.complete) {
-        await new Promise<void>((resolve) => {
-          qrImage.addEventListener("load", () => resolve(), { once: true });
-          qrImage.addEventListener("error", () => resolve(), { once: true });
-        });
-      }
-      nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
-      return;
-    }
+    // Prefer native ESC/POS text output on Android. Rendering an off-screen
+    // WebView to a bitmap can produce a white/partial image on some devices;
+    // the native bridge already supports text plus a rasterized QR marker.
     if (nativePrinter?.imprimir) {
-      const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
+      const columns = 32;
       const wrapLine = (value: string): string[] => {
         if (value.startsWith("[[QR:")) return [value];
         const words = value.split(/\s+/).filter(Boolean);
@@ -165,6 +157,19 @@ export function ThermalReceipt({
         "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
       ].filter(Boolean).flatMap(wrapLine);
       nativePrinter.imprimir(lines.join("\n"));
+      return;
+    }
+    // Keep HTML rendering only as a compatibility fallback for older bridges
+    // that expose imprimirHtml but do not implement the text ESC/POS method.
+    if (nativePrinter?.imprimirHtml) {
+      const qrImage = article.querySelector("img");
+      if (qrImage && !qrImage.complete) {
+        await new Promise<void>((resolve) => {
+          qrImage.addEventListener("load", () => resolve(), { once: true });
+          qrImage.addEventListener("error", () => resolve(), { once: true });
+        });
+      }
+      nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
       return;
     }
     window.print();

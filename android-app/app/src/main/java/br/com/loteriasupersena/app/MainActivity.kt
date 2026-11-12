@@ -221,7 +221,7 @@ class MainActivity : ComponentActivity() {
         val options = arrayOf(
             "Selecionar impressora pareada",
             "Papel 58 mm — 32 colunas",
-            "Papel 80 mm — 48 colunas",
+            "Imprimir teste de comunicação",
             "Ver status da impressora"
         )
         AlertDialog.Builder(this)
@@ -233,9 +233,13 @@ class MainActivity : ComponentActivity() {
                         printer.setPaperColumns(32)
                         toast("Papel configurado: 58 mm (32 colunas).")
                     }
-                    2 -> {
-                        printer.setPaperColumns(48)
-                        toast("Papel configurado: 80 mm (48 colunas).")
+                    2 -> lifecycleScope.launch {
+                        try {
+                            val bytes = printer.printText("CAMBISTA SUPER SENA\nTESTE DE COMUNICACAO BLUETOOTH\nPAPEL 58 MM\n\n")
+                            toast("Teste enviado à impressora ($bytes bytes).")
+                        } catch (error: Exception) {
+                            toast(error.message ?: "Falha no teste Bluetooth.")
+                        }
                     }
                     3 -> toast(printer.savedPrinterName()?.let { "Impressora: $it" }
                         ?: "Nenhuma impressora selecionada.")

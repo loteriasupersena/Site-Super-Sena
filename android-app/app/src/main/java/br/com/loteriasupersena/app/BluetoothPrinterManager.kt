@@ -114,12 +114,15 @@ class BluetoothPrinterManager(context: Context) {
                         active = newSocket
                     }
                     val output = active!!.getOutputStream()
+                    // Small paced writes are more reliable with low-cost Bluetooth
+                    // thermal printers whose receive buffers are limited.
                     var offset = 0
                     while (offset < payload.size) {
-                        val count = minOf(512, payload.size - offset)
+                        val count = minOf(256, payload.size - offset)
                         output.write(payload, offset, count)
                         output.flush()
                         offset += count
+                        if (offset < payload.size) delay(12)
                     }
                     return@withContext payload.size
                 } catch (error: IOException) {
@@ -136,12 +139,13 @@ class BluetoothPrinterManager(context: Context) {
 
     fun savedPrinterName(): String? = preferences.getString("printer_name", null)
 
+    /** The Cambista Super Sena app is exclusively configured for 58 mm paper. */
     fun setPaperColumns(columns: Int) {
-        require(columns == 32 || columns == 48) { "Use 32 colunas (58 mm) ou 48 colunas (80 mm)." }
-        preferences.edit().putInt("paper_columns", columns).apply()
+        require(columns == 32) { "Este aplicativo utiliza exclusivamente papel de 58 mm." }
+        preferences.edit().putInt("paper_columns", 32).apply()
     }
 
-    fun paperColumns(): Int = preferences.getInt("paper_columns", 32)
+    fun paperColumns(): Int = 32
 
     private fun closeSocket() {
         try { socket?.close() } catch (_: Exception) {}

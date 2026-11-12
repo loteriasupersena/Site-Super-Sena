@@ -19,7 +19,7 @@ object EscPosHelper {
     private val gs = 0x1D.toByte()
     private val qrMarker = Regex("""\[\[QR:([^\]\r\n]{1,1024})\]\]""")
 
-    private const val QR_SIZE = 240
+    private const val QR_SIZE = 160
     private const val MAX_QR_PAYLOAD_BYTES = 1024
 
     private fun qrRasterCommand(value: String): ByteArray {
@@ -77,10 +77,10 @@ object EscPosHelper {
      * 32 columns map to a 384-dot 58 mm head; 48 columns to 576-dot 80 mm.
      */
     fun encodeBitmap(source: Bitmap, columns: Int): ByteArray {
-        require(columns == 32 || columns == 48) { "Largura de papel inválida." }
+        require(columns == 32) { "Este aplicativo utiliza exclusivamente papel de 58 mm." }
         require(source.width > 0 && source.height > 0) { "Imagem do recibo inválida." }
 
-        val targetWidth = if (columns == 48) 576 else 384
+        val targetWidth = 384
         val targetHeight = ((source.height.toLong() * targetWidth) / source.width)
             .coerceIn(1L, 60000L).toInt()
         val scaled = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, true)
