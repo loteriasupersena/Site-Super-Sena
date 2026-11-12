@@ -1,5 +1,8 @@
 # Arquitetura — aplicativo de impressão Super Quina
 
+> **Arquitetura histórica — 08/11/2026.** Este documento descreve uma proposta anterior baseada em Capacitor e está supersedido pelo APK Kotlin nativo integrado à `main`. Use `android-app/README.md` e os arquivos `MainActivity.kt`, `BluetoothPrinterManager.kt`, `ReceiptBitmapGenerator.kt` e `EscPosHelper.kt` como referência atual.
+
+
 Data: 08/11/2026
 Status: implementação parcial. Fluxo direto SPP definido; PrintService e chamada ao Print Framework removidos. Perfil por impressora, página de teste e envio em blocos com pausa implementados nesta etapa. Build final e impressão física ainda pendentes.
 

@@ -1,5 +1,8 @@
 # Status da ponte Bluetooth do Super Quina
 
+> **Registro histórico — 08/11/2026.** O status abaixo descreve uma ponte Capacitor/RawBT que não corresponde à implementação atual. Não instalar dependências nem restaurar arquivos com base neste registro. A versão vigente é o APK Kotlin nativo em `android-app/`.
+
+
 Atualizado em 2026-11-08  
 Branch: feature/rawbt-inspired-printer-core
 
