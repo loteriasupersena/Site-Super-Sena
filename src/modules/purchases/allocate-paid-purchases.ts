@@ -1,8 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Prisma, RoundStatus, type PrismaClient } from "@/generated/prisma/client";
 import { selectNextValidRounds } from "@/modules/payments/select-next-valid-rounds";
-import { allocateNumberStake } from "@/domain/allocate-number-stake";
-import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "@/domain/numeric-prize-rules";
 
 const DEFAULT_BATCH_SIZE = 25;
 const MAX_BATCH_SIZE = 50;
@@ -109,37 +107,28 @@ export async function allocatePaidPurchases(
           if (selected.length !== count) return "waiting" as const;
 
           const numbersValue: unknown = purchase.numericIntent.numbers;
+          const allocationValue: unknown = purchase.numericIntent.allocation;
           if (!Array.isArray(numbersValue) || numbersValue.length === 0 ||
-              !purchase.numericIntent.allocation || typeof purchase.numericIntent.allocation !== "object" || Array.isArray(purchase.numericIntent.allocation)) {
+              !allocationValue || typeof allocationValue !== "object" || Array.isArray(allocationValue)) {
             throw new Error("Paid numeric purchase intent failed integrity validation");
           }
           const numbers = numbersValue as string[];
-          // Derive the per-number stake from the immutable purchase total.
-          // This safely migrates any pending intent written with an older
-          // allocation shape (including older category property names) while
-          // preserving exactly the amount already paid.
-          const stakeDivisor = count * numbers.length;
-          const stakePerNumberFromTotal = purchase.totalCents / stakeDivisor;
-          if (!Number.isSafeInteger(stakePerNumberFromTotal) || stakePerNumberFromTotal < 100) {
-            throw new Error("Paid numeric purchase total cannot be split into valid per-number stakes");
-          }
-          const allocation = allocateNumberStake(stakePerNumberFromTotal);
-          const allocationValues = [allocation.unitCents, allocation.tensCents, allocation.hundredsCents, allocation.quadraCents, allocation.quinaCents, allocation.senaCents];
+          const allocation = allocationValue as {
+            unitCents: number; tensCents: number; hundredsCents: number;
+            quadraCents: number; quinaCents: number; senaCents: number;
+          };
+          const allocationValues = [
+            allocation.unitCents, allocation.tensCents, allocation.hundredsCents,
+            allocation.quadraCents, allocation.quinaCents, allocation.senaCents,
+          ];
           const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
-          const isCurrentRule = purchase.numericIntent.ruleVersion === NUMERIC_PRIZE_RULE_VERSION &&
-            purchase.numericIntent.ruleSnapshot !== null &&
-            typeof purchase.numericIntent.ruleSnapshot === "object" &&
-            !Array.isArray(purchase.numericIntent.ruleSnapshot) &&
-            (purchase.numericIntent.ruleSnapshot as Record<string, unknown>).version === NUMERIC_PRIZE_RULE_VERSION;
-          const ruleVersion = NUMERIC_PRIZE_RULE_VERSION;
-          const snapshot = (isCurrentRule
-            ? purchase.numericIntent.ruleSnapshot
-            : createNumericPrizeRuleSnapshot()) as Prisma.InputJsonValue;
           const perRoundCents = numbers.length * stakePerNumber;
-          if (numbers.some((value) => typeof value !== "string" || !/^\d{6}$/.test(value)) ||
+          const snapshot = purchase.numericIntent.ruleSnapshot as Prisma.InputJsonValue;
+          if (numbers.some((value) => typeof value !== "string" || !/^\\d{6}$/.test(value)) ||
               allocationValues.some((value) => !Number.isSafeInteger(value) || value < 0) ||
               stakePerNumber < 100 || !Number.isSafeInteger(perRoundCents) ||
-              !Number.isSafeInteger(perRoundCents * count) || perRoundCents * count !== purchase.totalCents) {
+              !Number.isSafeInteger(perRoundCents * count) || perRoundCents * count !== purchase.totalCents ||
+              !purchase.numericIntent.ruleVersion || !snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
             throw new Error("Paid numeric purchase intent failed integrity validation");
           }
 
