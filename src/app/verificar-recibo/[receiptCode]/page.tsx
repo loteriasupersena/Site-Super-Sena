@@ -19,7 +19,7 @@ export default async function VerifyReceiptPage({ params }: PageProps) {
       className="home-page"
       style={{
         minHeight: "100vh",
-        padding: "calc(var(--site-header-height, 100px) + 16px) 16px 32px",
+        padding: "calc(var(--site-header-height, 100px) + 36px) 16px 32px",
       }}
     >
       <SiteHeader />
