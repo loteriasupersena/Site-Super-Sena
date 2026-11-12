@@ -221,7 +221,6 @@ class MainActivity : ComponentActivity() {
         val options = arrayOf(
             "Selecionar impressora pareada",
             "Papel 58 mm — 32 colunas",
-            "Papel 80 mm — 48 colunas",
             "Ver status da impressora"
         )
         AlertDialog.Builder(this)
@@ -233,11 +232,7 @@ class MainActivity : ComponentActivity() {
                         printer.setPaperColumns(32)
                         toast("Papel configurado: 58 mm (32 colunas).")
                     }
-                    2 -> {
-                        printer.setPaperColumns(48)
-                        toast("Papel configurado: 80 mm (48 colunas).")
-                    }
-                    3 -> toast(printer.savedPrinterName()?.let { "Impressora: $it" }
+                    2 -> toast(printer.savedPrinterName()?.let { "Impressora: $it" }
                         ?: "Nenhuma impressora selecionada.")
                 }
             }
