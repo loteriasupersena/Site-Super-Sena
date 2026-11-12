@@ -2935,15 +2935,6 @@ html.is-android .home-page.home-page-compact {
   cursor: pointer;
 }
 .player-menu-card > .player-collapsible-section > summary::-webkit-details-marker { display: none; }
-.player-menu-card > .player-collapsible-section > summary::after {
-  content: "⌄";
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: #59d5f2;
-  font-size: 2.3rem;
-  font-weight: 700;
-  line-height: 1;
-}
 .player-menu-card .player-collapsible-label,
 .player-menu-card .player-collapsible-title,
 .player-menu-card .player-collapsible-hint {
@@ -2969,4 +2960,19 @@ html.is-android .home-page.home-page-compact {
 @media (max-width: 600px) {
   .player-menu-card { margin-top: 14px; padding: 2px 12px; border-radius: 24px; }
   .player-menu-card > .player-collapsible-section > summary { min-height: 96px; padding: 12px 6px; }
+}
+
+
+/* Ajustes finais da área do jogador: uma única seta por menu e menor distância do formulário. */
+.area-page-compact .area-content-compact {
+  gap: 8px !important;
+}
+.area-page-compact .numeric-game-purchase {
+  margin-bottom: 0 !important;
+}
+.area-page-compact .player-menu-card {
+  margin-top: 0 !important;
+}
+.area-page-compact .player-menu-card > .player-collapsible-section > summary::after {
+  content: "";
 }
