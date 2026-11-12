@@ -41,10 +41,10 @@ object EscPosHelper {
         // Test/native text uses the printer's normal character size; no global enlargement.
         output.write(byteArrayOf(esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x00))
         output.write("SUPER SENA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x10))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x00))
         output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
-        // Body: double-height + bold for legibility; normal width avoids clipping.
-        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x10))
+        // Body: standard printer font; no double-height or double-width mode.
+        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x00))
         val body = text.substringAfter("COMPROVANTE DE APOSTA\n", text)
         val qrMarker = "[[QR]]"
         val qrPosition = body.indexOf(qrMarker)
@@ -53,7 +53,7 @@ object EscPosHelper {
         output.write(beforeQr.toByteArray(charset))
         output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'a'.code.toByte(), 2))
         output.write(qrRaster(qrPayload))
-        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x00))
         output.write(afterQr.toByteArray(charset))
         output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
         return output.toByteArray()
