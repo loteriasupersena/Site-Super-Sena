@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - fix/cambista-apk-isolation-receipt-layout
+      - fix/android-thermal-receipt-blank-print
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
