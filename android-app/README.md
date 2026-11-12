@@ -12,11 +12,12 @@ O APK é exclusivo para cambistas. Ao iniciar, abre diretamente `/cashier-app-lo
 
 ## Impressão térmica
 
-- O botão **Imprimir recibo** envia ao Android o HTML do próprio recibo oficial exibido na tela.
-- O Android renderiza esse HTML em uma WebView isolada, sem JavaScript e sem acesso à rede, converte a página em imagem monocromática e envia a imagem em raster ESC/POS.
-- O QR Code é impresso como parte da mesma imagem do recibo, preservando a organização, os títulos, valores e separadores do recibo exibido.
-- 32 colunas usam 384 pontos para papel de 58 mm; 48 colunas usam 576 pontos para papel de 80 mm.
-- No navegador comum, a impressão continua usando o fluxo web. O modo de texto legado permanece como compatibilidade para versões anteriores do APK.
+- O botão **Imprimir recibo** envia os dados oficiais ao Android pela ponte nativa.
+- O Android imprime o conteúdo como texto ESC/POS usando a tabela PC860, com alinhamento e quebra de linhas adequados à largura selecionada.
+- O QR Code de verificação é convertido em imagem monocromática ESC/POS e enviado junto com o recibo.
+- Para papel de 58 mm, o perfil padrão usa 32 colunas; para 80 mm, usa 48 colunas.
+- A impressão por imagem de uma WebView fica somente como compatibilidade de reserva para pontes antigas; não é o caminho principal, evitando páginas brancas ou cortadas em renderizações off-screen.
+- No navegador comum, a impressão continua usando o fluxo web.
 
 ## Ícone e identificação
 
