@@ -17,7 +17,7 @@ import java.util.EnumMap
 object EscPosHelper {
     private val esc = 0x1B.toByte()
     private val gs = 0x1D.toByte()
-    private const val QR_DOTS = 240
+    private const val QR_DOTS = 256
     private const val COLUMNS = 32
 
     fun encodeReceipt(text: String, qrPayload: String, columns: Int): ByteArray {
@@ -38,13 +38,13 @@ object EscPosHelper {
             esc, 'E'.code.toByte(), 1,
             esc, 'M'.code.toByte(), 0
         ))
-        // Header: larger and bold, while preserving the 58 mm line width.
-        output.write(byteArrayOf(esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x30))
+        // Test/native text uses the printer's normal character size; no global enlargement.
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x00))
         output.write("SUPER SENA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x10))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x00))
         output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
-        // Body: double-height + bold for legibility; normal width avoids clipping.
-        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x10))
+        // Body: standard printer font; no double-height or double-width mode.
+        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x00))
         val body = text.substringAfter("COMPROVANTE DE APOSTA\n", text)
         val qrMarker = "[[QR]]"
         val qrPosition = body.indexOf(qrMarker)
@@ -53,16 +53,16 @@ object EscPosHelper {
         output.write(beforeQr.toByteArray(charset))
         output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'a'.code.toByte(), 2))
         output.write(qrRaster(qrPayload))
-        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x00))
         output.write(afterQr.toByteArray(charset))
         output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
         return output.toByteArray()
     }
 
-    fun encodeBitmap(source: Bitmap, targetWidth: Int = 380): ByteArray {
-        require(targetWidth in 300..384) { "Largura de impressão inválida." }
+    fun encodeBitmap(source: Bitmap, targetWidth: Int = 384): ByteArray {
+        require(targetWidth == 384) { "A impressão utiliza 384 pontos em papel de 58 mm." }
         val height = (source.height.toFloat() * targetWidth / source.width).toInt().coerceAtLeast(1)
-        val scaled = Bitmap.createScaledBitmap(source, targetWidth, height, true)
+        val scaled = Bitmap.createScaledBitmap(source, targetWidth, height, false)
         val bytesPerRow = (targetWidth + 7) / 8
         val raster = ByteArray(bytesPerRow * height)
         val pixels = IntArray(targetWidth)
@@ -71,7 +71,7 @@ object EscPosHelper {
             for (x in 0 until targetWidth) {
                 val color = pixels[x]
                 val gray = (Color.red(color) * 299 + Color.green(color) * 587 + Color.blue(color) * 114) / 1000
-                if (gray < 190) {
+                if (gray < 160) {
                     val index = y * bytesPerRow + x / 8
                     raster[index] = (raster[index].toInt() or (0x80 shr (x % 8))).toByte()
                 }
