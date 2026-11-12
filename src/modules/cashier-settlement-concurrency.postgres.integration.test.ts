@@ -56,7 +56,7 @@ suite("PostgreSQL cashier settlement concurrency", () => {
     const sale = await createNumericPurchase(prisma, {
       idempotencyKey: `it-settlement-cash-sale-${suffix}`,
       cashierId, paymentMethod: "CASH", roundCount: 1, numbers: ["012345"], stakeCents: 100,
-    });
+    }, new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
     purchaseIds.push(sale.id);
     expect(sale.status).toBe("PENDING_PAYMENT");
     expect(await prisma.cashierCommission.count({ where: { purchaseId: sale.id } })).toBe(1);
