@@ -116,7 +116,6 @@ export function ThermalReceipt({
           qrImage.addEventListener("error", () => resolve(), { once: true });
         });
       }
-      const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
       nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
       return;
     }
