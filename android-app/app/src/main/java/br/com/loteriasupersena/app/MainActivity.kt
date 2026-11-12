@@ -216,7 +216,6 @@ class MainActivity : ComponentActivity() {
         val options = arrayOf(
             "Selecionar impressora pareada",
             "Papel 58 mm — 32 colunas",
-            "Imprimir teste de comunicação",
             "Ver status da impressora"
         )
         AlertDialog.Builder(this)
