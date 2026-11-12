@@ -275,7 +275,7 @@ h1 {
 }
 .thermal-receipt-code-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 20mm;
+  grid-template-columns: 20mm minmax(0, 1fr);
   align-items: center;
   gap: 1.5mm;
   margin: 3mm 0;
@@ -291,6 +291,7 @@ h1 {
   font-size: 10px;
   font-weight: 700;
 }
+.thermal-receipt-date { margin-top: 2mm; }
 .thermal-receipt-code {
   font-size: 13px;
   line-height: 1.2;
