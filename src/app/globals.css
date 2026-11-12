@@ -3564,3 +3564,35 @@ html.is-android {
     font-size: 1rem !important;
   }
 }
+
+
+/* CORREÇÃO FINAL: regra da home Android no fim do CSS global,
+   para prevalecer sobre as regras antigas que liberavam altura ilimitada. */
+@media screen and (max-width: 600px) {
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic img {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: calc(100vh - var(--site-header-height, 100px) - 110px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100svh - var(--site-header-height, 100px) - 110px - env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-access-footer {
+    flex: 0 0 auto !important;
+    min-height: 48px !important;
+    margin-top: 6px !important;
+  }
+}
