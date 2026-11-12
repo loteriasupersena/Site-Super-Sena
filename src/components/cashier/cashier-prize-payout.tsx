@@ -213,7 +213,6 @@ export function CashierPrizePayout() {
               <p>{line.prizeCategoryLabel ?? "Prêmio"} · <strong>{money(line.prizeCents)}</strong></p>
               {!line.calculationConsistent && <p role="alert" className="cashier-prize-review">Pagamento bloqueado: cálculo em revisão.</p>}
             </>}
-            {line.paid && <p className="cashier-prize-paid-detail">{line.payoutChannel === "CASHIER_CASH" ? "Pago em dinheiro pelo cambista" : line.payoutChannel === "WALLET" ? "Creditado na carteira" : "Pago por Pix"}</p>}
           </div>
           {line.roundCompleted && line.prizeCents > 0 && !line.paid && line.calculationConsistent && (
             <button type="button" className="cashier-prize-pay-button" onClick={() => setConfirmLine(line)} disabled={Boolean(busyLine)}>Pagar</button>
