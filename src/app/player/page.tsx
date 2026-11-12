@@ -12,30 +12,32 @@ export default async function PlayerPage() {
   return (
     <AreaShell title="Área do jogador" username={user.username} compact logoOnlyHeader logoutAtBottom>
       <NumericGamePurchaseForm mode="PLAYER" />
-      <details className="player-collapsible-section">
-        <summary>
-          <span className="player-collapsible-label">Carteira digital</span>
-          <span className="player-collapsible-title">Saldo e saques</span>
-          <span className="player-collapsible-hint">Toque para consultar saldo ou solicitar saque</span>
-        </summary>
-        <PlayerWalletWithdrawals />
-      </details>
-      <details className="player-collapsible-section">
-        <summary>
-          <span className="player-collapsible-label">Suas apostas</span>
-          <span className="player-collapsible-title">Histórico dos últimos 7 dias</span>
-          <span className="player-collapsible-hint">Toque para ver seus números, rodadas e prêmios</span>
-        </summary>
-        <PlayerBetHistory />
-      </details>
-      <details className="player-collapsible-section">
-        <summary>
-          <span className="player-collapsible-label">Resultados</span>
-          <span className="player-collapsible-title">Últimos resultados</span>
-          <span className="player-collapsible-hint">Toque para consultar os sorteios publicados</span>
-        </summary>
-        <PlayerRecentResults />
-      </details>
+      <div className="player-menu-card" aria-label="Menus do jogador">
+        <details className="player-collapsible-section">
+          <summary>
+            <span className="player-collapsible-label">Carteira digital</span>
+            <span className="player-collapsible-title">Saldo e saques</span>
+            <span className="player-collapsible-hint">Toque para consultar saldo ou solicitar saque</span>
+          </summary>
+          <PlayerWalletWithdrawals />
+        </details>
+        <details className="player-collapsible-section">
+          <summary>
+            <span className="player-collapsible-label">Suas apostas</span>
+            <span className="player-collapsible-title">Histórico dos últimos 7 dias</span>
+            <span className="player-collapsible-hint">Toque para ver seus números, rodadas e prêmios</span>
+          </summary>
+          <PlayerBetHistory />
+        </details>
+        <details className="player-collapsible-section">
+          <summary>
+            <span className="player-collapsible-label">Resultados</span>
+            <span className="player-collapsible-title">Últimos resultados</span>
+            <span className="player-collapsible-hint">Toque para consultar os sorteios publicados</span>
+          </summary>
+          <PlayerRecentResults />
+        </details>
+      </div>
     </AreaShell>
   );
 }
