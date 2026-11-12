@@ -189,14 +189,12 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
       bytes.push(...line(part, profile));
     }
     bytes.push(...line("Valor: " + money(entry.stakeCents), profile));
-    if ([entry.unitCents, entry.tensCents, entry.hundredsCents, entry.quadraCents, entry.quinaCents, entry.senaCents].some((value) => value !== undefined)) {
-      bytes.push(...line("Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0), profile));
-      bytes.push(...line("Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0), profile));
-      bytes.push(...line("Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), profile));
-    }
     bytes.push(...line("-".repeat(columns), profile));
   }
 
+  for (const part of wrap("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", columns)) {
+    bytes.push(...line(part, profile));
+  }
   bytes.push(ESC, 0x45, 0x01);
   for (const part of padPair("TOTAL PAGO", money(receipt.totalCents), columns)) bytes.push(...line(part, profile));
   bytes.push(ESC, 0x45, 0x00, ESC, 0x61, 0x01);
