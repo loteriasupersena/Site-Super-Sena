@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
+import html2canvas from "html2canvas";
 
 import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
@@ -106,64 +107,9 @@ export function ThermalReceipt({
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimir: (text: string) => void; imprimirImagemBase64?: (base64: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
     }).AndroidPrinter;
-    // Android's HTML bridge renders the official receipt at the same visual structure
-    // shown on screen. Text ESC/POS is retained as a fallback for older APK builds.
-    // On Android, prefer printing a rasterized copy of the exact on-screen HTML receipt.
-    // This keeps typography, alignment, QR placement and section hierarchy identical.
-    // Fall back to ESC/POS text only when the installed bridge lacks HTML rendering.
-    if (!nativePrinter?.imprimirHtml && nativePrinter?.imprimir) {
-      const columns = 32;
-      const wrapLine = (value: string): string[] => {
-        if (value.startsWith("[[QR:")) return [value];
-        const words = value.split(/\s+/).filter(Boolean);
-        const result: string[] = [];
-        let current = "";
-        for (const word of words) {
-          if (word.length > columns) {
-            if (current) result.push(current);
-            current = "";
-            for (let offset = 0; offset < word.length; offset += columns) {
-              const part = word.slice(offset, offset + columns);
-              if (part.length === columns) result.push(part);
-              else current = part;
-            }
-            continue;
-          }
-          const next = current ? current + " " + word : word;
-          if (next.length > columns) {
-            if (current) result.push(current);
-            current = word;
-          } else current = next;
-        }
-        if (current) result.push(current);
-        return result.length ? result : [""];
-      };
-      const center = (value: string) => value.padStart(Math.floor((columns + value.length) / 2), " ");
-      const lines = [
-        center("SUPER SENA"), center("COMPROVANTE DE APOSTA"), date, paymentLabel,
-        "RECIBO: " + receiptCode,
-        customerLabel ? "CLIENTE: " + customerLabel : "",
-        cashierLabel ? "CAMBISTA: " + cashierLabel : "",
-        "-".repeat(columns),
-        ...entries.flatMap((entry, index) => [
-          entry.numberValue, "Repetição " + repetitionNumbers[index], "Rodada " + entry.roundCode,
-          "Sorteio: " + drawDateTime(entry.resultAt), "Valor: " + money(entry.stakeCents),
-          "Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0),
-          "Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0),
-          "Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), "-".repeat(columns),
-        ]),
-        "TOTAL PAGO: " + money(totalCents), center("GUARDE ESTE COMPROVANTE"), receiptCode,
-        "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
-        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
-      ].filter(Boolean).flatMap(wrapLine);
-      nativePrinter.imprimir(lines.join("\n"));
-      return;
-    }
-    // Keep HTML rendering only as a compatibility fallback for older bridges
-    // that expose imprimirHtml but do not implement the text ESC/POS method.
-    if (nativePrinter?.imprimirHtml) {
+    if (nativePrinter?.imprimirImagemBase64) {
       const qrImage = article.querySelector("img");
       if (qrImage && !qrImage.complete) {
         await new Promise<void>((resolve) => {
@@ -171,7 +117,43 @@ export function ThermalReceipt({
           qrImage.addEventListener("error", () => resolve(), { once: true });
         });
       }
+
+      const canvas = await html2canvas(article, {
+        backgroundColor: "#FFFFFF",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDocument) => {
+          const clonedReceipt = clonedDocument.getElementById("thermal-receipt-" + receiptCode);
+          if (!clonedReceipt) return;
+          clonedReceipt.style.setProperty("background", "#FFFFFF", "important");
+          clonedReceipt.style.setProperty("background-color", "#FFFFFF", "important");
+          clonedReceipt.style.setProperty("color", "#000000", "important");
+          clonedReceipt.querySelectorAll<HTMLElement>("*").forEach((element) => {
+            element.style.setProperty("color", "#000000", "important");
+            element.style.setProperty("border-color", "#000000", "important");
+            element.style.setProperty("box-shadow", "none", "important");
+            if (element.tagName !== "IMG") {
+              element.style.setProperty("background-color", "#FFFFFF", "important");
+              element.style.setProperty("background-image", "none", "important");
+            }
+          });
+        },
+      });
+
+      const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
+      if (!pngBase64) throw new Error("Não foi possível gerar a imagem PNG do recibo.");
+      nativePrinter.imprimirImagemBase64(pngBase64);
+      return;
+    }
+
+    // Compatibility with earlier APK builds.
+    if (nativePrinter?.imprimirHtml) {
       nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
+      return;
+    }
+    if (nativePrinter?.imprimir) {
+      nativePrinter.imprimir("COMPROVANTE " + receiptCode + "\nUse a versão atualizada do aplicativo para impressão gráfica.");
       return;
     }
     window.print();
