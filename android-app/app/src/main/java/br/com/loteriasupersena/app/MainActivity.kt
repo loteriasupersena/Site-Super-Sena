@@ -140,6 +140,14 @@ class MainActivity : ComponentActivity() {
                 """.trimIndent(), null)
             }
 
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                super.doUpdateVisitedHistory(view, url, isReload)
+                val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
+                if (!isAllowedUrl(uri)) {
+                    view?.post { view.loadUrl(CASHIER_LOGIN_URL) }
+                }
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return true
                 return !isAllowedUrl(uri)
