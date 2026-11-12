@@ -9,9 +9,9 @@
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <application
         android:allowBackup="false"
-        android:label="Super Sena"
-        android:icon="@drawable/ic_launcher"
-        android:roundIcon="@drawable/ic_launcher"
+        android:label="Cambista Super Sena"
+        android:icon="@drawable/cambista_super_sena_icon"
+        android:roundIcon="@drawable/cambista_super_sena_icon"
         android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
         <activity
