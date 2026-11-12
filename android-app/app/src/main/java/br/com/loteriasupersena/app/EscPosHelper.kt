@@ -15,8 +15,7 @@ import java.util.EnumMap
 object EscPosHelper {
     private val esc = 0x1B.toByte()
     private val gs = 0x1D.toByte()
-    private const val PAPER_DOTS = 384
-    private const val QR_DOTS = 192
+    private const val QR_DOTS = 240
     private const val COLUMNS = 32
 
     fun encodeReceipt(text: String, qrPayload: String, columns: Int): ByteArray {
@@ -29,12 +28,20 @@ object EscPosHelper {
         val charset = runCatching { Charset.forName("CP860") }
             .getOrElse { Charset.forName("IBM860") }
         val output = ByteArrayOutputStream()
-        output.write(byteArrayOf(esc, 0x40, esc, 'a'.code.toByte(), 1, esc, 'E'.code.toByte(), 1))
+        output.write(byteArrayOf(
+            esc, 0x40,
+            gs, 'L'.code.toByte(), 0, 0,
+            gs, 'W'.code.toByte(), 0x80.toByte(), 0x01,
+            esc, 'a'.code.toByte(), 0,
+            esc, 'E'.code.toByte(), 1,
+            esc, 'M'.code.toByte(), 0
+        ))
         output.write("SUPER SENA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, 'E'.code.toByte(), 0))
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
         output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
         output.write(byteArrayOf(esc, 'a'.code.toByte(), 0))
         output.write(text.substringAfter("COMPROVANTE DE APOSTA\n", text).toByteArray(charset))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0))
         output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 1))
         output.write(qrRaster(qrPayload))
         output.write(byteArrayOf(0x0A, 0x0A, esc, 'a'.code.toByte(), 0, esc, 'd'.code.toByte(), 4))
