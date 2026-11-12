@@ -40,7 +40,10 @@ object ReceiptBitmapGenerator {
         isAntiAlias = false
         isFilterBitmap = false
         isDither = false
-        // Reforça o traço sem suavização: preto sólido e caracteres mais encorpados na bobina.\n        style = Paint.Style.FILL_AND_STROKE\n        strokeWidth = 0.65f\n        textAlign = Paint.Align.LEFT
+        // Reforça o traço sem suavização: preto sólido e caracteres mais encorpados na bobina.
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 0.65f
+        textAlign = Paint.Align.LEFT
     }
 
     private fun lineHeight(size: Float) = size.coerceAtLeast(18f) + 7f
