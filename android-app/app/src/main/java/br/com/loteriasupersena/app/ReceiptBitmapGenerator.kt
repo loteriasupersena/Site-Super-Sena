@@ -23,7 +23,7 @@ object ReceiptBitmapGenerator {
     private const val MARGIN = 2f
     private const val RIGHT = WIDTH - MARGIN
     private const val CONTENT_WIDTH = WIDTH - 2 * MARGIN
-    private const val QR_SIZE = 116
+    private const val QR_SIZE = 280
     private const val MAX_BITMAP_HEIGHT = 60_000
 
     private val receiptTypeface = Typeface.DEFAULT_BOLD
@@ -162,8 +162,11 @@ object ReceiptBitmapGenerator {
         header.forEach(::drawLine)
         divider()
 
+        drawLine(TextLine("CÓDIGO DO RECIBO", 22f, true, 2f))
+        drawLine(TextLine(code, 22f, true, 8f))
+
         val qrTop = y
-        val qrLeft = RIGHT - QR_SIZE
+        val qrLeft = (WIDTH - QR_SIZE) / 2f
         val qrPaint = Paint().apply {
             color = Color.BLACK
             isAntiAlias = false
@@ -171,14 +174,7 @@ object ReceiptBitmapGenerator {
             isDither = false
         }
         canvas.drawBitmap(qr, qrLeft, qrTop, qrPaint)
-        drawLine(TextLine("CÓDIGO DO RECIBO", 22f), qrLeft - MARGIN * 2)
-        val codePaint = paint(22f)
-        wrap(code, codePaint, qrLeft - MARGIN * 2).forEach { text ->
-            y += codePaint.textSize
-            canvas.drawText(text, MARGIN, y, codePaint)
-            y += 7f
-        }
-        y = maxOf(y, qrTop + QR_SIZE) + 12f
+        y = qrTop + QR_SIZE + 8f
         qr.recycle()
         divider()
 
