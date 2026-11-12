@@ -101,6 +101,9 @@ export function ThermalReceipt({
   const qrStyle: CSSProperties = { width: 76, height: 76, objectFit: "contain" };
   const effectiveQrUrl = qrCodeDataUrl ?? (generatedQr?.receiptCode === receiptCode && generatedQr.url ? generatedQr.url : null);
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
+  const roundDetails = entries.filter((entry, index) =>
+    entries.findIndex((candidate) => candidate.roundCode === entry.roundCode) === index
+  );
 
   function printReceipt() {
     const nativePrinter = (window as Window & {
@@ -188,11 +191,18 @@ export function ThermalReceipt({
                 <strong>{entry.numberValue}</strong>
                 <strong>{money(entry.stakeCents)}</strong>
               </div>
-              <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
-              <strong className="thermal-receipt-draw-time">Sorteio: {drawDateTime(entry.resultAt)}</strong>
-              <span>Rodada {entry.roundCode}</span>
             </div>
           ))}
+          {roundDetails.map((entry) => {
+            const index = entries.findIndex((candidate) => candidate.roundCode === entry.roundCode);
+            return (
+              <div className="thermal-receipt-item" key={`round-${entry.roundCode}`}>
+                <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
+                <strong className="thermal-receipt-draw-time">Sorteio: {drawDateTime(entry.resultAt)}</strong>
+                <span>Rodada {entry.roundCode}</span>
+              </div>
+            );
+          })}
           <p>O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.</p>
         </section>
 
