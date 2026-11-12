@@ -1,5 +1,8 @@
 # Android APK — Super Quina
 
+> **Documento supersedido.** Esta especificação descreve uma arquitetura Capacitor/WebView e o domínio antigo. O APK atual é Android nativo em Kotlin, usa `BluetoothPrinterManager`, `ReceiptBitmapGenerator` e `EscPosHelper`, e acessa `https://loteriasupersena.com.br`. Não use este arquivo para orientar builds ou alterações atuais. A referência vigente é [`android-app/README.md`](../android-app/README.md).
+
+
 ## Objetivo e limites
 
 O APK é uma aplicação Android nativa com Capacitor que abre a aplicação Next.js hospedada em produção. O Next.js continua responsável por páginas, rotas de API, sessão/autenticação, Prisma, pagamentos e confirmação definitiva do Pix.

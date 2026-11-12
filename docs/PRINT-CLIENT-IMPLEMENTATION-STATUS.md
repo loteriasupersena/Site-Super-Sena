@@ -1,5 +1,8 @@
 # Cliente de impressão oficial — estado da implementação
 
+> **Status histórico.** Este relatório registra uma etapa anterior da integração e não substitui a implementação atual. Confirme o fluxo em `src/components/receipts/thermal-receipt.tsx` e no projeto Kotlin `android-app/` antes de executar mudanças.
+
+
 ## Implementado
 Arquivo: `src/modules/printing/client/print-official-purchase-receipt.ts`.
 
