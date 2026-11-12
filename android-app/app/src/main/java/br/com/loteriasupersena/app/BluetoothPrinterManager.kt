@@ -85,7 +85,7 @@ class BluetoothPrinterManager(context: Context) {
     suspend fun printReceipt(text: String, qrPayload: String): Int =
         printPayload(EscPosHelper.encodeReceipt(text, qrPayload, paperColumns()))
 
-    suspend fun printBitmap(bitmap: Bitmap, targetWidth: Int = 380): Int =
+    suspend fun printBitmap(bitmap: Bitmap, targetWidth: Int = 384): Int =
         printPayload(EscPosHelper.encodeBitmap(bitmap, targetWidth))
 
     private suspend fun printPayload(payload: ByteArray): Int = mutex.withLock {
@@ -93,6 +93,7 @@ class BluetoothPrinterManager(context: Context) {
             require(payload.isNotEmpty()) { "O conteúdo da impressão está vazio." }
             var lastError: IOException? = null
             repeat(2) { attempt ->
+                var transmissionStarted = false
                 try {
                     var active = socket
                     if (active == null || !active.isConnected) {
@@ -115,6 +116,7 @@ class BluetoothPrinterManager(context: Context) {
                     var offset = 0
                     while (offset < payload.size) {
                         val count = minOf(256, payload.size - offset)
+                        transmissionStarted = true
                         output.write(payload, offset, count)
                         output.flush()
                         offset += count
@@ -124,7 +126,18 @@ class BluetoothPrinterManager(context: Context) {
                 } catch (error: IOException) {
                     lastError = error
                     closeSocket()
-                    if (attempt == 0) delay(800)
+                    if (attempt == 0 && !transmissionStarted) {
+                        delay(800)
+                    } else {
+                        throw IOException(
+                            if (transmissionStarted) {
+                                "A conexão falhou durante o envio. Verifique o papel antes de tentar imprimir novamente."
+                            } else {
+                                error.message ?: "Falha na impressão."
+                            },
+                            error
+                        )
+                    }
                 }
             }
             throw lastError ?: IOException("Falha ao imprimir.")
