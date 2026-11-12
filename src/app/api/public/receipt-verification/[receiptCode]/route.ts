@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         },
       },
     });
-    if (!purchase) return NextResponse.json({ valid: false, message: "Este código não corresponde a um recibo registrado na Super Quina." }, { status: 404, headers });
+    if (!purchase) return NextResponse.json({ valid: false, message: "Este código não corresponde a um recibo registrado na Super Sena." }, { status: 404, headers });
     const paymentConfirmed = purchase.paymentMethod === "CASH" || purchase.paymentMethod === "WALLET"
       ? purchase.status === "CONFIRMED" && purchase.confirmedAt !== null
       : purchase.status === "CONFIRMED" && purchase.payment?.status === "CONFIRMED" && purchase.payment.confirmedAt !== null;
