@@ -23,7 +23,7 @@ object ReceiptBitmapGenerator {
     private const val MARGIN = 2f
     private const val RIGHT = WIDTH - MARGIN
     private const val CONTENT_WIDTH = WIDTH - 2 * MARGIN
-    private const val QR_SIZE = 104
+    private const val QR_SIZE = 136
     private const val MAX_BITMAP_HEIGHT = 60_000
 
     private val receiptTypeface = Typeface.DEFAULT_BOLD
@@ -100,19 +100,19 @@ object ReceiptBitmapGenerator {
 
         val header = listOf(
             TextLine("SUPER SENA", 32f, true, 6f),
-            TextLine("COMPROVANTE DE APOSTA", 28f, true, 1f),
-            TextLine(data.optString("issuedAtLabel"), 24f, true, 2f),
-            TextLine(if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) "Venda no Pix" else "Venda em dinheiro", 26f, true, 4f)
+            TextLine("COMPROVANTE DE APOSTA", 26f, true, 1f),
+            TextLine(data.optString("issuedAtLabel"), 22f, true, 2f),
+            TextLine(if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) "Venda no Pix" else "Venda em dinheiro", 24f, true, 4f)
         )
         val footer = listOf(
-            TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 2f),
+            TextLine("GUARDE ESTE COMPROVANTE", 22f, true, 2f),
             TextLine("Consulte o resultado pelo QR Code.", 19f, true, 2f, true),
         )
 
         val cashier = data.optString("cashierName").ifBlank { "—" }
         val infoLines = mutableListOf(
-            TextLine("CAMBISTA: $cashier", 26f, false, 4f),
-            TextLine("APOSTAS", 32f, false, 3f)
+            TextLine("CAMBISTA: $cashier", 20f, false, 4f),
+            TextLine("APOSTAS", 28f, false, 3f)
         )
         val betRows = mutableListOf<Pair<String, String>>()
         for (index in 0 until entries.length()) {
@@ -175,12 +175,12 @@ object ReceiptBitmapGenerator {
         val codeX = qrLeft + QR_SIZE + 12f
         val codeWidth = RIGHT - codeX
         var codeY = qrTop + 26f
-        val labelPaint = paint(17f)
+        val labelPaint = paint(15f)
         wrap("CÓDIGO DO RECIBO", labelPaint, codeWidth).forEach { line ->
             canvas.drawText(line, codeX, codeY, labelPaint)
             codeY += labelPaint.textSize + 3f
         }
-        val valuePaint = paint(16f)
+        val valuePaint = paint(14f)
         wrap(code, valuePaint, codeWidth).forEach { line ->
             canvas.drawText(line, codeX, codeY, valuePaint)
             codeY += valuePaint.textSize + 3f
@@ -191,7 +191,7 @@ object ReceiptBitmapGenerator {
 
         infoLines.take(2).forEach(::drawLine)
         betRows.forEach { (number, stake) ->
-            val p = paint(32f)
+            val p = paint(30f)
             y += p.textSize
             canvas.drawText(number, MARGIN, y, p)
             canvas.drawText(stake, RIGHT - p.measureText(stake), y, p)
@@ -199,7 +199,7 @@ object ReceiptBitmapGenerator {
         }
         infoLines.drop(2).forEach(::drawLine)
 
-        val totalPaint = paint(32f)
+        val totalPaint = paint(28f)
         val total = money(data.optInt("totalCents"))
         y += totalPaint.textSize
         canvas.drawText("TOTAL PAGO", MARGIN, y, totalPaint)
