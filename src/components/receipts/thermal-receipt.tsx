@@ -47,7 +47,6 @@ export function ThermalReceipt({
   issuedAt,
   totalCents,
   entries,
-  customerLabel,
   cashierLabel,
   paymentLabel = "Dinheiro recebido",
   qrCodeDataUrl,
