@@ -15,7 +15,7 @@ O APK é exclusivo para cambistas. Ao iniciar, abre diretamente `/cashier-app-lo
 - O botão **Imprimir recibo** captura o comprovante oficial com `html2canvas` em PNG Base64.
 - Antes da captura, o recibo é normalizado para fundo branco puro, textos e bordas pretos, sem sombras e sem fundos cinzas.
 - O PNG Base64 é enviado pela ponte JavaScript `imprimirImagemBase64`; o Android decodifica para Bitmap, redimensiona proporcionalmente para 384 pontos e imprime em raster ESC/POS.
-- A impressão em texto ESC/POS permanece como compatibilidade para versões antigas da ponte nativa.
+- O fluxo Android possui um único caminho de impressão: PNG Base64 → Bitmap → raster ESC/POS. As antigas pontes HTML e texto foram removidas.
 - O aplicativo usa exclusivamente papel de **58 mm — 32 colunas — 384 pontos**. Não oferece configuração para 80 mm.
 - Os dados do recibo continuam sendo fornecidos pela página oficial; o APK apenas transmite os comandos de impressão por Bluetooth.
 - Os dados são enviados em blocos pequenos com pausas curtas para reduzir perdas em impressoras Bluetooth com buffer limitado.
@@ -25,7 +25,7 @@ O APK é exclusivo para cambistas. Ao iniciar, abre diretamente `/cashier-app-lo
 
 - Nome exibido no Android: **Cambista Super Sena**.
 - O ícone do APK é gerado durante o build a partir de `public/images/brand/super-sena-icon.svg`, usando a imagem PNG incorporada nesse SVG.
-- Versão Android: `1.3.0` (código 4).
+- Versão Android: `1.4.0` (código 5).
 
 ## Bluetooth
 
@@ -44,7 +44,7 @@ Saída: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## GitHub Actions
 
-O workflow `.github/workflows/build-unified-apk.yml` executa na `main` e nesta branch de correção quando arquivos Android são alterados, ou pode ser iniciado manualmente pela aba **Actions**. O artefato gerado chama-se `Cambista-Super-Sena-APK`.
+O workflow `.github/workflows/build-unified-apk.yml` executa na `main` e na branch de limpeza da impressão gráfica quando arquivos Android são alterados, ou pode ser iniciado manualmente pela aba **Actions**. O artefato gerado chama-se `Cambista-Super-Sena-APK`.
 
 ## Requisitos
 
