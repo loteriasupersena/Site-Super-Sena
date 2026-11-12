@@ -1,6 +1,5 @@
 package br.com.loteriasupersena.app
 
-import android.graphics.Bitmap
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
