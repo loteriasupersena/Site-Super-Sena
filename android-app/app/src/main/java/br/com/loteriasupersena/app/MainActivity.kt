@@ -3,6 +3,9 @@ package br.com.loteriasupersena.app
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +15,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -26,8 +30,9 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
-        // URL pública única do site. Altere somente aqui se o domínio mudar.
         private const val SITE_URL = "https://loteriasupersena.com.br"
+        private const val CASHIER_LOGIN_URL = "$SITE_URL/cashier-app-login"
+        private const val MAX_RECEIPT_HTML_LENGTH = 1_500_000
     }
 
     private lateinit var webView: WebView
@@ -69,12 +74,17 @@ class MainActivity : ComponentActivity() {
         findViewById<FloatingActionButton>(R.id.printerButton).setOnClickListener {
             requestBluetoothPermissions()
         }
-        webView.loadUrl(SITE_URL)
+        // The app always starts at the dedicated CASHIER-only login.
+        webView.loadUrl(CASHIER_LOGIN_URL)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack()
-                else toast("Você está no início do aplicativo.")
+                val current = runCatching { Uri.parse(webView.url ?: CASHIER_LOGIN_URL) }.getOrNull()
+                if (webView.canGoBack() && current?.let(::isAllowedUrl) == true) {
+                    webView.goBack()
+                } else {
+                    toast("O Cambista Super Sena permanece na área do cambista.")
+                }
             }
         })
 
@@ -127,9 +137,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun isAllowedUrl(uri: Uri): Boolean =
-        uri.scheme.equals("https", ignoreCase = true) &&
-            uri.host.equals(Uri.parse(SITE_URL).host, ignoreCase = true)
+    /**
+     * Restrict document navigation, not the site's network/API layer.
+     * Fetch/XHR, payment callbacks, image assets and cashier APIs continue to
+     * work because they are subresource requests, not top-level navigation.
+     */
+    private fun isAllowedUrl(uri: Uri): Boolean {
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            !uri.host.equals(Uri.parse(SITE_URL).host, ignoreCase = true)
+        ) return false
+
+        return when (uri.path?.trimEnd('/')) {
+            "/cashier-app-login" -> true
+            "/cashier" -> uri.getQueryParameter("app") == "1"
+            "/change-password" -> uri.getQueryParameter("app") == "1"
+            else -> false
+        }
+    }
 
     private fun requiredBluetoothPermissions(): Array<String> = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
@@ -137,10 +161,6 @@ class MainActivity : ComponentActivity() {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         else -> emptyArray()
-    }
-
-    private fun hasBluetoothPermission(): Boolean = requiredBluetoothPermissions().all {
-        checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestBluetoothPermissions(autoOpenMenu: Boolean = true) {
@@ -212,6 +232,65 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun renderAndPrintReceipt(html: String) {
+        if (html.length !in 1..MAX_RECEIPT_HTML_LENGTH || !html.contains("<html", ignoreCase = true)) {
+            toast("Conteúdo do recibo inválido.")
+            return
+        }
+
+        val columns = printer.paperColumns()
+        val cssWidth = if (columns == 48) 302 else 219 // 80 mm / 58 mm at 96 CSS dpi
+        val root = findViewById<FrameLayout>(android.R.id.content)
+        val renderView = WebView(this)
+        renderView.settings.javaScriptEnabled = false
+        renderView.settings.domStorageEnabled = false
+        renderView.settings.allowFileAccess = false
+        renderView.settings.blockNetworkLoads = true
+        renderView.setBackgroundColor(Color.WHITE)
+        renderView.layoutParams = FrameLayout.LayoutParams(cssWidth, 1).apply {
+            leftMargin = -cssWidth - 32
+        }
+        root.addView(renderView)
+
+        renderView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                if (view == null) return
+                view.evaluateJavascript(
+                    "(function(){return Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);})()"
+                ) { result ->
+                    val contentHeight = result.trim('"').toIntOrNull()?.coerceIn(100, 20000) ?: 1200
+                    try {
+                        view.measure(
+                            android.view.View.MeasureSpec.makeMeasureSpec(cssWidth, android.view.View.MeasureSpec.EXACTLY),
+                            android.view.View.MeasureSpec.makeMeasureSpec(contentHeight, android.view.View.MeasureSpec.EXACTLY)
+                        )
+                        view.layout(0, 0, cssWidth, contentHeight)
+                        val bitmap = Bitmap.createBitmap(cssWidth, contentHeight, Bitmap.Config.ARGB_8888)
+                        view.draw(Canvas(bitmap))
+                        root.removeView(view)
+                        view.destroy()
+                        lifecycleScope.launch {
+                            try {
+                                toast("Imprimindo recibo oficial...")
+                                val bytes = printer.printBitmap(bitmap, columns)
+                                toast("Recibo oficial enviado à impressora ($bytes bytes).")
+                            } catch (error: Exception) {
+                                toast(error.message ?: "Falha na impressão Bluetooth.")
+                            } finally {
+                                bitmap.recycle()
+                            }
+                        }
+                    } catch (error: Exception) {
+                        root.removeView(view)
+                        view.destroy()
+                        toast(error.message ?: "Não foi possível preparar a imagem do recibo.")
+                    }
+                }
+            }
+        }
+        renderView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
     private inner class AndroidPrinterBridge {
         @JavascriptInterface
         fun imprimir(texto: String) {
@@ -226,6 +305,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+
+        @JavascriptInterface
+        fun imprimirHtml(html: String) {
+            runOnUiThread { renderAndPrintReceipt(html) }
         }
 
         @JavascriptInterface
