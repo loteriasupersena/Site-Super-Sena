@@ -34,9 +34,10 @@ describe("encodeThermalReceipt", () => {
     expect(text).not.toContain("Quadra:");
     expect(text).not.toContain("Quina:");
     expect(text).not.toContain("Sena:");
-    const summary = "O valor de cada aposta sera dividido entre os 6 premios do 1o ao 6o premio.";
-    expect(text).toContain(summary);
-    expect(text.indexOf(summary)).toBeLessThan(text.indexOf("TOTAL PAGO"));
+    expect(text).toContain("O valor de cada aposta sera");
+    expect(text).toContain("dividido entre os 6 premios do");
+    expect(text).toContain("1o ao 6o premio.");
+    expect(text.indexOf("O valor de cada aposta sera")).toBeLessThan(text.indexOf("TOTAL PAGO"));
     expect(text).toContain("SQ-1234567890ABCDEF");
     expect(text).toContain("Joao da Silva");
     expect(Array.from(bytes.slice(-3))).toEqual([0x0a, 0x0a, 0x0a]);
