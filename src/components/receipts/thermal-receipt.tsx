@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import html2canvas from "html2canvas";
 
 import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
@@ -50,7 +49,7 @@ export function ThermalReceipt({
   entries,
   customerLabel,
   cashierLabel,
-  paymentLabel = "Pagamento confirmado",
+  paymentLabel = "Dinheiro recebido",
   qrCodeDataUrl,
   onClose,
 }: ThermalReceiptProps) {
@@ -103,119 +102,39 @@ export function ThermalReceipt({
   const effectiveQrUrl = qrCodeDataUrl ?? (generatedQr?.receiptCode === receiptCode && generatedQr.url ? generatedQr.url : null);
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
 
-  async function printReceipt() {
+  function printReceipt() {
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimirImagemBase64?: (base64: string) => void };
+      AndroidPrinter?: { imprimirReciboJson?: (json: string) => void };
     }).AndroidPrinter;
-    if (!nativePrinter?.imprimirImagemBase64) {
-      window.alert("A impressão gráfica não está disponível nesta versão do aplicativo.");
+    if (!nativePrinter?.imprimirReciboJson) {
+      window.alert("A impressão nativa exige a versão atualizada do aplicativo Android.");
       return;
     }
 
-    const article = document.getElementById("thermal-receipt-" + receiptCode);
-    if (!article) return;
-    const sourceQr = article.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-    if (sourceQr && !sourceQr.complete) {
-      await new Promise<void>((resolve) => {
-        sourceQr.addEventListener("load", () => resolve(), { once: true });
-        sourceQr.addEventListener("error", () => resolve(), { once: true });
-      });
-    }
-
-    const printRoot = document.createElement("div");
-    printRoot.setAttribute("aria-hidden", "true");
-    printRoot.id = "thermal-receipt-print-capture";
-    Object.assign(printRoot.style, {
-      position: "fixed",
-      left: "0",
-      top: "0",
-      visibility: "hidden",
-      width: "384px",
-      padding: "4px",
-      margin: "0",
-      boxSizing: "border-box",
-      background: "#FFFFFF",
-      color: "#000000",
-      overflow: "visible",
-      zIndex: "2147483647",
-      pointerEvents: "none",
-    });
-
-    const printReceipt = article.cloneNode(true) as HTMLElement;
-    printReceipt.removeAttribute("id");
-    Object.assign(printReceipt.style, {
-      display: "block",
-      width: "376px",
-      minWidth: "376px",
-      maxWidth: "376px",
-      margin: "0",
-      padding: "0",
-      boxSizing: "border-box",
-      background: "#FFFFFF",
-      color: "#000000",
-      fontFamily: "Arial, Helvetica, sans-serif",
-    });
-    printReceipt.querySelectorAll<HTMLElement>("*").forEach((element) => {
-      element.style.setProperty("color", "#000000", "important");
-      element.style.setProperty("border-color", "#000000", "important");
-      element.style.setProperty("box-shadow", "none", "important");
-      element.style.setProperty("text-shadow", "none", "important");
-      element.style.setProperty("background-color", "#FFFFFF", "important");
-      element.style.setProperty("background-image", "none", "important");
-      element.style.setProperty("font-family", "Arial, Helvetica, sans-serif", "important");
-      element.style.setProperty("opacity", "1", "important");
-    });
-
-    const setTextStyle = (selector: string, styles: Partial<CSSStyleDeclaration>) => {
-      printReceipt.querySelectorAll<HTMLElement>(selector).forEach((element) => Object.assign(element.style, styles));
+    const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
+    const payload = {
+      receiptCode,
+      issuedAtLabel: date,
+      paymentLabel,
+      cashierName: cashierLabel ?? "",
+      totalCents,
+      qrPayload: verificationUrl,
+      entries: entries.map((entry, index) => ({
+        numberValue: entry.numberValue,
+        repetition: repetitionNumbers[index] ?? 1,
+        stakeCents: entry.stakeCents,
+        unitCents: entry.unitCents ?? 0,
+        tensCents: entry.tensCents ?? 0,
+        hundredsCents: entry.hundredsCents ?? 0,
+        quadraCents: entry.quadraCents ?? 0,
+        quinaCents: entry.quinaCents ?? 0,
+        senaCents: entry.senaCents ?? 0,
+        drawAtLabel: drawDateTime(entry.resultAt),
+        roundCode: entry.roundCode,
+      })),
     };
-    setTextStyle(".thermal-receipt-brand", { fontSize: "24px", fontWeight: "700", lineHeight: "1.15" });
-    setTextStyle(".thermal-receipt-header > span, .thermal-receipt-section-title, .thermal-receipt-total", {
-      fontSize: "18px", fontWeight: "700", lineHeight: "1.25",
-    });
-    setTextStyle(".thermal-receipt-label, .thermal-receipt-code, .thermal-receipt-customer, .thermal-receipt-item, .thermal-receipt-footer", {
-      fontSize: "16px", lineHeight: "1.3",
-    });
-    setTextStyle(".thermal-receipt-item-heading, .thermal-receipt-draw-time, .thermal-receipt-footer-code", {
-      fontWeight: "700",
-    });
-    setTextStyle(".thermal-receipt-divider", { borderColor: "#000000", backgroundColor: "#000000" });
 
-    const qr = printReceipt.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-    if (qr) {
-      qr.style.setProperty("width", "135px", "important");
-      qr.style.setProperty("height", "135px", "important");
-      qr.style.setProperty("max-width", "135px", "important");
-      qr.style.setProperty("object-fit", "contain", "important");
-      qr.style.setProperty("image-rendering", "pixelated", "important");
-    }
-
-    printRoot.appendChild(printReceipt);
-    document.body.appendChild(printRoot);
-    try {
-      const canvas = await html2canvas(printRoot, {
-        backgroundColor: "#FFFFFF",
-        width: 384,
-        windowWidth: 384,
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDocument) => {
-          const captureRoot = clonedDocument.getElementById("thermal-receipt-print-capture");
-          if (captureRoot) captureRoot.style.setProperty("visibility", "visible", "important");
-        },
-        scrollX: 0,
-        scrollY: 0,
-      });
-      const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
-      if (!pngBase64) throw new Error("Não foi possível gerar a imagem do recibo.");
-      nativePrinter.imprimirImagemBase64(pngBase64);
-    } catch (error) {
-      console.error("Falha ao preparar recibo gráfico:", error);
-      window.alert(error instanceof Error ? error.message : "Não foi possível preparar a impressão.");
-    } finally {
-      printRoot.remove();
-    }
+    nativePrinter.imprimirReciboJson(JSON.stringify(payload));
   }
 
   function downloadReceipt() {
