@@ -40,7 +40,7 @@ object ReceiptBitmapGenerator {
         textSize = size.coerceAtLeast(19f)
         typeface = receiptTypeface
         style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 0.9f
+        strokeWidth = 1.2f
         strokeJoin = Paint.Join.ROUND
         isAntiAlias = false
         isFilterBitmap = false
@@ -101,13 +101,11 @@ object ReceiptBitmapGenerator {
             TextLine("SUPER SENA", 32f, true, 2f),
             TextLine("COMPROVANTE DE APOSTA", 28f, true, 2f),
             TextLine(data.optString("issuedAtLabel"), 24f, true, 2f),
-            TextLine(data.optString("paymentLabel", "Dinheiro recebido"), 26f, true, 8f)
+            TextLine(if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) "Venda no Pix" else "Venda em dinheiro", 26f, true, 8f)
         )
         val footer = listOf(
             TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 5f),
-            TextLine("Consulte o resultado pelo código do recibo.", 20f, true, 3f),
-            TextLine("Este recibo comprova o pagamento e contém suas apostas.", 20f, true, 5f),
-            TextLine(code, 26f, true, 8f)
+            TextLine("Consulte o resultado pelo QR Code.", 20f, true, 8f)
         )
 
         val cashier = data.optString("cashierName").ifBlank { "—" }
@@ -201,7 +199,7 @@ object ReceiptBitmapGenerator {
         divider()
         footer.forEach(::drawLine)
 
-        val finalHeight = (y + 12f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
+        val finalHeight = (y + 60f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
         require(finalHeight < MAX_BITMAP_HEIGHT) { "Recibo excede o limite de impressão." }
         val cropped = Bitmap.createBitmap(bitmap, 0, 0, WIDTH, finalHeight)
         bitmap.recycle()
