@@ -526,10 +526,6 @@ h1 {
 .cashier-purchase-result-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
 .cashier-purchase-result-heading p, .cashier-purchase-meta { margin: .35rem 0; overflow-wrap: anywhere; }
 @media (max-width: 560px) { .cashier-purchase-search-row { flex-direction: column; } }
-
-
-/* Página principal pública da Super Quina */
-.home-page{min-height:100vh;background:transparent;color:#f4f6fb}
 .home-header{width:min(100%,1240px);margin:0 auto;padding:18px clamp(18px,4vw,48px);display:flex;align-items:center;justify-content:space-between;gap:20px}
 .home-brand{display:inline-flex;align-items:center;gap:0;text-decoration:none;color:#123c70;font-size:1.65rem;font-weight:900;letter-spacing:-.055em;white-space:nowrap}
 /* Wordmark legado mantido apenas para compatibilidade visual durante a troca da marca. */
@@ -555,7 +551,6 @@ h1 {
 .home-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);align-items:center;gap:clamp(30px,6vw,76px);width:min(100%,1240px);margin:0 auto;padding:clamp(40px,7vw,90px) clamp(18px,4vw,48px) clamp(48px,7vw,88px)}
 .home-hero:before{content:"";position:absolute;z-index:-1;inset:0 0 0 20%;border-radius:40px 0 0 40px;background:linear-gradient(135deg,#e9f4ee,#eaf1fb)}
 .home-hero-copy{max-width:680px}
-.home-eyebrow{margin:0 0 12px;color:#147348;font-size:.8rem;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
 .home-hero h1{font-size:clamp(2.55rem,5.7vw,4.8rem);line-height:1.02;letter-spacing:-.065em}
 .home-hero h1 span{display:block;color:#147348}
 .home-hero-description{max-width:60ch;margin:22px 0;color:#4c5c70;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.7}
@@ -628,7 +623,7 @@ body { color: #f4f6fb; }
   color: #f4f6fb;
   box-shadow: none;
 }
-.eyebrow, .feature-label, .public-results-eyebrow, .home-eyebrow {
+.eyebrow, .feature-label, .public-results-eyebrow{
   color: #59d5f2;
 }
 h1, h2, h3, .feature-card h2, .ticket-check-heading h2 { color: #f4f6fb; }
@@ -678,7 +673,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .status-nao_premiada { color: #a0adbf; }
 .status-aguardando_resultado, .status-compra_pendente { color: #f5cb75; }
 .form-error { background: #351d27; border-color: #78404c; color: #ffb9c2; }
-.home-page { background: transparent; color: #f4f6fb; }
 .home-header, .home-ticket-section, .home-results-section { color: #f4f6fb; }
 .home-brand { color: #f4f6fb; }
 .home-brand span { color: #59d5f2; }
@@ -686,7 +680,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .home-login-button, .home-primary-button { background: #59d5f2; color: #08121d; }
 .home-secondary-button { background: #141b26; border-color: #374355; color: #f4f6fb; }
 .home-hero:before { background: linear-gradient(135deg, #142331, #172238); }
-.home-eyebrow { color: #59d5f2; }
 .home-hero-description, .home-small-note,
 .home-section-intro > p:last-child { color: #a0adbf; }
 .home-hero-stamp { background: #59d5f2; color: #08121d; }
@@ -969,21 +962,7 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .auth-layout .auth-card{margin:clamp(18px,4vh,40px) auto 0}
 .site-page-shell{padding-top:0!important}
 @media(max-width:480px){.auth-layout{padding-left:10px;padding-right:10px}}
-
-
-/* Página inicial: hero e imagens proporcionais em celular, sem placa cortada. */
-.home-page .home-hero{box-sizing:border-box;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:clamp(18px,3vw,40px);padding:clamp(20px,4vw,44px) clamp(14px,3vw,32px) clamp(28px,5vw,52px)}
-.home-page .home-hero-art{box-sizing:border-box;width:100%;min-width:0;gap:clamp(10px,2vw,18px);padding:18px 12px 28px}
-.home-page .home-page .home-page .home-page .home-hero-stamp{width:clamp(66px,8vw,96px);height:clamp(66px,8vw,96px);font-size:clamp(.7rem,1.4vw,.9rem)}
 @media(max-width:700px){
-  .home-page .home-hero{grid-template-columns:minmax(0,1fr);gap:12px;padding:18px 14px 28px}
- .home-page .home-hero:before{inset:0;border-radius:20px}
- .home-page .home-hero-copy{min-width:0}
- .home-page .home-hero h1{font-size:clamp(2rem,8vw,2.8rem);line-height:1.05}
- .home-page .home-hero-description{margin:12px 0;font-size:1rem;line-height:1.5}
- .home-page .home-hero-actions{gap:8px;margin-top:16px}
- .home-page .home-hero-art{width:100%;max-width:440px;margin:0 auto;padding:8px 8px 30px;gap:10px}
- .home-page  .home-page  .home-page .home-hero-stamp{right:0;bottom:0;width:68px;height:68px;font-size:.7rem}
 }
 
 
@@ -991,45 +970,8 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 /* Correção do hero em desktop: impedir que texto e botões ultrapassem a coluna.
    O breakpoint móvel existente permanece responsável pelo layout do celular. */
 @media (min-width: 701px) {
-  .home-page .home-hero {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
-    align-items: start;
-    gap: clamp(20px, 3vw, 40px);
-  }
-  .home-page .home-hero-copy,
-  .home-page .home-hero-art {
-    min-width: 0;
-    max-width: 100%;
-  }
-  .home-page .home-hero-description,
-  .home-page .home-small-note {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-  .home-page .home-hero-actions {
-    align-items: stretch;
-    gap: 10px;
-  }
-  .home-page .home-hero-actions > a {
-    min-width: 0;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    text-align: center;
-  }
-  .home-page .home-how-infographic {
-    margin-top: 18px;
-    padding: 8px;
-  }
-  .home-page .home-how-infographic figcaption {
-    font-size: clamp(.78rem, .9vw, .92rem);
-    overflow-wrap: anywhere;
-  }
 }
-
-.home-how-infographic{width:100%;margin:28px 0 8px;padding:12px;border:1px solid #d7e3ef;border-radius:20px;background:#07172b;box-shadow:0 16px 42px rgb(7 23 43 / 12%)}
-.home-how-infographic img{display:block;width:100%;height:auto;max-width:100%;border-radius:12px;object-fit:contain}
-.home-how-infographic figcaption{padding:10px 8px 2px;color:#d6e6f8;text-align:center;font-size:.95rem;line-height:1.5}
-@media(max-width:700px){.home-how-infographic{margin:20px 0 6px;padding:6px;border-radius:14px}.home-how-infographic figcaption{font-size:.85rem}}
+@media(max-width:700px){}
 
 
 /* Feedback padronizado dos formulários: mensagens sempre legíveis e semanticamente coloridas. */
@@ -1070,76 +1012,9 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .admin-accordion-content{padding:0 12px 14px;min-width:0}
 .admin-accordion-content>*{min-width:0}
 @media(max-width:480px){.admin-accordion-list{gap:9px}.admin-accordion>summary{padding:13px 42px 13px 13px}.admin-accordion-content{padding:0 8px 10px}}
-
-
-/* Página pública enxuta: infográfico e apenas as duas ações de acesso. */
-.home-entry{
-  width:min(100%,760px);
-  margin:0 auto;
-  padding:4px clamp(14px,3vw,24px) 16px;
-}
-.home-entry .home-how-infographic{
-  margin:0;
-  padding:clamp(7px,2vw,12px);
-  border:1px solid #d7e3ef;
-  border-radius:clamp(14px,3vw,22px);
-  background:#07172b;
-  box-shadow:0 16px 42px rgb(0 0 0 / 18%);
-}
-.home-entry .home-how-infographic img{
-  display:block;
-  width:100%;
-  height:auto;
-  border-radius:12px;
-  object-fit:contain;
-}
-.home-entry .home-how-infographic figcaption{
-  padding:clamp(12px,3vw,20px) 8px 8px;
-  color:#e6f2ff;
-  text-align:center;
-  font-size:clamp(.98rem,3.4vw,1.18rem);
-  line-height:1.6;
-}
-.home-entry-actions{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:22px;
-}
-.home-entry-actions>a{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-width:0;
-  min-height:58px;
-  padding:14px 18px;
-  border:1px solid transparent;
-  border-radius:15px;
-  text-align:center;
-  text-decoration:none;
-  font-size:1.05rem;
-  font-weight:800;
-  line-height:1.25;
-  box-shadow:0 8px 20px rgb(0 0 0 / 18%);
-  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
-}
-.home-entry-actions>a:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 24px rgb(0 0 0 / 24%)}
-.home-entry-actions>a:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.home-entry-login{
-  background:linear-gradient(135deg,#65e0f4,#39bedb);
-  color:#07172b;
-}
-.home-entry-register{
-  background:linear-gradient(135deg,#16834b,#0d6939);
-  color:#fff;
-  border-color:rgba(134,239,172,.35)!important;
-}
 @media(max-width:420px){
-  .home-entry-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
-  .home-entry-actions>a{min-height:54px;padding:10px 8px;font-size:.95rem}
 }
 @media(prefers-reduced-motion:reduce){
-  .home-entry-actions>a{transition:none}
 }
 
 
@@ -1314,24 +1189,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   .auth-layout .login-form input,
   .auth-layout .auth-description {
     font-size: 1.05rem;
-  }
-
-  .home-entry {
-    width: min(100%, 1100px);
-    padding: 32px 28px 44px;
-  }
-
-  .home-entry > .home-eyebrow {
-    font-size: clamp(1.4rem, 1.8vw, 1.75rem);
-  }
-
-  .home-entry .home-how-infographic figcaption {
-    font-size: clamp(1.15rem, 1.5vw, 1.35rem);
-  }
-
-  .home-entry-actions > a {
-    min-height: 68px;
-    font-size: 1.2rem;
   }
 
   .public-results-header,
@@ -1805,30 +1662,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
     padding: 16px;
   }
 }
-
-
-/* Imagem principal responsiva: quadro maior e proporção original preservada. */
-.home-entry{
-  width:min(100%,988px);
-}
-.home-entry .home-how-infographic{
-  width:100%;
-  height:auto;
-  aspect-ratio:auto;
-  overflow:visible;
-}
-.home-entry .home-how-infographic img{
-  display:block;
-  width:100%;
-  max-width:100%;
-  height:auto;
-  object-fit:contain;
-  object-position:center;
-}
-
-
-/* Acesso da página inicial: um botão no cabeçalho abre as duas opções de conta. */
-.home-header-wrap{position:relative;width:100%}
 .home-header-access{
   position:absolute;z-index:5;top:50%;right:clamp(12px,3vw,36px);transform:translateY(-50%);
   min-width:104px;min-height:42px;padding:9px 20px;border:2px solid #fff;border-radius:999px;
@@ -1866,27 +1699,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 }
 
 
-/* Espaço reservado para a campanha do kit de ponto credenciado na página inicial. */
-.home-promo{
-  width:100%;
-  margin:clamp(18px,3vw,30px) auto 0;
-  padding:clamp(7px,2vw,12px);
-  overflow:hidden;
-  border:1px solid #d7e3ef;
-  border-radius:clamp(14px,3vw,22px);
-  background:#07172b;
-  box-shadow:0 16px 42px rgb(0 0 0 / 18%);
-}
-.home-promo-image{
-  display:block;
-  width:100%;
-  max-width:100%;
-  height:auto;
-  border-radius:12px;
-  object-fit:contain;
-}
-
-
 /* Botão Entrar mais discreto no cabeçalho, com texto legível. */
 .home-header-access{
   min-width:88px;
@@ -1909,124 +1721,8 @@ p, .intro, .auth-description, .area-description, .feature-card p,
     font-size:.95rem;
   }
 }
-
-
-/* Botão abaixo da última imagem, sem sobreposição nem sobra no rodapé. */
-.home-access-footer{
-  display:flex;
-  justify-content:center;
-  width:100%;
-  padding:0;
-  margin:12px 0 0;
-}
-.home-page-compact{
-  min-height:0;
-}
-.home-page-compact .home-entry{
-  padding-bottom:18px !important;
-}
-.home-footer-access{
-  min-width:190px;
-  min-height:36px;
-  padding:6px 34px;
-  border:2px solid #fff;
-  border-radius:999px;
-  background:linear-gradient(135deg,#ffe34a,#ffbd16);
-  color:#082c75;
-  font-family:Arial,Helvetica,sans-serif;
-  font-size:1rem;
-  line-height:1.1;
-  font-weight:900;
-  letter-spacing:.015em;
-  white-space:nowrap;
-  text-shadow:0 1px 0 rgb(255 255 255 / 35%);
-  box-shadow:0 3px 10px rgb(0 0 0 / 25%);
-  cursor:pointer;
-}
-.home-footer-access:focus-visible{
-  outline:3px solid #55d4ef;
-  outline-offset:3px;
-}
 @media(max-width:600px){
-  .home-footer-access{
-    min-width:176px;
-    min-height:34px;
-    padding:6px 30px;
-    font-size:.95rem;
-  }
 }
-
-
-
-/* Página inicial: molduras alinhadas no mesmo fluxo, sem deslocamentos laterais. */
-.home-entry{
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  width:min(100%,988px);
-  margin:0 auto;
-  padding:4px clamp(14px,3vw,24px) 18px;
-  box-sizing:border-box;
-}
-.home-entry > .home-how-infographic,
-.home-entry > .home-promo{
-  position:relative;
-  display:block;
-  float:none;
-  clear:both;
-  flex:0 0 auto;
-  align-self:stretch;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  margin-left:0;
-  margin-right:0;
-  box-sizing:border-box;
-  transform:none;
-}
-.home-entry > .home-how-infographic{
-  margin-top:0;
-  margin-bottom:0;
-  padding:clamp(7px,2vw,12px);
-  border:1px solid #d7e3ef;
-  border-radius:clamp(14px,3vw,22px);
-  background:#07172b;
-  box-shadow:0 16px 42px rgb(0 0 0 / 18%);
-  overflow:hidden;
-}
-.home-entry > .home-promo{
-  margin-top:0;
-  margin-bottom:0;
-  padding:clamp(7px,2vw,12px);
-  border:1px solid #d7e3ef;
-  border-radius:clamp(14px,3vw,22px);
-  background:#07172b;
-  box-shadow:0 16px 42px rgb(0 0 0 / 18%);
-  overflow:hidden;
-  line-height:0;
-}
-.home-entry > .home-how-infographic img,
-.home-entry > .home-promo img{
-  display:block;
-  width:100%;
-  max-width:100%;
-  height:auto;
-  margin:0;
-  border-radius:12px;
-  object-fit:contain;
-}
-.home-entry > .home-access-footer{
-  display:flex;
-  position:static;
-  float:none;
-  clear:both;
-  flex:0 0 auto;
-  width:100%;
-  margin:20px 0 0;
-  padding:0;
-  justify-content:center;
-}
-.home-page-compact .home-entry{padding-bottom:18px !important}
 
 /* Valor da aposta e total em uma única faixa compacta. */
 /* Valor da aposta e total com larguras proporcionais e caixas alinhadas. */
@@ -2170,23 +1866,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   .area-page-compact .numeric-game-purchase .round-repeat-fieldset>.round-repeat-select{min-height:44px!important;}
 }
 
-/* Página inicial: remover molduras das imagens promocionais. */
-.home-entry > .home-how-infographic,
-.home-entry > .home-promo {
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-}
-.home-entry > .home-how-infographic img,
-.home-entry > .home-promo img {
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
 
 
 /* Central de ganhadores: controles maiores e confortáveis no celular. */
@@ -2325,26 +2004,13 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   }
 }
 
-.home-page,
-.auth-layout,
-.site-page-shell {
+.auth-layout, .site-page-shell{
   padding-top: 0 !important;
 }
 
-.home-page,
-.auth-layout,
-.site-page-shell,
-.area-page {
+.auth-layout, .site-page-shell, .area-page{
   box-sizing: border-box !important;
   padding-top: 0 !important;
-}
-
-.home-header-wrap {
-  position: static !important;
-  width: 100% !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 
@@ -2355,176 +2021,10 @@ body {
   overscroll-behavior: none !important;
 }
 
-
-/* A página inicial também pode rolar normalmente em telas pequenas. */
-html:has(.home-page.home-page-compact),
-body:has(.home-page.home-page-compact) {
-  width: 100%;
-  min-height: 100% !important;
-  height: auto !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  overscroll-behavior-y: auto !important;
-}
-
-.home-page.home-page-compact {
-  display: flex !important;
-  flex-direction: column !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  height: calc(100dvh - var(--site-header-height)) !important;
-  min-height: 0 !important;
-  max-height: calc(100dvh - var(--site-header-height)) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-.home-page-compact .home-header-wrap {
-  flex: 0 0 0 !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.home-page-compact .home-entry {
-  display: grid !important;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto !important;
-  align-items: stretch !important;
-  justify-items: stretch !important;
-  gap: clamp(2px, 0.7dvh, 7px) !important;
-  box-sizing: border-box !important;
-  width: min(100%, 760px) !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: 100% !important;
-  margin: 0 auto !important;
-  padding: clamp(3px, 0.7dvh, 8px) 10px clamp(4px, 0.8dvh, 9px) !important;
-  overflow: hidden !important;
-}
-
-.home-page-compact .home-entry > .home-how-infographic,
-.home-page-compact .home-entry > .home-promo {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  align-self: stretch !important;
-  justify-self: stretch !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  line-height: 0 !important;
-}
-
-.home-page-compact .home-entry > .home-how-infographic img,
-.home-page-compact .home-entry > .home-promo img {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  margin: 0 auto !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  object-fit: contain !important;
-  object-position: center !important;
-}
-
-.home-page-compact .home-entry > .home-access-footer {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  align-self: end !important;
-  width: 100% !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.home-page-compact .home-footer-access {
-  width: min(100%, 230px) !important;
-  min-width: 0 !important;
-  min-height: clamp(36px, 5.8dvh, 50px) !important;
-  max-height: 50px !important;
-  margin: 0 !important;
-  padding: 5px 24px !important;
-  font-size: clamp(.9rem, 2.6dvh, 1.08rem) !important;
-  line-height: 1.1 !important;
+@media (max-height: 620px) {
 }
 
 @media (max-height: 620px) {
-  .home-page-compact .home-entry {
-    gap: 1px !important;
-    padding-top: 2px !important;
-    padding-bottom: 3px !important;
-  }
-  .home-page-compact .home-footer-access {
-    min-height: 32px !important;
-  }
-}
-
-
-/* Respiro inferior para o botão Entrar na página inicial, sem criar rolagem. */
-.home-page.home-page-compact .home-entry {
-  gap: clamp(5px, 1dvh, 10px) !important;
-  padding-bottom: max(22px, calc(env(safe-area-inset-bottom, 0px) + 16px)) !important;
-}
-
-.home-page.home-page-compact .home-entry > .home-access-footer {
-  align-self: center !important;
-  min-height: 48px !important;
-  padding: 0 !important;
-}
-
-.home-page.home-page-compact .home-footer-access {
-  min-height: 48px !important;
-  max-height: 48px !important;
-}
-
-@media (max-height: 620px) {
-  .home-page.home-page-compact .home-entry {
-    padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px)) !important;
-  }
-  .home-page.home-page-compact .home-footer-access {
-    min-height: 42px !important;
-    max-height: 42px !important;
-  }
-}
-
-
-/* Botão Entrar da página inicial: verde destacado e texto perfeitamente centralizado. */
-.home-page .home-footer-access {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  background: linear-gradient(180deg, #39d878 0%, #16a34a 100%) !important;
-  border: 2px solid #b8ffd0 !important;
-  color: #ffffff !important;
-  font-size: clamp(1.05rem, 2.8dvh, 1.2rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: .04em !important;
-  line-height: 1 !important;
-  text-shadow: 0 2px 3px rgb(0 65 25 / 55%) !important;
-  box-shadow: 0 0 0 2px rgb(22 163 74 / 20%), 0 4px 14px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 35%) !important;
-}
-.home-page .home-footer-access:active {
-  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
 }
 
 
@@ -2654,17 +2154,8 @@ body:has(.home-page.home-page-compact) {
   object-position: center;
 }
 
-/* Reserva o espaço do cabeçalho fixo em todas as páginas do site. */
-.home-page:not(.home-page-compact),
-.auth-layout,
-.site-page-shell,
-.area-page {
+.auth-layout, .site-page-shell, .area-page{
   padding-top: var(--site-header-height) !important;
-}
-
-/* A página inicial compacta já calcula sua altura descontando o cabeçalho. */
-.home-page.home-page-compact {
-  margin-top: var(--site-header-height) !important;
 }
 
 @media (max-width: 600px) {
@@ -2673,119 +2164,16 @@ body:has(.home-page.home-page-compact) {
   }
 }
 
-
-/* Botão Entrar da página inicial: tamanho mais compacto. */
-.home-page-compact .home-footer-access {
-  min-width: 142px;
-  min-height: 30px;
-  padding: 4px 22px;
-  font-size: 0.88rem;
+@media (max-width: 600px) {
 }
 
 @media (max-width: 600px) {
-  .home-page-compact .home-footer-access {
-    min-width: 132px;
-    min-height: 28px;
-    padding: 4px 18px;
-    font-size: 0.84rem;
-  }
-}
-
-
-/* Ajuste fino da página inicial: imagens próximas e botão menor com respiro inferior. */
-.home-page.home-page-compact .home-entry {
-  gap: 0 !important;
-  padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 22px)) !important;
-}
-
-.home-page.home-page-compact .home-entry > .home-how-infographic,
-.home-page.home-page-compact .home-entry > .home-promo {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-.home-page.home-page-compact .home-entry > .home-access-footer {
-  min-height: 0 !important;
-  margin-top: 9px !important;
-  padding: 0 !important;
-}
-
-.home-page.home-page-compact .home-footer-access {
-  width: 108px !important;
-  min-width: 108px !important;
-  min-height: 25px !important;
-  max-height: 25px !important;
-  padding: 2px 12px !important;
-  font-size: .76rem !important;
-  line-height: 1 !important;
-  border-width: 1px !important;
 }
 
 @media (max-width: 600px) {
-  .home-page.home-page-compact .home-footer-access {
-    width: 100px !important;
-    min-width: 100px !important;
-    min-height: 23px !important;
-    max-height: 23px !important;
-    padding: 2px 10px !important;
-    font-size: .72rem !important;
-  }
-}
-
-
-/* Refinamento mobile: aproximar os dois banners e centralizar o acesso no espaço inferior. */
-.home-page.home-page-compact .home-entry {
-  row-gap: 0 !important;
-  column-gap: 0 !important;
-  padding-bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 18px)) !important;
-}
-
-.home-page.home-page-compact .home-entry > .home-access-footer {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  align-self: stretch !important;
-  justify-self: stretch !important;
-  width: 100% !important;
-  min-height: 40px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.home-page.home-page-compact .home-footer-access {
-  width: 150px !important;
-  min-width: 150px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
-  margin: 0 auto !important;
-  padding: 4px 18px !important;
-  font-size: .9rem !important;
 }
 
 @media (max-width: 600px) {
-  .home-page.home-page-compact .home-entry {
-    row-gap: 0 !important;
-  }
-
-  .home-page.home-page-compact .home-footer-access {
-    width: 146px !important;
-    min-width: 146px !important;
-    min-height: 35px !important;
-    max-height: 35px !important;
-    font-size: .88rem !important;
-  }
-}
-
-
-/* Mantém um intervalo visível entre o banner inferior e o botão Entrar. */
-.home-page.home-page-compact .home-entry > .home-access-footer {
-  margin-top: 22px !important;
-}
-
-@media (max-width: 600px) {
-  .home-page.home-page-compact .home-entry > .home-access-footer {
-    margin-top: 24px !important;
-  }
 }
 
 
@@ -2802,105 +2190,6 @@ body:has(.home-page.home-page-compact) {
   font-size: 13px !important;
   font-weight: 800 !important;
   line-height: 1.3 !important;
-}
-
-
-/* Página inicial: somente a imagem principal, ocupando toda a área disponível. */
-.home-page.home-page-compact .home-entry {
-  grid-template-rows: minmax(0, 1fr) auto !important;
-}
-.home-page.home-page-compact .home-entry > .home-how-infographic {
-  display: flex !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-.home-page.home-page-compact .home-entry > .home-how-infographic img {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  object-fit: contain !important;
-  object-position: center !important;
-}
-
-
-/* Página inicial: imagem principal ampliada para ocupar todo o espaço útil da tela. */
-.home-page.home-page-compact {
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-height: calc(100dvh - var(--site-header-height)) !important;
-  height: calc(100dvh - var(--site-header-height)) !important;
-  margin-top: var(--site-header-height) !important;
-  overflow: hidden !important;
-}
-.home-page.home-page-compact > .home-entry {
-  display: grid !important;
-  grid-template-rows: minmax(0, 1fr) auto !important;
-  gap: 0 !important;
-  width: 100% !important;
-  max-width: none !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 0 max(12px, env(safe-area-inset-bottom, 0px)) !important;
-  box-sizing: border-box !important;
-}
-.home-page.home-page-compact .home-entry > .home-how-infographic {
-  align-self: stretch !important;
-  justify-self: stretch !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-}
-.home-page.home-page-compact .home-entry > .home-how-infographic img {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  border-radius: 0 !important;
-  object-fit: contain !important;
-  object-position: center !important;
-}
-.home-page.home-page-compact .home-entry > .home-access-footer {
-  flex: 0 0 auto !important;
-  margin: 8px 0 0 !important;
-  min-height: 42px !important;
-}
-
-/* Link de credenciamento: área clicável restrita ao banner "Solicite seu kit gratuito". */
-.home-page.home-page-compact .home-how-infographic {
-  position: relative !important;
-  aspect-ratio: 2 / 3;
-}
-.home-page.home-page-compact .home-kit-whatsapp-link {
-  position: absolute;
-  z-index: 2;
-  left: 5%;
-  bottom: 5.5%;
-  width: 90%;
-  height: 16%;
-  display: block;
-  border-radius: 12px;
-  cursor: pointer;
-}
-.home-page.home-page-compact .home-kit-whatsapp-link:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 3px;
 }
 
 
@@ -3166,10 +2455,7 @@ html.is-android {
 
   /* Contêineres principais de todas as áreas: jogador, cambista, administrador,
      autenticação e páginas públicas. */
-  html.is-android .area-page,
-  html.is-android .site-page-shell,
-  html.is-android .auth-layout,
-  html.is-android .home-page {
+  html.is-android .area-page, html.is-android .site-page-shell, html.is-android .auth-layout{
     min-width: 0;
     max-width: 100%;
   }
@@ -3251,14 +2537,8 @@ html.is-android {
 /* Android: cria folga real abaixo do cabeçalho fixo para impedir sobreposição
    do primeiro formulário/conteúdo em todas as páginas. */
 @media screen and (max-width: 900px) {
-  html.is-android .area-page,
-  html.is-android .auth-layout,
-  html.is-android .site-page-shell,
-  html.is-android .home-page:not(.home-page-compact) {
+  html.is-android .area-page, html.is-android .auth-layout, html.is-android .site-page-shell{
     padding-top: calc(var(--site-header-height, 120px) + 6px) !important;
-  }
-  html.is-android .home-page.home-page-compact {
-    margin-top: calc(var(--site-header-height, 120px) + 6px) !important;
   }
 }
 
@@ -3479,4 +2759,141 @@ html.is-android {
     padding-right: 16px !important;
     padding-left: 16px !important;
   }
+}
+
+/* Página inicial compacta: uma estrutura única, com viewport medido no Android. */
+.home-page.home-page-compact {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(100vh - var(--site-header-height, 100px));
+  min-height: 0;
+  max-height: calc(100vh - var(--site-header-height, 100px));
+  margin: var(--site-header-height, 100px) 0 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  color: #f4f6fb;
+}
+@supports (height: 100dvh) {
+  .home-page.home-page-compact {
+    height: calc(100dvh - var(--site-header-height, 100px));
+    max-height: calc(100dvh - var(--site-header-height, 100px));
+  }
+}
+html.is-android .home-page.home-page-compact {
+  height: calc(var(--android-visible-height, 100vh) - var(--site-header-height, 100px));
+  max-height: calc(var(--android-visible-height, 100vh) - var(--site-header-height, 100px));
+}
+.home-page-compact .home-header-wrap {
+  flex: 0 0 0;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.home-page-compact .home-entry {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: min(100%, 988px);
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0 auto;
+  padding: 8px 12px 8px;
+  overflow: hidden;
+}
+.home-page-compact .home-entry > .home-how-infographic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.home-page-compact .home-entry > .home-how-infographic img {
+  display: block;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  object-fit: contain;
+  object-position: center;
+}
+.home-page-compact .home-entry > .home-access-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 0;
+}
+.home-page-compact .home-footer-access {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 230px);
+  min-width: 0;
+  min-height: 44px;
+  max-height: 48px;
+  margin: 0 auto;
+  padding: 5px 24px;
+  border: 2px solid #b8ffd0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #39d878 0%, #16a34a 100%);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+.home-page-compact .home-footer-access:focus-visible {
+  outline: 3px solid #55d4ef;
+  outline-offset: 3px;
+}
+.home-page-compact .home-kit-whatsapp-link {
+  position: absolute;
+  z-index: 2;
+  left: 5%;
+  bottom: 5.5%;
+  display: block;
+  width: 90%;
+  height: 16%;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.home-page-compact .home-kit-whatsapp-link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+@media (max-height: 620px) {
+  .home-page-compact .home-entry { gap: 4px; padding-top: 4px; padding-bottom: 4px; }
+  .home-page-compact .home-entry > .home-access-footer { min-height: 40px; }
+  .home-page-compact .home-footer-access { min-height: 36px; }
 }
