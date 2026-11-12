@@ -82,9 +82,6 @@ class BluetoothPrinterManager(context: Context) {
         }
     }
 
-    suspend fun printReceipt(text: String, qrPayload: String): Int =
-        printPayload(EscPosHelper.encodeReceipt(text, qrPayload, paperColumns()))
-
     suspend fun printBitmap(bitmap: Bitmap, targetWidth: Int = 384): Int =
         printPayload(EscPosHelper.encodeBitmap(bitmap, targetWidth))
 
