@@ -5,9 +5,9 @@ import { AndroidBrowserClass } from "@/components/android-browser-class";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loteriasupersena.com.br";
 
-const icon = "/images/brand/super-sena-icon.svg";
-const shareImage = "/images/brand/super-sena-icone.webp";
-const favicon = icon;
+const icon = "/images/brand/super-sena-icone.png";
+const shareImage = "/images/brand/super-sena-icone.png";
+const favicon = "/images/brand/favicon-super-sena.svg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -25,8 +25,12 @@ export const metadata: Metadata = {
     title: "Super Sena",
   },
   icons: {
-    icon: [{ url: favicon, type: "image/svg+xml", sizes: "any" }],
+    icon: [
+      { url: icon, type: "image/png", sizes: "512x512" },
+      { url: favicon, type: "image/svg+xml", sizes: "any" },
+    ],
     shortcut: [{ url: favicon, type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: icon, type: "image/png", sizes: "512x512" }],
   },
   openGraph: {
     type: "website",
