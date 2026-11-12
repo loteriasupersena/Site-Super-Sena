@@ -104,6 +104,40 @@ class MainActivity : ComponentActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 view?.evaluateJavascript("document.documentElement.classList.add('is-apk','is-android');", null)
+                view?.evaluateJavascript("""
+                    (function () {
+                      function allowed(value) {
+                        try {
+                          var url = new URL(value, window.location.href);
+                          if (url.origin !== window.location.origin) return false;
+                          var path = url.pathname.replace(/\/+$/, '');
+                          return path === '/cashier-app-login' ||
+                            (path === '/cashier' && url.searchParams.get('app') === '1') ||
+                            (path === '/change-password' && url.searchParams.get('app') === '1');
+                        } catch (_) { return false; }
+                      }
+                      document.addEventListener('click', function (event) {
+                        var link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+                        if (link && !allowed(link.href)) {
+                          event.preventDefault();
+                          event.stopImmediatePropagation();
+                        }
+                      }, true);
+                      var originalPushState = history.pushState;
+                      history.pushState = function (state, title, url) {
+                        if (url != null && !allowed(url)) return;
+                        return originalPushState.apply(this, arguments);
+                      };
+                      var originalReplaceState = history.replaceState;
+                      history.replaceState = function (state, title, url) {
+                        if (url != null && !allowed(url)) return;
+                        return originalReplaceState.apply(this, arguments);
+                      };
+                      window.addEventListener('popstate', function () {
+                        if (!allowed(window.location.href)) window.location.replace('https://loteriasupersena.com.br/cashier-app-login');
+                      });
+                    })();
+                """.trimIndent(), null)
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
