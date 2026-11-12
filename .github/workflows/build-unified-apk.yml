@@ -12,6 +12,7 @@ on:
       - fix/android-receipt-print-button-margin
       - fix/thermal-receipt-384px-print-layout
       - fix/native-text-thermal-receipt
+      - fix/native-receipt-clean-renderer
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
