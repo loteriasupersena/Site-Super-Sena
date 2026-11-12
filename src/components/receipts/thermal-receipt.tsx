@@ -106,7 +106,7 @@ export function ThermalReceipt({
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
     }).AndroidPrinter;
     if (nativePrinter?.imprimirHtml) {
       const qrImage = article.querySelector("img");
