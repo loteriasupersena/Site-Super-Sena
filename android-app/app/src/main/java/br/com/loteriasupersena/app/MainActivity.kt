@@ -231,7 +231,7 @@ class MainActivity : ComponentActivity() {
                     }
                     2 -> lifecycleScope.launch {
                         try {
-                            val bytes = printer.printText("CAMBISTA SUPER SENA\nTESTE DE COMUNICACAO BLUETOOTH\nPAPEL 58 MM\n\n")
+                            val bytes = printer.printReceipt("TESTE DE IMPRESSAO\nCAMBISTA SUPER SENA\nFONTE AMPLIADA\nPAPEL 58 MM\n[[QR]]\nTESTE DE QR CODE\n\n", "https://loteriasupersena.com.br")
                             toast("Teste enviado à impressora ($bytes bytes).")
                         } catch (error: Exception) {
                             toast(error.message ?: "Falha no teste Bluetooth.")
