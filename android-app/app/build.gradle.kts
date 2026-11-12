@@ -1,4 +1,3 @@
-import java.util.Base64
 import javax.imageio.ImageIO
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -33,20 +32,14 @@ val generatedBrandRes = layout.buildDirectory.dir("generated/brand-res")
 android.sourceSets.getByName("main").res.srcDir(generatedBrandRes)
 
 val generateBrandLauncherIcon by tasks.registering {
-    val sourceSvg = file("../../public/images/brand/super-sena-icon.svg")
+    val sourcePng = file("src/main/brand/super-sena-icon.png")
     val outputPng = generatedBrandRes.map { it.file("drawable-nodpi/cambista_super_sena_icon.png") }
-    inputs.file(sourceSvg)
+    inputs.file(sourcePng)
     outputs.file(outputPng)
     doLast {
-        val svgText = sourceSvg.readText()
-        val encodedPng = Regex("data:image/png;base64,([A-Za-z0-9+/=]+)")
-            .find(svgText)?.groupValues?.get(1)
-            ?: error("Não foi possível localizar a imagem PNG da marca Super Sena.")
-
-        // Mantém a arte centralizada em uma área transparente para que
-        // as máscaras circulares/arredondadas do Android não cortem a marca.
-        val original = ImageIO.read(Base64.getDecoder().decode(encodedPng).inputStream())
-            ?: error("Não foi possível decodificar o ícone da marca.")
+        // Usa diretamente a arte oficial preparada para o launcher do Android.
+        val original = ImageIO.read(sourcePng)
+            ?: error("Não foi possível decodificar o ícone Super Sena.")
         val canvasSize = 512
         val scale = 0.76
         val iconSize = (canvasSize * scale).toInt()
