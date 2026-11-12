@@ -176,6 +176,7 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
   }
   bytes.push(...line("-".repeat(columns), profile));
 
+  const roundEntries = new Map<string, ThermalReceiptEntry>();
   for (const entry of receipt.entries) {
     if (typeof entry.numberValue !== "string" || entry.numberValue.length < 1 || entry.numberValue.length > 40) {
       throw new Error("Invalid entry number");
@@ -184,19 +185,24 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
     if (!Number.isFinite(Date.parse(entry.resultAt))) throw new Error("Invalid draw date");
     if (!Number.isSafeInteger(entry.stakeCents) || entry.stakeCents < 0) throw new Error("Invalid stake");
     for (const part of wrap(entry.numberValue, columns)) bytes.push(...line(part, profile));
-    for (const part of wrap("Rodada " + entry.roundCode, columns)) bytes.push(...line(part, profile));
-    for (const part of wrap("Sorteio " + new Date(entry.resultAt).toISOString().slice(0, 16).replace("T", " "), columns)) {
-      bytes.push(...line(part, profile));
-    }
-    bytes.push(...line("Valor: " + money(entry.stakeCents), profile));
-    if ([entry.unitCents, entry.tensCents, entry.hundredsCents, entry.quadraCents, entry.quinaCents, entry.senaCents].some((value) => value !== undefined)) {
-      bytes.push(...line("Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0), profile));
-      bytes.push(...line("Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0), profile));
-      bytes.push(...line("Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), profile));
-    }
+    for (const part of padPair("", money(entry.stakeCents), columns)) bytes.push(...line(part, profile));
     bytes.push(...line("-".repeat(columns), profile));
+    if (!roundEntries.has(entry.roundCode)) roundEntries.set(entry.roundCode, entry);
   }
 
+  let repetitionNumber = 0;
+  for (const entry of roundEntries.values()) {
+    repetitionNumber += 1;
+    bytes.push(...line("Repetição " + repetitionNumber + " · Jogo Super Sena", profile));
+    for (const part of wrap("Sorteio: " + new Date(entry.resultAt).toISOString().slice(0, 16).replace("T", " "), columns)) {
+      bytes.push(...line(part, profile));
+    }
+    for (const part of wrap("Rodada " + entry.roundCode, columns)) bytes.push(...line(part, profile));
+  }
+
+  for (const part of wrap("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", columns)) {
+    bytes.push(...line(part, profile));
+  }
   bytes.push(ESC, 0x45, 0x01);
   for (const part of padPair("TOTAL PAGO", money(receipt.totalCents), columns)) bytes.push(...line(part, profile));
   bytes.push(ESC, 0x45, 0x00, ESC, 0x61, 0x01);

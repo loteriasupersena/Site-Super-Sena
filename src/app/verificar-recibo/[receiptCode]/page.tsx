@@ -5,8 +5,8 @@ import { SiteHeader } from "@/components/site-header";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Consulta do recibo | Super Quina",
-  description: "Consulte o resultado oficial do recibo na Super Quina.",
+  title: "Consulta do recibo | Super Sena",
+  description: "Consulte o resultado oficial do recibo na Super Sena.",
   robots: { index: false, follow: false },
 };
 

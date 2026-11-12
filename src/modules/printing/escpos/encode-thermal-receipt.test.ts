@@ -28,13 +28,38 @@ describe("encodeThermalReceipt", () => {
     expect(Array.from(bytes.slice(0, 2))).toEqual([0x1b, 0x40]);
     expect(text).toContain("00123");
     expect(text).toContain("R$ 12,34");
-    expect(text).toContain("Unidade:");
-    expect(text).toContain("Quadra:");
-    expect(text).toContain("Quina:");
-    expect(text).toContain("Sena:");
+    expect(text).not.toContain("Unidade:");
+    expect(text).not.toContain("Dezena:");
+    expect(text).not.toContain("Centena:");
+    expect(text).not.toContain("Quadra:");
+    expect(text).not.toContain("Quina:");
+    expect(text).not.toContain("Sena:");
+    const summary = "O valor de cada aposta sera dividido entre os 6 premios do 1o ao 6o premio.";
+    expect(text).toContain(summary);
+    expect(text.indexOf(summary)).toBeLessThan(text.indexOf("TOTAL PAGO"));
     expect(text).toContain("SQ-1234567890ABCDEF");
     expect(text).toContain("Joao da Silva");
     expect(Array.from(bytes.slice(-3))).toEqual([0x0a, 0x0a, 0x0a]);
+  });
+
+  it("prints each number but lists repetition, draw time and round only once per distinct round", () => {
+    const bytes = encodeThermalReceipt({
+      ...receipt,
+      entries: [
+        { ...receipt.entries[0]!, numberValue: "420107", roundCode: "SQ-20261112-1130" },
+        { ...receipt.entries[0]!, numberValue: "784998", roundCode: "SQ-20261112-1130" },
+        { ...receipt.entries[0]!, numberValue: "420107", roundCode: "SQ-20261112-1200" },
+        { ...receipt.entries[0]!, numberValue: "784998", roundCode: "SQ-20261112-1200" },
+      ],
+    }, profile);
+    const text = String.fromCharCode(...bytes);
+    expect(text.match(/Repeticao 1/g)).toHaveLength(1);
+    expect(text.match(/Repeticao 2/g)).toHaveLength(1);
+    expect(text.match(/Rodada SQ-20261112-1130/g)).toHaveLength(1);
+    expect(text.match(/Rodada SQ-20261112-1200/g)).toHaveLength(1);
+    expect(text.indexOf("784998")).toBeLessThan(text.indexOf("Repeticao 1"));
+    expect(text.indexOf("Repeticao 1")).toBeLessThan(text.indexOf("Repeticao 2"));
+    expect(text.indexOf("O valor de cada aposta")).toBeLessThan(text.indexOf("TOTAL PAGO"));
   });
 
   it("selects the configured ESC/POS font mode", () => {
