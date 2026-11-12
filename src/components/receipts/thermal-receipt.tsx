@@ -6,6 +6,12 @@ import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
 import { createReceiptQrDataUrl } from "./receipt-qr";
 export { getReceiptRepetitionNumbers } from "./receipt-repetition";
+function buildReceiptHtml(article: HTMLElement, columns: number): string {
+  const paperWidth = columns === 48 ? 80 : 58;
+  const contentWidth = columns === 48 ? 70 : 48;
+  const styles = "@page{size:" + paperWidth + "mm auto;margin:0}*{box-sizing:border-box}html,body{width:" + paperWidth + "mm;margin:0;padding:0;background:#fff;color:#111}body{font-family:Arial,Helvetica,sans-serif}.thermal-receipt{width:" + contentWidth + "mm;max-width:none;margin:0 auto;padding:2mm 0;font-size:12px;line-height:1.35;overflow-wrap:anywhere;color:#000}.thermal-receipt *{color:#000!important;opacity:1!important;text-shadow:none!important;filter:none!important}.thermal-receipt-cashier{font-size:13px;font-weight:800;line-height:1.3}.thermal-receipt-header{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}.thermal-receipt-brand{font-size:18px;letter-spacing:.04em}.thermal-receipt-code-row{display:grid;grid-template-columns:minmax(0,1fr) 20mm;align-items:center;gap:1.5mm;margin:3mm 0}.thermal-receipt-code-copy{display:flex;min-width:0;flex-direction:column;gap:2px}.thermal-receipt-label,.thermal-receipt-section-title{font-size:10px;font-weight:700}.thermal-receipt-code{font-size:13px;line-height:1.2;word-break:break-all}.thermal-receipt-payment{font-size:10px}.thermal-receipt-qr,.thermal-receipt-qr-placeholder{width:20mm;height:20mm;object-fit:contain}.thermal-receipt-qr-placeholder{display:grid;place-items:center;border:1px dashed #777}.thermal-receipt-divider{border-top:1px dashed #222;margin:2.5mm 0}.thermal-receipt-items{display:flex;flex-direction:column;gap:2.5mm}.thermal-receipt-item{display:flex;flex-direction:column;gap:1px}.thermal-receipt-item-heading,.thermal-receipt-total{display:flex;justify-content:space-between;gap:2mm}.thermal-receipt-total{font-size:14px}.thermal-receipt-footer{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:4mm;text-align:center;font-size:10px}.thermal-receipt-footer-code{margin-top:1mm;font-weight:700}.thermal-receipt-customer{margin:2mm 0}.thermal-receipt-actions{display:none!important}";
+  return "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Recibo oficial</title><style>" + styles + "</style></head><body>" + article.outerHTML + "</body></html>";
+}
 
 export type ThermalReceiptProps = {
   receiptCode: string;
@@ -86,71 +92,44 @@ export function ThermalReceipt({
   const effectiveQrUrl = qrCodeDataUrl ?? (generatedQr?.receiptCode === receiptCode && generatedQr.url ? generatedQr.url : null);
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
 
-  function printReceipt() {
+  async function printReceipt() {
+    const article = document.getElementById("thermal-receipt-" + receiptCode);
+    if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string) => void; colunas?: () => number };
     }).AndroidPrinter;
-    if (nativePrinter?.imprimir) {
+    if (nativePrinter?.imprimirHtml) {
+      const qrImage = article.querySelector("img");
+      if (qrImage && !qrImage.complete) {
+        await new Promise<void>((resolve) => {
+          qrImage.addEventListener("load", () => resolve(), { once: true });
+          qrImage.addEventListener("error", () => resolve(), { once: true });
+        });
+      }
       const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
-      const wrapLine = (value: string): string[] => {
-        if (value.startsWith("[[QR:")) return [value];
-        const words = value.split(/\s+/).filter(Boolean);
-        const result: string[] = [];
-        let current = "";
-        for (const word of words) {
-          if (word.length > columns) {
-            if (current) result.push(current);
-            current = "";
-            for (let offset = 0; offset < word.length; offset += columns) {
-              const part = word.slice(offset, offset + columns);
-              if (part.length === columns) result.push(part);
-              else current = part;
-            }
-            continue;
-          }
-          const next = current ? current + " " + word : word;
-          if (next.length > columns) {
-            if (current) result.push(current);
-            current = word;
-          } else current = next;
-        }
-        if (current) result.push(current);
-        return result.length ? result : [""];
-      };
-      const center = (value: string) => value.padStart(
-        Math.floor((columns + value.length) / 2),
-        " ",
-      );
-      const lines = [
-        center("SUPER SENA"),
-        center("COMPROVANTE DE APOSTA"),
-        date, paymentLabel,
-        "RECIBO: " + receiptCode,
-        customerLabel ? "CLIENTE: " + customerLabel : "",
-        cashierLabel ? "CAMBISTA: " + cashierLabel : "",
-        "-".repeat(columns),
-        ...entries.flatMap((entry, index) => [
-          entry.numberValue, "Repetição " + repetitionNumbers[index], "Rodada " + entry.roundCode,
-          "Sorteio: " + drawDateTime(entry.resultAt), "Valor: " + money(entry.stakeCents),
-          "Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0),
-          "Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0),
-          "Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), "-".repeat(columns),
-        ]),
-        "TOTAL PAGO: " + money(totalCents), center("GUARDE ESTE COMPROVANTE"), receiptCode,
-        "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
-        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
-      ].filter(Boolean).flatMap(wrapLine);
-      nativePrinter.imprimir(lines.join("\n"));
+      nativePrinter.imprimirHtml(buildReceiptHtml(article, columns));
+      return;
+    }
+    if (nativePrinter?.imprimir) {
+      const lines = [centerReceiptText("SUPER SENA"), centerReceiptText("COMPROVANTE DE APOSTA"), date, paymentLabel,
+        "RECIBO: " + receiptCode, cashierLabel ? "CAMBISTA: " + cashierLabel : "",
+        ...entries.map((entry) => entry.numberValue + " | " + money(entry.stakeCents)),
+        "TOTAL PAGO: " + money(totalCents), receiptCode,
+        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]"].filter(Boolean);
+      nativePrinter.imprimir(lines.join("\\n"));
       return;
     }
     window.print();
   }
 
+  function centerReceiptText(value: string): string {
+    const columns = (window as Window & { AndroidPrinter?: { colunas?: () => number } }).AndroidPrinter?.colunas?.() === 48 ? 48 : 32;
+    return value.padStart(Math.floor((columns + value.length) / 2), " ");
+  }
   function downloadReceipt() {
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
-    const styles = " @page{size:58mm auto;margin:2mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif}.thermal-receipt{width:48mm;max-width:100%;margin:0 auto;padding:2mm 0;font-size:12px;line-height:1.35;overflow-wrap:anywhere;color:#000}.thermal-receipt *{color:#000!important;opacity:1!important;text-shadow:none!important;filter:none!important}.thermal-receipt-cashier{font-size:13px;font-weight:800;line-height:1.3}.thermal-receipt-header{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}.thermal-receipt-brand{font-size:18px;letter-spacing:.04em}.thermal-receipt-code-row{display:grid;grid-template-columns:minmax(0,1fr) 20mm;align-items:center;gap:1.5mm;margin:3mm 0}.thermal-receipt-code-copy{display:flex;min-width:0;flex-direction:column;gap:2px}.thermal-receipt-label,.thermal-receipt-section-title{font-size:10px;font-weight:700}.thermal-receipt-code{font-size:13px;line-height:1.2;word-break:break-all}.thermal-receipt-payment{font-size:10px}.thermal-receipt-qr,.thermal-receipt-qr-placeholder{width:20mm;height:20mm;object-fit:contain}.thermal-receipt-qr-placeholder{display:grid;place-items:center;border:1px dashed #777}.thermal-receipt-divider{border-top:1px dashed #222;margin:2.5mm 0}.thermal-receipt-items{display:flex;flex-direction:column;gap:2.5mm}.thermal-receipt-item{display:flex;flex-direction:column;gap:1px}.thermal-receipt-item-heading,.thermal-receipt-total{display:flex;justify-content:space-between;gap:2mm}.thermal-receipt-total{font-size:14px}.thermal-receipt-footer{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:4mm;text-align:center;font-size:10px}.thermal-receipt-footer-code{margin-top:1mm;font-weight:700}.thermal-receipt-customer{margin:2mm 0}.thermal-receipt-cashier{color:#000;font-size:13px;font-weight:800;line-height:1.3;opacity:1}";
-    const html = "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Recibo " + receiptCode + "</title><style>" + styles + "</style></head><body>" + article.outerHTML + "</body></html>";
+    const html = buildReceiptHtml(article, 32);
     const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
