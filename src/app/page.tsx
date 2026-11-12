@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { HomeAccess, HomeAccessFooter } from "@/components/home-access";
-import "./android-home-fit.css";
 
 export const metadata: Metadata = {
   title: "Super Sena | Página Inicial Oficial",
