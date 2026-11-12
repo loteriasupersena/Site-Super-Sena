@@ -119,12 +119,17 @@ object ReceiptBitmapGenerator {
             TextLine("APOSTAS", 28f, false, 3f)
         )
         val betRows = mutableListOf<Pair<String, String>>()
+        val displayedRounds = mutableSetOf<String>()
         for (index in 0 until entries.length()) {
             val item = entries.getJSONObject(index)
             betRows += item.optString("numberValue") to money(item.optInt("stakeCents"))
-            infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena", 20f, false, 1f)
-            infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 20f, false, 1f)
-            infoLines += TextLine("Rodada ${item.optString("roundCode")}", 20f, false, 4f)
+
+            val roundCode = item.optString("roundCode")
+            if (displayedRounds.add(roundCode)) {
+                infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena", 20f, false, 1f)
+                infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 20f, false, 1f)
+                infoLines += TextLine("Rodada $roundCode", 20f, false, 4f)
+            }
         }
 
         val qr = createQr(qrPayload)
