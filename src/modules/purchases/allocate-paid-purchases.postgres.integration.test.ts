@@ -114,25 +114,28 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
     expect(audits).toBe(1);
   });
 
-  it("migrates a legacy five-category pending intent to the six-category allocation", async () => {
+  it("preserves the immutable six-category allocation and rule snapshot", async () => {
     const now = Date.now();
     const round = await prisma.round.create({
       data: {
-        code: `IT-ALLOC-LEGACY-${suffix.slice(0, 10)}`,
+        code: `IT-ALLOC-SNAPSHOT-${suffix.slice(0, 10)}`,
         startsAt: new Date(now - 60_000), cutoffAt: new Date(now + 10 * 60_000),
         resultAt: new Date(now + 20 * 60_000), status: RoundStatus.SCHEDULED,
       },
     });
     roundIds.push(round.id);
+    const ruleSnapshot = createNumericPrizeRuleSnapshot();
+    const allocation = {
+      unitCents: 25, tensCents: 15, hundredsCents: 15,
+      quadraCents: 15, quinaCents: 15, senaCents: 15,
+    };
     const purchase = await prisma.purchase.create({
       data: {
         status: PurchaseStatus.PENDING_PAYMENT, paymentMethod: PaymentMethod.CASH, totalCents: 100,
-        idempotencyKey: `it-alloc-legacy-${suffix}`,
+        idempotencyKey: `it-alloc-snapshot-${suffix}`,
         numericIntent: { create: {
-          roundCount: 1, numbers: ["123456"],
-          allocation: { unitCents: 20, tensCents: 20, hundredsCents: 20, thousandsCents: 20, quinaCents: 20 },
-          ruleVersion: "numeric-five-prize-v1",
-          ruleSnapshot: { version: "numeric-five-prize-v1", multipliers: {} },
+          roundCount: 1, numbers: ["123456"], allocation,
+          ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot,
         } },
       },
     });
@@ -144,8 +147,9 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
       where: { participation: { purchaseId: purchase.id } },
     });
     expect(line).toMatchObject({
-      unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16,
+      ...allocation,
       ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
+      ruleSnapshot,
     });
   });
 
