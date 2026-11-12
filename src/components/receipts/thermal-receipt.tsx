@@ -107,7 +107,7 @@ export function ThermalReceipt({
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; imprimirImagemBase64?: (base64: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimirImagemBase64?: (base64: string) => void };
     }).AndroidPrinter;
     if (nativePrinter?.imprimirImagemBase64) {
       const qrImage = article.querySelector("img");
@@ -147,15 +147,7 @@ export function ThermalReceipt({
       return;
     }
 
-    // Compatibility with earlier APK builds.
-    if (nativePrinter?.imprimirHtml) {
-      nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
-      return;
-    }
-    if (nativePrinter?.imprimir) {
-      nativePrinter.imprimir("COMPROVANTE " + receiptCode + "\nUse a versão atualizada do aplicativo para impressão gráfica.");
-      return;
-    }
+    throw new Error("Atualize o aplicativo Cambista Super Sena para imprimir o recibo gráfico.");
     window.print();
   }
 
