@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - fix/cambista-apk-isolation-receipt-layout
+      - fix/thermal-receipt-match-screen
       - fix/android-thermal-receipt-blank-print
     paths:
       - "android-app/**"
