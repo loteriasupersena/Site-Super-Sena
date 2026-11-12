@@ -40,8 +40,7 @@ object ReceiptBitmapGenerator {
         isAntiAlias = false
         isFilterBitmap = false
         isDither = false
-        style = Paint.Style.FILL
-        textAlign = Paint.Align.LEFT
+        // Reforça o traço sem suavização: preto sólido e caracteres mais encorpados na bobina.\n        style = Paint.Style.FILL_AND_STROKE\n        strokeWidth = 0.65f\n        textAlign = Paint.Align.LEFT
     }
 
     private fun lineHeight(size: Float) = size.coerceAtLeast(18f) + 7f
@@ -71,7 +70,7 @@ object ReceiptBitmapGenerator {
 
         val details = mutableListOf<Line>()
         val cashier = data.optString("cashierName").ifBlank { "—" }
-        details += Line("CAMBISTA: $cashier", 20f, false, 8f)
+        details += Line("CAMBISTA: $cashier", 22f, false, 8f)
         details += Line("APOSTAS", 28f, false, 6f)
 
         val betRows = mutableListOf<Pair<String, String>>()
