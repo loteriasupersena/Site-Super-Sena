@@ -112,7 +112,7 @@ export function ThermalReceipt({
     // WebView to a bitmap can produce a white/partial image on some devices;
     // the native bridge already supports text plus a rasterized QR marker.
     if (nativePrinter?.imprimir) {
-      const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
+      const columns = 32;
       const wrapLine = (value: string): string[] => {
         if (value.startsWith("[[QR:")) return [value];
         const words = value.split(/\s+/).filter(Boolean);
