@@ -23,7 +23,7 @@ object ReceiptBitmapGenerator {
     private const val MARGIN = 2f
     private const val RIGHT = WIDTH - MARGIN
     private const val CONTENT_WIDTH = WIDTH - 2 * MARGIN
-    private const val QR_SIZE = 116
+    private const val QR_SIZE = 104
     private const val MAX_BITMAP_HEIGHT = 60_000
 
     private val receiptTypeface = Typeface.DEFAULT_BOLD
@@ -161,11 +161,10 @@ object ReceiptBitmapGenerator {
         header.forEach(::drawLine)
         divider()
 
-        drawLine(TextLine("CÓDIGO DO RECIBO", 22f, true, 2f))
-        drawLine(TextLine(code, 22f, true, 8f))
-
+        // QR Code à esquerda e identificação do recibo na mesma faixa, à direita.
+        // O texto menor evita quebra e aproveita a largura do papel.
         val qrTop = y
-        val qrLeft = (WIDTH - QR_SIZE) / 2f
+        val qrLeft = MARGIN
         val qrPaint = Paint().apply {
             color = Color.BLACK
             isAntiAlias = false
@@ -173,6 +172,19 @@ object ReceiptBitmapGenerator {
             isDither = false
         }
         canvas.drawBitmap(qr, qrLeft, qrTop, qrPaint)
+        val codeX = qrLeft + QR_SIZE + 12f
+        val codeWidth = RIGHT - codeX
+        var codeY = qrTop + 26f
+        val labelPaint = paint(17f)
+        wrap("CÓDIGO DO RECIBO", labelPaint, codeWidth).forEach { line ->
+            canvas.drawText(line, codeX, codeY, labelPaint)
+            codeY += labelPaint.textSize + 3f
+        }
+        val valuePaint = paint(16f)
+        wrap(code, valuePaint, codeWidth).forEach { line ->
+            canvas.drawText(line, codeX, codeY, valuePaint)
+            codeY += valuePaint.textSize + 3f
+        }
         y = qrTop + QR_SIZE + 2f
         qr.recycle()
         divider()
@@ -196,7 +208,7 @@ object ReceiptBitmapGenerator {
         divider()
         footer.forEach(::drawLine)
 
-        val finalHeight = (y + 24f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
+        val finalHeight = (y + 64f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
         require(finalHeight < MAX_BITMAP_HEIGHT) { "Recibo excede o limite de impressão." }
         val cropped = Bitmap.createBitmap(bitmap, 0, 0, WIDTH, finalHeight)
         bitmap.recycle()
