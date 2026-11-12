@@ -136,12 +136,13 @@ class BluetoothPrinterManager(context: Context) {
 
     fun savedPrinterName(): String? = preferences.getString("printer_name", null)
 
+    /** The Cambista Super Sena app is exclusively configured for 58 mm paper. */
     fun setPaperColumns(columns: Int) {
-        require(columns == 32 || columns == 48) { "Use 32 colunas (58 mm) ou 48 colunas (80 mm)." }
-        preferences.edit().putInt("paper_columns", columns).apply()
+        require(columns == 32) { "Este aplicativo utiliza exclusivamente papel de 58 mm." }
+        preferences.edit().putInt("paper_columns", 32).apply()
     }
 
-    fun paperColumns(): Int = preferences.getInt("paper_columns", 32)
+    fun paperColumns(): Int = 32
 
     private fun closeSocket() {
         try { socket?.close() } catch (_: Exception) {}
