@@ -111,49 +111,94 @@ export function ThermalReceipt({
       window.alert("A impressão gráfica não está disponível nesta versão do aplicativo.");
       return;
     }
+
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
-    const qrImage = article.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-    if (qrImage && !qrImage.complete) {
+    const sourceQr = article.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
+    if (sourceQr && !sourceQr.complete) {
       await new Promise<void>((resolve) => {
-        qrImage.addEventListener("load", () => resolve(), { once: true });
-        qrImage.addEventListener("error", () => resolve(), { once: true });
+        sourceQr.addEventListener("load", () => resolve(), { once: true });
+        sourceQr.addEventListener("error", () => resolve(), { once: true });
       });
     }
+
+    const printRoot = document.createElement("div");
+    printRoot.setAttribute("aria-hidden", "true");
+    Object.assign(printRoot.style, {
+      position: "fixed",
+      left: "-10000px",
+      top: "0",
+      width: "384px",
+      padding: "4px",
+      margin: "0",
+      boxSizing: "border-box",
+      background: "#FFFFFF",
+      color: "#000000",
+      overflow: "visible",
+      zIndex: "-1",
+    });
+
+    const printReceipt = article.cloneNode(true) as HTMLElement;
+    printReceipt.removeAttribute("id");
+    Object.assign(printReceipt.style, {
+      display: "block",
+      width: "376px",
+      minWidth: "376px",
+      maxWidth: "376px",
+      margin: "0",
+      padding: "0",
+      boxSizing: "border-box",
+      background: "#FFFFFF",
+      color: "#000000",
+      fontFamily: "Arial, Helvetica, sans-serif",
+    });
+    printReceipt.querySelectorAll<HTMLElement>("*").forEach((element) => {
+      element.style.setProperty("color", "#000000", "important");
+      element.style.setProperty("border-color", "#000000", "important");
+      element.style.setProperty("box-shadow", "none", "important");
+      element.style.setProperty("text-shadow", "none", "important");
+      element.style.setProperty("background-color", "#FFFFFF", "important");
+      element.style.setProperty("background-image", "none", "important");
+      element.style.setProperty("font-family", "Arial, Helvetica, sans-serif", "important");
+      element.style.setProperty("opacity", "1", "important");
+    });
+
+    const setTextStyle = (selector: string, styles: Partial<CSSStyleDeclaration>) => {
+      printReceipt.querySelectorAll<HTMLElement>(selector).forEach((element) => Object.assign(element.style, styles));
+    };
+    setTextStyle(".thermal-receipt-brand", { fontSize: "24px", fontWeight: "700", lineHeight: "1.15" });
+    setTextStyle(".thermal-receipt-header > span, .thermal-receipt-section-title, .thermal-receipt-total", {
+      fontSize: "18px", fontWeight: "700", lineHeight: "1.25",
+    });
+    setTextStyle(".thermal-receipt-label, .thermal-receipt-code, .thermal-receipt-customer, .thermal-receipt-item, .thermal-receipt-footer", {
+      fontSize: "16px", lineHeight: "1.3",
+    });
+    setTextStyle(".thermal-receipt-item-heading, .thermal-receipt-draw-time, .thermal-receipt-footer-code", {
+      fontWeight: "700",
+    });
+    setTextStyle(".thermal-receipt-divider", { borderColor: "#000000", backgroundColor: "#000000" });
+
+    const qr = printReceipt.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
+    if (qr) {
+      qr.style.setProperty("width", "135px", "important");
+      qr.style.setProperty("height", "135px", "important");
+      qr.style.setProperty("max-width", "135px", "important");
+      qr.style.setProperty("object-fit", "contain", "important");
+      qr.style.setProperty("image-rendering", "pixelated", "important");
+    }
+
+    printRoot.appendChild(printReceipt);
+    document.body.appendChild(printRoot);
     try {
-      const cssWidth = article.getBoundingClientRect().width;
-      if (!cssWidth) throw new Error("Não foi possível medir o recibo.");
-      const outputWidth = 380;
-      const canvas = await html2canvas(article, {
+      const canvas = await html2canvas(printRoot, {
         backgroundColor: "#FFFFFF",
-        scale: outputWidth / cssWidth,
-        width: cssWidth,
+        width: 384,
+        windowWidth: 384,
+        scale: 2,
         useCORS: true,
         logging: false,
-        onclone: (clonedDocument) => {
-          const cloned = clonedDocument.getElementById("thermal-receipt-" + receiptCode);
-          if (!cloned) return;
-          cloned.style.setProperty("width", cssWidth + "px", "important");
-          cloned.style.setProperty("max-width", "none", "important");
-          cloned.style.setProperty("background", "#fff", "important");
-          cloned.style.setProperty("color", "#000", "important");
-          const qr = cloned.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-          if (qr) {
-            qr.style.setProperty("width", "132px", "important");
-            qr.style.setProperty("height", "132px", "important");
-            qr.style.setProperty("object-fit", "contain", "important");
-            qr.style.setProperty("image-rendering", "pixelated", "important");
-          }
-          cloned.querySelectorAll<HTMLElement>("*").forEach((element) => {
-            element.style.setProperty("color", "#000", "important");
-            element.style.setProperty("border-color", "#000", "important");
-            element.style.setProperty("box-shadow", "none", "important");
-            if (element.tagName !== "IMG") {
-              element.style.setProperty("background-color", "#fff", "important");
-              element.style.setProperty("background-image", "none", "important");
-            }
-          });
-        },
+        scrollX: 0,
+        scrollY: 0,
       });
       const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
       if (!pngBase64) throw new Error("Não foi possível gerar a imagem do recibo.");
@@ -161,6 +206,8 @@ export function ThermalReceipt({
     } catch (error) {
       console.error("Falha ao preparar recibo gráfico:", error);
       window.alert(error instanceof Error ? error.message : "Não foi possível preparar a impressão.");
+    } finally {
+      printRoot.remove();
     }
   }
 
