@@ -124,7 +124,7 @@ export async function allocatePaidPurchases(
           const stakePerNumber = allocationValues.reduce((sum, value) => sum + value, 0);
           const perRoundCents = numbers.length * stakePerNumber;
           const snapshot = purchase.numericIntent.ruleSnapshot as Prisma.InputJsonValue;
-          if (numbers.some((value) => typeof value !== "string" || !/^\\d{6}$/.test(value)) ||
+          if (numbers.some((value) => typeof value !== "string" || !/^\d{6}$/.test(value)) ||
               allocationValues.some((value) => !Number.isSafeInteger(value) || value < 0) ||
               stakePerNumber < 100 || !Number.isSafeInteger(perRoundCents) ||
               !Number.isSafeInteger(perRoundCents * count) || perRoundCents * count !== purchase.totalCents ||
