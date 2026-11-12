@@ -8,6 +8,7 @@ on:
       - fix/cambista-apk-isolation-receipt-layout
       - fix/thermal-receipt-match-screen
       - fix/android-thermal-receipt-blank-print
+      - cleanup/android-thermal-image-only
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
