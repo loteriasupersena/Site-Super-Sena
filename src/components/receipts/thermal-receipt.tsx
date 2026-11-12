@@ -105,117 +105,77 @@ export function ThermalReceipt({
 
   async function printReceipt() {
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimirImagemBase64?: (base64: string) => void };
+      AndroidPrinter?: { imprimirRecibo?: (text: string, qrPayload: string) => void };
     }).AndroidPrinter;
-    if (!nativePrinter?.imprimirImagemBase64) {
-      window.alert("A impressão gráfica não está disponível nesta versão do aplicativo.");
+    if (!nativePrinter?.imprimirRecibo) {
+      window.alert("A impressão nativa em texto não está disponível nesta versão do aplicativo.");
       return;
     }
 
-    const article = document.getElementById("thermal-receipt-" + receiptCode);
-    if (!article) return;
-    const sourceQr = article.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-    if (sourceQr && !sourceQr.complete) {
-      await new Promise<void>((resolve) => {
-        sourceQr.addEventListener("load", () => resolve(), { once: true });
-        sourceQr.addEventListener("error", () => resolve(), { once: true });
-      });
-    }
-
-    const printRoot = document.createElement("div");
-    printRoot.setAttribute("aria-hidden", "true");
-    printRoot.id = "thermal-receipt-print-capture";
-    Object.assign(printRoot.style, {
-      position: "fixed",
-      left: "0",
-      top: "0",
-      visibility: "hidden",
-      width: "384px",
-      padding: "4px",
-      margin: "0",
-      boxSizing: "border-box",
-      background: "#FFFFFF",
-      color: "#000000",
-      overflow: "visible",
-      zIndex: "2147483647",
-      pointerEvents: "none",
-    });
-
-    const printReceipt = article.cloneNode(true) as HTMLElement;
-    printReceipt.removeAttribute("id");
-    Object.assign(printReceipt.style, {
-      display: "block",
-      width: "376px",
-      minWidth: "376px",
-      maxWidth: "376px",
-      margin: "0",
-      padding: "0",
-      boxSizing: "border-box",
-      background: "#FFFFFF",
-      color: "#000000",
-      fontFamily: "Arial, Helvetica, sans-serif",
-    });
-    printReceipt.querySelectorAll<HTMLElement>("*").forEach((element) => {
-      element.style.setProperty("color", "#000000", "important");
-      element.style.setProperty("border-color", "#000000", "important");
-      element.style.setProperty("box-shadow", "none", "important");
-      element.style.setProperty("text-shadow", "none", "important");
-      element.style.setProperty("background-color", "#FFFFFF", "important");
-      element.style.setProperty("background-image", "none", "important");
-      element.style.setProperty("font-family", "Arial, Helvetica, sans-serif", "important");
-      element.style.setProperty("opacity", "1", "important");
-    });
-
-    const setTextStyle = (selector: string, styles: Partial<CSSStyleDeclaration>) => {
-      printReceipt.querySelectorAll<HTMLElement>(selector).forEach((element) => Object.assign(element.style, styles));
+    const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
+    const columns = 32;
+    const center = (value: string) => {
+      const clean = value.trim();
+      return clean.length >= columns ? clean : " ".repeat(Math.floor((columns - clean.length) / 2)) + clean;
     };
-    setTextStyle(".thermal-receipt-brand", { fontSize: "24px", fontWeight: "700", lineHeight: "1.15" });
-    setTextStyle(".thermal-receipt-header > span, .thermal-receipt-section-title, .thermal-receipt-total", {
-      fontSize: "18px", fontWeight: "700", lineHeight: "1.25",
+    const wrap = (value: string) => {
+      const words = value.split(/\\s+/);
+      const lines: string[] = [];
+      let line = "";
+      for (const word of words) {
+        const candidate = line ? line + " " + word : word;
+        if (candidate.length > columns && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = candidate;
+        }
+      }
+      if (line) lines.push(line);
+      return lines.join("\\n");
+    };
+    const separator = "-".repeat(columns);
+    const lines = [
+      center(date),
+      center(paymentLabel),
+      "",
+      "CODIGO DO RECIBO",
+      receiptCode,
+      "[[QR]]",
+      "",
+      cashierLabel ? wrap("CAMBISTA: " + cashierLabel) : "",
+      separator,
+      "APOSTAS",
+    ].filter((line) => line !== undefined);
+    entries.forEach((entry, index) => {
+      lines.push(
+        "",
+        entry.numberValue.padEnd(20, " ").slice(0, 20) + money(entry.stakeCents).padStart(12, " "),
+        wrap("Repeticao " + repetitionNumbers[index] + " - Jogo Super Sena"),
+        wrap("Unidade: " + money(entry.unitCents ?? 0) + "  Dezena: " + money(entry.tensCents ?? 0)),
+        wrap("Centena: " + money(entry.hundredsCents ?? 0) + "  Quadra: " + money(entry.quadraCents ?? 0)),
+        wrap("Quina: " + money(entry.quinaCents ?? 0) + "  Sena: " + money(entry.senaCents ?? 0)),
+        wrap("Sorteio: " + drawDateTime(entry.resultAt)),
+        wrap("Rodada " + entry.roundCode)
+      );
     });
-    setTextStyle(".thermal-receipt-label, .thermal-receipt-code, .thermal-receipt-customer, .thermal-receipt-item, .thermal-receipt-footer", {
-      fontSize: "16px", lineHeight: "1.3",
-    });
-    setTextStyle(".thermal-receipt-item-heading, .thermal-receipt-draw-time, .thermal-receipt-footer-code", {
-      fontWeight: "700",
-    });
-    setTextStyle(".thermal-receipt-divider", { borderColor: "#000000", backgroundColor: "#000000" });
+    lines.push(
+      separator,
+      "TOTAL PAGO".padEnd(20, " ") + money(totalCents).padStart(12, " "),
+      "",
+      center("GUARDE ESTE COMPROVANTE"),
+      center("Consulte o resultado pelo"),
+      center("codigo do recibo."),
+      center("Este recibo comprova o pagamento"),
+      center("e contem suas apostas."),
+      "",
+      center(receiptCode),
+      "",
+      ""
+    );
 
-    const qr = printReceipt.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
-    if (qr) {
-      qr.style.setProperty("width", "135px", "important");
-      qr.style.setProperty("height", "135px", "important");
-      qr.style.setProperty("max-width", "135px", "important");
-      qr.style.setProperty("object-fit", "contain", "important");
-      qr.style.setProperty("image-rendering", "pixelated", "important");
-    }
-
-    printRoot.appendChild(printReceipt);
-    document.body.appendChild(printRoot);
-    try {
-      const canvas = await html2canvas(printRoot, {
-        backgroundColor: "#FFFFFF",
-        width: 384,
-        windowWidth: 384,
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDocument) => {
-          const captureRoot = clonedDocument.getElementById("thermal-receipt-print-capture");
-          if (captureRoot) captureRoot.style.setProperty("visibility", "visible", "important");
-        },
-        scrollX: 0,
-        scrollY: 0,
-      });
-      const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
-      if (!pngBase64) throw new Error("Não foi possível gerar a imagem do recibo.");
-      nativePrinter.imprimirImagemBase64(pngBase64);
-    } catch (error) {
-      console.error("Falha ao preparar recibo gráfico:", error);
-      window.alert(error instanceof Error ? error.message : "Não foi possível preparar a impressão.");
-    } finally {
-      printRoot.remove();
-    }
+    const nativeText = "SUPER SENA\\nCOMPROVANTE DE APOSTA\\n" + lines.join("\\n");
+    nativePrinter.imprimirRecibo(nativeText, verificationUrl);
   }
 
   function downloadReceipt() {
