@@ -111,7 +111,10 @@ export function ThermalReceipt({
     // Prefer native ESC/POS text output on Android. Rendering an off-screen
     // WebView to a bitmap can produce a white/partial image on some devices;
     // the native bridge already supports text plus a rasterized QR marker.
-    if (nativePrinter?.imprimir) {
+    // On Android, prefer printing a rasterized copy of the exact on-screen HTML receipt.
+    // This keeps typography, alignment, QR placement and section hierarchy identical.
+    // Fall back to ESC/POS text only when the installed bridge lacks HTML rendering.
+    if (!nativePrinter?.imprimirHtml && nativePrinter?.imprimir) {
       const columns = 32;
       const wrapLine = (value: string): string[] => {
         if (value.startsWith("[[QR:")) return [value];
