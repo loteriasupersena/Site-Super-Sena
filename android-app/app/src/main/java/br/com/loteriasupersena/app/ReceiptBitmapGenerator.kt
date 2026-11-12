@@ -128,7 +128,7 @@ object ReceiptBitmapGenerator {
         }
 
         val qr = createQr(qrPayload)
-        val bitmap = Bitmap.createBitmap(WIDTH, MAX_BITMAP_HEIGHT, Bitmap.Config.ARGB_8888)
+        val estimatedHeight = (2_000 + entries.length() * 260).coerceAtMost(MAX_BITMAP_HEIGHT)\n        val bitmap = Bitmap.createBitmap(WIDTH, estimatedHeight, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.WHITE)
         val canvas = Canvas(bitmap)
         var y = 20f
