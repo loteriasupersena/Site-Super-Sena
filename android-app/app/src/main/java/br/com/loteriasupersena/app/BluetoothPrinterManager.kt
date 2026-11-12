@@ -83,12 +83,6 @@ class BluetoothPrinterManager(context: Context) {
         }
     }
 
-    suspend fun printText(text: String): Int {
-        require(text.isNotBlank()) { "O recibo está vazio." }
-        require(text.length <= 30000) { "O texto do recibo excede o limite." }
-        return printPayload(EscPosHelper.encode(text))
-    }
-
     suspend fun printBitmap(bitmap: Bitmap, columns: Int): Int =
         printPayload(EscPosHelper.encodeBitmap(bitmap, columns))
 
