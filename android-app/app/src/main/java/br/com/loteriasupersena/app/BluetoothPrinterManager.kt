@@ -1,5 +1,6 @@
 package br.com.loteriasupersena.app
 
+import android.graphics.Bitmap
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -83,6 +84,9 @@ class BluetoothPrinterManager(context: Context) {
 
     suspend fun printReceipt(text: String, qrPayload: String): Int =
         printPayload(EscPosHelper.encodeReceipt(text, qrPayload, paperColumns()))
+
+    suspend fun printBitmap(bitmap: Bitmap, targetWidth: Int = 380): Int =
+        printPayload(EscPosHelper.encodeBitmap(bitmap, targetWidth))
 
     private suspend fun printPayload(payload: ByteArray): Int = mutex.withLock {
         withContext(Dispatchers.IO) {
