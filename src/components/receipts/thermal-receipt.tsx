@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import html2canvas from "html2canvas";
 
 import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
@@ -103,79 +102,39 @@ export function ThermalReceipt({
   const effectiveQrUrl = qrCodeDataUrl ?? (generatedQr?.receiptCode === receiptCode && generatedQr.url ? generatedQr.url : null);
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
 
-  async function printReceipt() {
+  function printReceipt() {
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimirRecibo?: (text: string, qrPayload: string) => void };
+      AndroidPrinter?: { imprimirReciboJson?: (json: string) => void };
     }).AndroidPrinter;
-    if (!nativePrinter?.imprimirRecibo) {
-      window.alert("A impressão nativa em texto não está disponível nesta versão do aplicativo.");
+    if (!nativePrinter?.imprimirReciboJson) {
+      window.alert("A impressão nativa exige a versão atualizada do aplicativo Android.");
       return;
     }
 
     const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
-    const columns = 32;
-    const center = (value: string) => {
-      const clean = value.trim();
-      return clean.length >= columns ? clean : " ".repeat(Math.floor((columns - clean.length) / 2)) + clean;
-    };
-    const wrap = (value: string) => {
-      const words = value.split(/\\s+/);
-      const lines: string[] = [];
-      let line = "";
-      for (const word of words) {
-        const candidate = line ? line + " " + word : word;
-        if (candidate.length > columns && line) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = candidate;
-        }
-      }
-      if (line) lines.push(line);
-      return lines.join("\\n");
-    };
-    const separator = "-".repeat(columns);
-    const lines = [
-      center(date),
-      center(paymentLabel),
-      "",
-      "CODIGO DO RECIBO",
+    const payload = {
       receiptCode,
-      "[[QR]]",
-      "",
-      cashierLabel ? wrap("CAMBISTA: " + cashierLabel) : "",
-      separator,
-      "APOSTAS",
-    ].filter((line) => line !== undefined);
-    entries.forEach((entry, index) => {
-      lines.push(
-        "",
-        entry.numberValue.padEnd(20, " ").slice(0, 20) + money(entry.stakeCents).padStart(12, " "),
-        wrap("Repeticao " + repetitionNumbers[index] + " - Jogo Super Sena"),
-        wrap("Unidade: " + money(entry.unitCents ?? 0) + "  Dezena: " + money(entry.tensCents ?? 0)),
-        wrap("Centena: " + money(entry.hundredsCents ?? 0) + "  Quadra: " + money(entry.quadraCents ?? 0)),
-        wrap("Quina: " + money(entry.quinaCents ?? 0) + "  Sena: " + money(entry.senaCents ?? 0)),
-        wrap("Sorteio: " + drawDateTime(entry.resultAt)),
-        wrap("Rodada " + entry.roundCode)
-      );
-    });
-    lines.push(
-      separator,
-      "TOTAL PAGO".padEnd(20, " ") + money(totalCents).padStart(12, " "),
-      "",
-      center("GUARDE ESTE COMPROVANTE"),
-      center("Consulte o resultado pelo"),
-      center("codigo do recibo."),
-      center("Este recibo comprova o pagamento"),
-      center("e contem suas apostas."),
-      "",
-      center(receiptCode),
-      "",
-      ""
-    );
+      issuedAtLabel: date,
+      paymentLabel,
+      cashierName: cashierLabel ?? "",
+      totalCents,
+      qrPayload: verificationUrl,
+      entries: entries.map((entry, index) => ({
+        numberValue: entry.numberValue,
+        repetition: repetitionNumbers[index] ?? 1,
+        stakeCents: entry.stakeCents,
+        unitCents: entry.unitCents ?? 0,
+        tensCents: entry.tensCents ?? 0,
+        hundredsCents: entry.hundredsCents ?? 0,
+        quadraCents: entry.quadraCents ?? 0,
+        quinaCents: entry.quinaCents ?? 0,
+        senaCents: entry.senaCents ?? 0,
+        drawAtLabel: drawDateTime(entry.resultAt),
+        roundCode: entry.roundCode,
+      })),
+    };
 
-    const nativeText = "SUPER SENA\\nCOMPROVANTE DE APOSTA\\n" + lines.join("\\n");
-    nativePrinter.imprimirRecibo(nativeText, verificationUrl);
+    nativePrinter.imprimirReciboJson(JSON.stringify(payload));
   }
 
   function downloadReceipt() {
