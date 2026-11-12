@@ -6,6 +6,22 @@ import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
 import { createReceiptQrDataUrl } from "./receipt-qr";
 export { getReceiptRepetitionNumbers } from "./receipt-repetition";
+function buildReceiptHtml(article: HTMLElement): string {
+  const clone = article.cloneNode(true) as HTMLElement;
+  const sourceNodes = [article, ...Array.from(article.querySelectorAll<HTMLElement>("*"))];
+  const cloneNodes = [clone, ...Array.from(clone.querySelectorAll<HTMLElement>("*"))];
+  sourceNodes.forEach((source, index) => {
+    const computed = window.getComputedStyle(source);
+    const declarations = Array.from({ length: computed.length }, (_, propertyIndex) => computed.item(propertyIndex)).map((property) => property + ":" + computed.getPropertyValue(property) + ";").join("");
+    cloneNodes[index].setAttribute("style", declarations);
+  });
+  const width = Math.ceil(article.getBoundingClientRect().width);
+  clone.style.width = width + "px";
+  clone.style.maxWidth = "none";
+  clone.style.margin = "0";
+  clone.style.backgroundColor = "#fff";
+  return "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Recibo oficial</title><style>html,body{margin:0;padding:0;background:#fff}body{width:" + width + "px;overflow:hidden}</style></head><body>" + clone.outerHTML + "</body></html>";
+}
 
 export type ThermalReceiptProps = {
   receiptCode: string;
@@ -86,10 +102,23 @@ export function ThermalReceipt({
   const effectiveQrUrl = qrCodeDataUrl ?? (generatedQr?.receiptCode === receiptCode && generatedQr.url ? generatedQr.url : null);
   const repetitionNumbers = getReceiptRepetitionNumbers(entries);
 
-  function printReceipt() {
+  async function printReceipt() {
+    const article = document.getElementById("thermal-receipt-" + receiptCode);
+    if (!article) return;
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimir: (text: string) => void; colunas?: () => number };
+      AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
     }).AndroidPrinter;
+    if (nativePrinter?.imprimirHtml) {
+      const qrImage = article.querySelector("img");
+      if (qrImage && !qrImage.complete) {
+        await new Promise<void>((resolve) => {
+          qrImage.addEventListener("load", () => resolve(), { once: true });
+          qrImage.addEventListener("error", () => resolve(), { once: true });
+        });
+      }
+      nativePrinter.imprimirHtml(buildReceiptHtml(article), Math.ceil(article.getBoundingClientRect().width));
+      return;
+    }
     if (nativePrinter?.imprimir) {
       const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
       const wrapLine = (value: string): string[] => {
@@ -117,14 +146,9 @@ export function ThermalReceipt({
         if (current) result.push(current);
         return result.length ? result : [""];
       };
-      const center = (value: string) => value.padStart(
-        Math.floor((columns + value.length) / 2),
-        " ",
-      );
+      const center = (value: string) => value.padStart(Math.floor((columns + value.length) / 2), " ");
       const lines = [
-        center("SUPER SENA"),
-        center("COMPROVANTE DE APOSTA"),
-        date, paymentLabel,
+        center("SUPER SENA"), center("COMPROVANTE DE APOSTA"), date, paymentLabel,
         "RECIBO: " + receiptCode,
         customerLabel ? "CLIENTE: " + customerLabel : "",
         cashierLabel ? "CAMBISTA: " + cashierLabel : "",
@@ -146,11 +170,11 @@ export function ThermalReceipt({
     window.print();
   }
 
+
   function downloadReceipt() {
     const article = document.getElementById("thermal-receipt-" + receiptCode);
     if (!article) return;
-    const styles = " @page{size:58mm auto;margin:2mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif}.thermal-receipt{width:48mm;max-width:100%;margin:0 auto;padding:2mm 0;font-size:12px;line-height:1.35;overflow-wrap:anywhere;color:#000}.thermal-receipt *{color:#000!important;opacity:1!important;text-shadow:none!important;filter:none!important}.thermal-receipt-cashier{font-size:13px;font-weight:800;line-height:1.3}.thermal-receipt-header{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}.thermal-receipt-brand{font-size:18px;letter-spacing:.04em}.thermal-receipt-code-row{display:grid;grid-template-columns:minmax(0,1fr) 20mm;align-items:center;gap:1.5mm;margin:3mm 0}.thermal-receipt-code-copy{display:flex;min-width:0;flex-direction:column;gap:2px}.thermal-receipt-label,.thermal-receipt-section-title{font-size:10px;font-weight:700}.thermal-receipt-code{font-size:13px;line-height:1.2;word-break:break-all}.thermal-receipt-payment{font-size:10px}.thermal-receipt-qr,.thermal-receipt-qr-placeholder{width:20mm;height:20mm;object-fit:contain}.thermal-receipt-qr-placeholder{display:grid;place-items:center;border:1px dashed #777}.thermal-receipt-divider{border-top:1px dashed #222;margin:2.5mm 0}.thermal-receipt-items{display:flex;flex-direction:column;gap:2.5mm}.thermal-receipt-item{display:flex;flex-direction:column;gap:1px}.thermal-receipt-item-heading,.thermal-receipt-total{display:flex;justify-content:space-between;gap:2mm}.thermal-receipt-total{font-size:14px}.thermal-receipt-footer{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:4mm;text-align:center;font-size:10px}.thermal-receipt-footer-code{margin-top:1mm;font-weight:700}.thermal-receipt-customer{margin:2mm 0}.thermal-receipt-cashier{color:#000;font-size:13px;font-weight:800;line-height:1.3;opacity:1}";
-    const html = "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Recibo " + receiptCode + "</title><style>" + styles + "</style></head><body>" + article.outerHTML + "</body></html>";
+    const html = buildReceiptHtml(article);
     const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;

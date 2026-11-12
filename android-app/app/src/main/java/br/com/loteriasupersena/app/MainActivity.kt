@@ -3,6 +3,9 @@ package br.com.loteriasupersena.app
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +15,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -26,8 +30,9 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
-        // URL pública única do site. Altere somente aqui se o domínio mudar.
         private const val SITE_URL = "https://loteriasupersena.com.br"
+        private const val CASHIER_LOGIN_URL = "$SITE_URL/cashier-app-login"
+        private const val MAX_RECEIPT_HTML_LENGTH = 1_500_000
     }
 
     private lateinit var webView: WebView
@@ -69,12 +74,17 @@ class MainActivity : ComponentActivity() {
         findViewById<FloatingActionButton>(R.id.printerButton).setOnClickListener {
             requestBluetoothPermissions()
         }
-        webView.loadUrl(SITE_URL)
+        // The app always starts at the dedicated CASHIER-only login.
+        webView.loadUrl(CASHIER_LOGIN_URL)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack()
-                else toast("Você está no início do aplicativo.")
+                val current = runCatching { Uri.parse(webView.url ?: CASHIER_LOGIN_URL) }.getOrNull()
+                if (webView.canGoBack() && current?.let(::isAllowedUrl) == true) {
+                    webView.goBack()
+                } else {
+                    toast("O Cambista Super Sena permanece na área do cambista.")
+                }
             }
         })
 
@@ -94,6 +104,48 @@ class MainActivity : ComponentActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 view?.evaluateJavascript("document.documentElement.classList.add('is-apk','is-android');", null)
+                view?.evaluateJavascript("""
+                    (function () {
+                      function allowed(value) {
+                        try {
+                          var url = new URL(value, window.location.href);
+                          if (url.origin !== window.location.origin) return false;
+                          var path = url.pathname.replace(/\/+$/, '');
+                          return path === '/cashier-app-login' ||
+                            (path === '/cashier' && url.searchParams.get('app') === '1') ||
+                            (path === '/change-password' && url.searchParams.get('app') === '1');
+                        } catch (_) { return false; }
+                      }
+                      document.addEventListener('click', function (event) {
+                        var link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+                        if (link && !allowed(link.href)) {
+                          event.preventDefault();
+                          event.stopImmediatePropagation();
+                        }
+                      }, true);
+                      var originalPushState = history.pushState;
+                      history.pushState = function (state, title, url) {
+                        if (url != null && !allowed(url)) return;
+                        return originalPushState.apply(this, arguments);
+                      };
+                      var originalReplaceState = history.replaceState;
+                      history.replaceState = function (state, title, url) {
+                        if (url != null && !allowed(url)) return;
+                        return originalReplaceState.apply(this, arguments);
+                      };
+                      window.addEventListener('popstate', function () {
+                        if (!allowed(window.location.href)) window.location.replace('https://loteriasupersena.com.br/cashier-app-login');
+                      });
+                    })();
+                """.trimIndent(), null)
+            }
+
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                super.doUpdateVisitedHistory(view, url, isReload)
+                val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
+                if (!isAllowedUrl(uri)) {
+                    view?.post { view.loadUrl(CASHIER_LOGIN_URL) }
+                }
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -127,9 +179,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun isAllowedUrl(uri: Uri): Boolean =
-        uri.scheme.equals("https", ignoreCase = true) &&
-            uri.host.equals(Uri.parse(SITE_URL).host, ignoreCase = true)
+    /**
+     * Restrict document navigation, not the site's network/API layer.
+     * Fetch/XHR, payment callbacks, image assets and cashier APIs continue to
+     * work because they are subresource requests, not top-level navigation.
+     */
+    private fun isAllowedUrl(uri: Uri): Boolean {
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            !uri.host.equals(Uri.parse(SITE_URL).host, ignoreCase = true)
+        ) return false
+
+        return when (uri.path?.trimEnd('/')) {
+            "/cashier-app-login" -> true
+            "/cashier" -> uri.getQueryParameter("app") == "1"
+            "/change-password" -> uri.getQueryParameter("app") == "1"
+            else -> false
+        }
+    }
 
     private fun requiredBluetoothPermissions(): Array<String> = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
@@ -137,10 +203,6 @@ class MainActivity : ComponentActivity() {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         else -> emptyArray()
-    }
-
-    private fun hasBluetoothPermission(): Boolean = requiredBluetoothPermissions().all {
-        checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestBluetoothPermissions(autoOpenMenu: Boolean = true) {
@@ -212,6 +274,68 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun renderAndPrintReceipt(html: String, widthCssPx: Int) {
+        if (html.length !in 1..MAX_RECEIPT_HTML_LENGTH || !html.contains("<html", ignoreCase = true)) {
+            toast("Conteúdo do recibo inválido.")
+            return
+        }
+
+        val columns = printer.paperColumns()
+        val cssWidth = widthCssPx.coerceIn(180, 1000)
+        val density = resources.displayMetrics.density
+        val viewWidth = (cssWidth * density).toInt().coerceAtLeast(cssWidth)
+        val root = findViewById<FrameLayout>(android.R.id.content)
+        val renderView = WebView(this)
+        renderView.settings.javaScriptEnabled = false
+        renderView.settings.domStorageEnabled = false
+        renderView.settings.allowFileAccess = false
+        renderView.settings.blockNetworkLoads = true
+        renderView.settings.textZoom = 100
+        renderView.setBackgroundColor(Color.WHITE)
+        renderView.layoutParams = FrameLayout.LayoutParams(viewWidth, 1).apply {
+            leftMargin = -viewWidth - 32
+        }
+        root.addView(renderView)
+
+        renderView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                if (view == null) return
+                // WebView.contentHeight is the document height in CSS pixels.
+                view.post {
+                    val contentHeightCss = view.contentHeight.coerceIn(100, 20000)
+                    val viewHeight = (contentHeightCss * density).toInt().coerceAtLeast(contentHeightCss)
+                    try {
+                        view.measure(
+                            android.view.View.MeasureSpec.makeMeasureSpec(viewWidth, android.view.View.MeasureSpec.EXACTLY),
+                            android.view.View.MeasureSpec.makeMeasureSpec(viewHeight, android.view.View.MeasureSpec.EXACTLY)
+                        )
+                        view.layout(0, 0, viewWidth, viewHeight)
+                        val bitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888)
+                        view.draw(Canvas(bitmap))
+                        root.removeView(view)
+                        view.destroy()
+                        lifecycleScope.launch {
+                            try {
+                                toast("Imprimindo recibo oficial...")
+                                val bytes = printer.printBitmap(bitmap, columns)
+                                toast("Recibo oficial enviado à impressora ($bytes bytes).")
+                            } catch (error: Exception) {
+                                toast(error.message ?: "Falha na impressão Bluetooth.")
+                            } finally {
+                                bitmap.recycle()
+                            }
+                        }
+                    } catch (error: Exception) {
+                        root.removeView(view)
+                        view.destroy()
+                        toast(error.message ?: "Não foi possível preparar a imagem do recibo.")
+                    }
+                }
+            }
+        }
+        renderView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
     private inner class AndroidPrinterBridge {
         @JavascriptInterface
         fun imprimir(texto: String) {
@@ -226,6 +350,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+
+        @JavascriptInterface
+        fun imprimirHtml(html: String, widthPx: Int) {
+            runOnUiThread { renderAndPrintReceipt(html, widthPx) }
         }
 
         @JavascriptInterface
