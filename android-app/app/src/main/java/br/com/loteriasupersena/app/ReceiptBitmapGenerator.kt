@@ -161,11 +161,25 @@ object ReceiptBitmapGenerator {
         header.forEach(::drawLine)
         divider()
 
-        drawLine(TextLine("CÓDIGO DO RECIBO", 22f, true, 2f))
-        drawLine(TextLine(code, 22f, true, 8f))
-
-        val qrTop = y
-        val qrLeft = (WIDTH - QR_SIZE) / 2f
+        // Código à esquerda e QR Code à direita, na mesma faixa horizontal.
+        // Fonte menor no identificador para caber sem invadir a área do QR.
+        val codeLabelPaint = paint(18f)
+        val codeValuePaint = paint(16f)
+        val qrTop = y + 2f
+        val qrLeft = RIGHT - QR_SIZE
+        val textAreaWidth = CONTENT_WIDTH - QR_SIZE - 12f
+        val label = "CÓDIGO DO RECIBO"
+        val codeLines = wrap(code, codeValuePaint, textAreaWidth)
+        val textBlockHeight = codeLabelPaint.textSize + 5f + codeLines.size * (codeValuePaint.textSize + 3f)
+        var textY = qrTop + ((QR_SIZE - textBlockHeight) / 2f).coerceAtLeast(0f)
+        textY += codeLabelPaint.textSize
+        canvas.drawText(label, MARGIN, textY, codeLabelPaint)
+        textY += 5f
+        codeLines.forEach { line ->
+            textY += codeValuePaint.textSize
+            canvas.drawText(line, MARGIN, textY, codeValuePaint)
+            textY += 3f
+        }
         val qrPaint = Paint().apply {
             color = Color.BLACK
             isAntiAlias = false
@@ -196,7 +210,7 @@ object ReceiptBitmapGenerator {
         divider()
         footer.forEach(::drawLine)
 
-        val finalHeight = (y + 24f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
+        val finalHeight = (y + 52f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
         require(finalHeight < MAX_BITMAP_HEIGHT) { "Recibo excede o limite de impressão." }
         val cropped = Bitmap.createBitmap(bitmap, 0, 0, WIDTH, finalHeight)
         bitmap.recycle()
