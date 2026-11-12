@@ -274,7 +274,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private inner class AndroidPrinterBridge {
+    inner class AndroidPrinterBridge {
         @JavascriptInterface
         fun imprimirRecibo(texto: String, qrPayload: String) {
             runOnUiThread {
