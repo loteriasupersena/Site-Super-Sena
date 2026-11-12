@@ -3596,3 +3596,56 @@ html.is-android {
     margin-top: 6px !important;
   }
 }
+
+
+/* Android pequeno: limita o QUADRO da arte, não apenas a imagem.
+   A imagem inteira é ajustada dentro da área disponível e o botão fica abaixo. */
+@media screen and (max-width: 600px) {
+  html.is-android .home-page.home-page-compact .home-entry {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    gap: 8px !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic {
+    display: flex !important;
+    flex: 0 1 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: calc(100vh - var(--site-header-height, 100px) - 150px) !important;
+    height: calc(100svh - var(--site-header-height, 100px) - 150px) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-how-infographic img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  html.is-android .home-page.home-page-compact .home-entry > .home-access-footer {
+    flex: 0 0 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    margin: 0 !important;
+  }
+}
