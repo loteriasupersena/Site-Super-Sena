@@ -23,7 +23,7 @@ object ReceiptBitmapGenerator {
     private const val MARGIN = 2f
     private const val RIGHT = WIDTH - MARGIN
     private const val CONTENT_WIDTH = WIDTH - 2 * MARGIN
-    private const val QR_SIZE = 280
+    private const val QR_SIZE = 150
     private const val MAX_BITMAP_HEIGHT = 60_000
 
     private val receiptTypeface = Typeface.DEFAULT_BOLD
@@ -32,15 +32,16 @@ object ReceiptBitmapGenerator {
         val text: String,
         val size: Float = 20f,
         val centered: Boolean = false,
-        val gapAfter: Float = 0f
+        val gapAfter: Float = 0f,
+        val bold: Boolean = true
     )
 
-    private fun paint(size: Float): Paint = Paint().apply {
+    private fun paint(size: Float, bold: Boolean = true): Paint = Paint().apply {
         color = Color.BLACK
-        textSize = size.coerceAtLeast(19f)
-        typeface = receiptTypeface
-        style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 0.9f
+        textSize = if (bold) size.coerceAtLeast(19f) else size.coerceAtLeast(14f)
+        typeface = if (bold) receiptTypeface else Typeface.DEFAULT
+        style = if (bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL
+        strokeWidth = if (bold) 0.9f else 0f
         strokeJoin = Paint.Join.ROUND
         isAntiAlias = false
         isFilterBitmap = false
@@ -66,7 +67,7 @@ object ReceiptBitmapGenerator {
 
     private fun createQr(payload: String): Bitmap {
         val hints = mapOf(
-            EncodeHintType.MARGIN to 1,
+            EncodeHintType.MARGIN to 0,
             EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M
         )
         val matrix = QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, QR_SIZE, QR_SIZE, hints)
@@ -105,8 +106,8 @@ object ReceiptBitmapGenerator {
         )
         val footer = listOf(
             TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 5f),
-            TextLine("Consulte o resultado pelo código do recibo.", 20f, true, 3f),
-            TextLine("Este recibo comprova o pagamento e contém suas apostas.", 20f, true, 5f),
+            TextLine("Consulte o resultado pelo código do recibo.", 14f, true, 3f, false),
+            TextLine("Este recibo comprova o pagamento e contém suas apostas.", 14f, true, 5f, false),
             TextLine(code, 26f, true, 8f)
         )
 
@@ -135,7 +136,7 @@ object ReceiptBitmapGenerator {
         var y = 20f
 
         fun drawLine(line: TextLine, maxWidth: Float = CONTENT_WIDTH) {
-            val p = paint(line.size)
+            val p = paint(line.size, line.bold)
             wrap(line.text, p, maxWidth).forEach { text ->
                 y += p.textSize
                 val x = if (line.centered) (WIDTH - p.measureText(text)) / 2f else MARGIN
@@ -197,7 +198,7 @@ object ReceiptBitmapGenerator {
         divider()
         footer.forEach(::drawLine)
 
-        val finalHeight = (y + 12f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
+        val finalHeight = (y + 60f).toInt().coerceAtMost(MAX_BITMAP_HEIGHT)
         require(finalHeight < MAX_BITMAP_HEIGHT) { "Recibo excede o limite de impressão." }
         val cropped = Bitmap.createBitmap(bitmap, 0, 0, WIDTH, finalHeight)
         bitmap.recycle()
