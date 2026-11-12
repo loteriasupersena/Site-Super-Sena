@@ -138,7 +138,7 @@ export async function allocatePaidPurchases(
                 purchaseId: purchase.id, roundId: round.id, status: "CONFIRMED",
                 totalCents: perRoundCents, confirmedAt: decisionTime,
                 numericLines: { create: numbers.map((numberValue) => ({
-                  numberValue, ...allocation, ruleVersion, ruleSnapshot: snapshot,
+                  numberValue, ...allocation, ruleVersion: purchase.numericIntent!.ruleVersion, ruleSnapshot: snapshot,
                 })) },
               },
             });
