@@ -156,7 +156,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
         <p style={{ margin: "0 0 9px", color: "#374151", fontSize: 14 }}>Você tem um prêmio disponível. Entre em contato para combinar o recebimento.</p>
         <a href={prizeContactUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 7, background: "#15803d", color: "#ffffff", fontWeight: 800, textDecoration: "none" }}>Receber prêmio pelo WhatsApp</a>
       </div>}
-      <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Quina · superquina.com</p>
+      <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
   );
 }
