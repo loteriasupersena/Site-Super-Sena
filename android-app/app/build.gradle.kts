@@ -1,4 +1,7 @@
 import java.util.Base64
+import javax.imageio.ImageIO
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
 
 plugins {
     id("com.android.application")
@@ -39,9 +42,26 @@ val generateBrandLauncherIcon by tasks.registering {
         val encodedPng = Regex("data:image/png;base64,([A-Za-z0-9+/=]+)")
             .find(svgText)?.groupValues?.get(1)
             ?: error("Não foi possível localizar a imagem PNG da marca Super Sena.")
+
+        // Mantém a arte centralizada em uma área transparente para que
+        // as máscaras circulares/arredondadas do Android não cortem a marca.
+        val original = ImageIO.read(Base64.getDecoder().decode(encodedPng).inputStream())
+            ?: error("Não foi possível decodificar o ícone da marca.")
+        val canvasSize = 512
+        val scale = 0.76
+        val iconSize = (canvasSize * scale).toInt()
+        val x = (canvasSize - iconSize) / 2
+        val y = (canvasSize - iconSize) / 2
+        val padded = BufferedImage(canvasSize, canvasSize, BufferedImage.TYPE_INT_ARGB)
+        val graphics = padded.createGraphics()
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        graphics.drawImage(original, x, y, iconSize, iconSize, null)
+        graphics.dispose()
+
         val target = outputPng.get().asFile
         target.parentFile.mkdirs()
-        target.writeBytes(Base64.getDecoder().decode(encodedPng))
+        ImageIO.write(padded, "png", target)
     }
 }
 
