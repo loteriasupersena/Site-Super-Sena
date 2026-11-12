@@ -1,6 +1,7 @@
 package br.com.loteriasupersena.app
 
 import android.Manifest
+import android.graphics.Bitmap
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
@@ -82,12 +83,18 @@ class BluetoothPrinterManager(context: Context) {
         }
     }
 
-    suspend fun printText(text: String): Int = mutex.withLock {
+    suspend fun printText(text: String): Int {
+        require(text.isNotBlank()) { "O recibo está vazio." }
+        require(text.length <= 30000) { "O texto do recibo excede o limite." }
+        return printPayload(EscPosHelper.encode(text))
+    }
+
+    suspend fun printBitmap(bitmap: Bitmap, columns: Int): Int =
+        printPayload(EscPosHelper.encodeBitmap(bitmap, columns))
+
+    private suspend fun printPayload(payload: ByteArray): Int = mutex.withLock {
         withContext(Dispatchers.IO) {
-            requirePermission()
-            require(text.isNotBlank()) { "O recibo está vazio." }
-            require(text.length <= 30000) { "O texto do recibo excede o limite." }
-            val payload = EscPosHelper.encode(text)
+            require(payload.isNotEmpty()) { "O conteúdo da impressão está vazio." }
             var lastError: IOException? = null
             repeat(2) { attempt ->
                 try {
