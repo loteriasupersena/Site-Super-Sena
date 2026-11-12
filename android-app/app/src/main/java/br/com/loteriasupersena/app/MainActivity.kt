@@ -300,10 +300,9 @@ class MainActivity : ComponentActivity() {
         renderView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 if (view == null) return
-                view.evaluateJavascript(
-                    "(function(){return Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);})()"
-                ) { result ->
-                    val contentHeightCss = result.trim().toIntOrNull()?.coerceIn(100, 20000) ?: 1200
+                // WebView.contentHeight is the document height in CSS pixels.
+                view.post {
+                    val contentHeightCss = view.contentHeight.coerceIn(100, 20000)
                     val viewHeight = (contentHeightCss * density).toInt().coerceAtLeast(contentHeightCss)
                     try {
                         view.measure(
