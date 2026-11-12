@@ -15,11 +15,19 @@ type PageProps = { params: Promise<{ receiptCode: string }> };
 export default async function VerifyReceiptPage({ params }: PageProps) {
   const { receiptCode } = await params;
   return (
-    <main className="home-page" style={{ minHeight: "100vh", padding: "0 16px 32px" }}>
+    <main
+      className="home-page"
+      style={{
+        minHeight: "100vh",
+        padding: "calc(var(--site-header-height, 100px) + 16px) 16px 32px",
+      }}
+    >
       <SiteHeader />
-      <section style={{ width: "100%", maxWidth: 720, margin: "24px auto" }}>
+      <section style={{ width: "100%", maxWidth: 720, margin: "0 auto" }}>
         <ReceiptVerification receiptCode={receiptCode} />
-        <p style={{ marginTop: 20, textAlign: "center" }}><Link href="/">Página inicial</Link></p>
+        <p style={{ marginTop: 20, textAlign: "center" }}>
+          <Link href="/">Página inicial</Link>
+        </p>
       </section>
     </main>
   );
