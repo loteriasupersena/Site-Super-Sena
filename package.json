@@ -29,8 +29,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.1.5",
-    "qrcode-generator": "2.0.4",
-    "html2canvas": "1.4.1"
+    "qrcode-generator": "2.0.4"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",
