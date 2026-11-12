@@ -111,11 +111,50 @@ export function ThermalReceipt({
       return;
     }
     if (nativePrinter?.imprimir) {
-      const lines = [centerReceiptText("SUPER SENA"), centerReceiptText("COMPROVANTE DE APOSTA"), date, paymentLabel,
-        "RECIBO: " + receiptCode, cashierLabel ? "CAMBISTA: " + cashierLabel : "",
-        ...entries.map((entry) => entry.numberValue + " | " + money(entry.stakeCents)),
-        "TOTAL PAGO: " + money(totalCents), receiptCode,
-        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]"].filter(Boolean);
+      const columns = nativePrinter.colunas?.() === 48 ? 48 : 32;
+      const wrapLine = (value: string): string[] => {
+        if (value.startsWith("[[QR:")) return [value];
+        const words = value.split(/\\s+/).filter(Boolean);
+        const result: string[] = [];
+        let current = "";
+        for (const word of words) {
+          if (word.length > columns) {
+            if (current) result.push(current);
+            current = "";
+            for (let offset = 0; offset < word.length; offset += columns) {
+              const part = word.slice(offset, offset + columns);
+              if (part.length === columns) result.push(part);
+              else current = part;
+            }
+            continue;
+          }
+          const next = current ? current + " " + word : word;
+          if (next.length > columns) {
+            if (current) result.push(current);
+            current = word;
+          } else current = next;
+        }
+        if (current) result.push(current);
+        return result.length ? result : [""];
+      };
+      const center = (value: string) => value.padStart(Math.floor((columns + value.length) / 2), " ");
+      const lines = [
+        center("SUPER SENA"), center("COMPROVANTE DE APOSTA"), date, paymentLabel,
+        "RECIBO: " + receiptCode,
+        customerLabel ? "CLIENTE: " + customerLabel : "",
+        cashierLabel ? "CAMBISTA: " + cashierLabel : "",
+        "-".repeat(columns),
+        ...entries.flatMap((entry, index) => [
+          entry.numberValue, "Repetição " + repetitionNumbers[index], "Rodada " + entry.roundCode,
+          "Sorteio: " + drawDateTime(entry.resultAt), "Valor: " + money(entry.stakeCents),
+          "Unidade: " + money(entry.unitCents ?? 0) + " Dezena: " + money(entry.tensCents ?? 0),
+          "Centena: " + money(entry.hundredsCents ?? 0) + " Quadra: " + money(entry.quadraCents ?? 0),
+          "Quina: " + money(entry.quinaCents ?? 0) + " Sena: " + money(entry.senaCents ?? 0), "-".repeat(columns),
+        ]),
+        "TOTAL PAGO: " + money(totalCents), center("GUARDE ESTE COMPROVANTE"), receiptCode,
+        "CONSULTA: " + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode),
+        "[[QR:" + window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode) + "]]",
+      ].filter(Boolean).flatMap(wrapLine);
       nativePrinter.imprimir(lines.join("\\n"));
       return;
     }
