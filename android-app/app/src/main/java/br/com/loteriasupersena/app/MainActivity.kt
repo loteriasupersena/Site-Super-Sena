@@ -240,15 +240,18 @@ class MainActivity : ComponentActivity() {
 
         val columns = printer.paperColumns()
         val cssWidth = if (columns == 48) 302 else 219 // 80 mm / 58 mm at 96 CSS dpi
+        val density = resources.displayMetrics.density
+        val viewWidth = (cssWidth * density).toInt().coerceAtLeast(cssWidth)
         val root = findViewById<FrameLayout>(android.R.id.content)
         val renderView = WebView(this)
         renderView.settings.javaScriptEnabled = false
         renderView.settings.domStorageEnabled = false
         renderView.settings.allowFileAccess = false
         renderView.settings.blockNetworkLoads = true
+        renderView.settings.textZoom = 100
         renderView.setBackgroundColor(Color.WHITE)
-        renderView.layoutParams = FrameLayout.LayoutParams(cssWidth, 1).apply {
-            leftMargin = -cssWidth - 32
+        renderView.layoutParams = FrameLayout.LayoutParams(viewWidth, 1).apply {
+            leftMargin = -viewWidth - 32
         }
         root.addView(renderView)
 
@@ -258,14 +261,15 @@ class MainActivity : ComponentActivity() {
                 view.evaluateJavascript(
                     "(function(){return Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);})()"
                 ) { result ->
-                    val contentHeight = result.trim('"').toIntOrNull()?.coerceIn(100, 20000) ?: 1200
+                    val contentHeightCss = result.trim().toIntOrNull()?.coerceIn(100, 20000) ?: 1200
+                    val viewHeight = (contentHeightCss * density).toInt().coerceAtLeast(contentHeightCss)
                     try {
                         view.measure(
-                            android.view.View.MeasureSpec.makeMeasureSpec(cssWidth, android.view.View.MeasureSpec.EXACTLY),
-                            android.view.View.MeasureSpec.makeMeasureSpec(contentHeight, android.view.View.MeasureSpec.EXACTLY)
+                            android.view.View.MeasureSpec.makeMeasureSpec(viewWidth, android.view.View.MeasureSpec.EXACTLY),
+                            android.view.View.MeasureSpec.makeMeasureSpec(viewHeight, android.view.View.MeasureSpec.EXACTLY)
                         )
-                        view.layout(0, 0, cssWidth, contentHeight)
-                        val bitmap = Bitmap.createBitmap(cssWidth, contentHeight, Bitmap.Config.ARGB_8888)
+                        view.layout(0, 0, viewWidth, viewHeight)
+                        val bitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888)
                         view.draw(Canvas(bitmap))
                         root.removeView(view)
                         view.destroy()
