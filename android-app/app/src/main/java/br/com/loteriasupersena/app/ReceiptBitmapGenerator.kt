@@ -123,9 +123,6 @@ object ReceiptBitmapGenerator {
             val item = entries.getJSONObject(index)
             betRows += item.optString("numberValue") to money(item.optInt("stakeCents"))
             infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena", 20f, false, 1f)
-            infoLines += TextLine("Unidade: ${money(item.optInt("unitCents"))} · Dezena: ${money(item.optInt("tensCents"))}", 20f, false, 1f)
-            infoLines += TextLine("Centena: ${money(item.optInt("hundredsCents"))} · Quadra: ${money(item.optInt("quadraCents"))}", 20f, false, 1f)
-            infoLines += TextLine("Quina: ${money(item.optInt("quinaCents"))} · Sena: ${money(item.optInt("senaCents"))}", 20f, false, 1f)
             infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 20f, false, 1f)
             infoLines += TextLine("Rodada ${item.optString("roundCode")}", 20f, false, 4f)
         }
@@ -205,6 +202,7 @@ object ReceiptBitmapGenerator {
         divider()
 
         infoLines.take(2).forEach(::drawLine)
+        drawLine(TextLine("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", 18f, false, 4f))
         betRows.forEach { (number, stake) ->
             val p = paint(30f)
             y += p.textSize
