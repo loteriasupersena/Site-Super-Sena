@@ -12,7 +12,7 @@ function buildReceiptHtml(article: HTMLElement): string {
   const cloneNodes = [clone, ...Array.from(clone.querySelectorAll<HTMLElement>("*"))];
   sourceNodes.forEach((source, index) => {
     const computed = window.getComputedStyle(source);
-    const declarations = Array.from(computed).map((property) => property + ":" + computed.getPropertyValue(property) + ";").join("");
+    const declarations = Array.from({ length: computed.length }, (_, propertyIndex) => computed.item(propertyIndex)).map((property) => property + ":" + computed.getPropertyValue(property) + ";").join("");
     cloneNodes[index].setAttribute("style", declarations);
   });
   const width = Math.ceil(article.getBoundingClientRect().width);
