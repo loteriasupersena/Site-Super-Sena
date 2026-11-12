@@ -49,9 +49,7 @@ export function PlayerWalletWithdrawals() {
     finally { setBusy(false); }
   }
 
-  return <section className="feature-card" aria-labelledby="player-wallet-withdrawals-heading">
-    <span className="feature-label">Carteira digital</span>
-    <h2 id="player-wallet-withdrawals-heading">Saldo e saques</h2>
+  return <section className="player-wallet-withdrawals-content">
     <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
     <form className="admin-round-create" onSubmit={requestWithdrawal}>
       <p className="wallet-withdrawal-full-balance">O saque será do saldo total disponível.</p>
