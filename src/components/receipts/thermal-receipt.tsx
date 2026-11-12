@@ -47,7 +47,6 @@ export function ThermalReceipt({
   issuedAt,
   totalCents,
   entries,
-  customerLabel,
   cashierLabel,
   paymentLabel = "Dinheiro recebido",
   qrCodeDataUrl,
@@ -157,36 +156,35 @@ export function ThermalReceipt({
 
   return (
     <div className="thermal-receipt-print-root">
-      <article id={`thermal-receipt-${receiptCode}`} className="thermal-receipt" aria-label={`Recibo ${receiptCode}`}>
+      <article id={"thermal-receipt-" + receiptCode} className="thermal-receipt" aria-label={"Recibo " + receiptCode}>
         <header className="thermal-receipt-header">
           <strong className="thermal-receipt-brand">SUPER SENA</strong>
           <span>COMPROVANTE DE APOSTA</span>
-          <span>{date}</span>
-          <span className="thermal-receipt-payment">{paymentLabel}</span>
         </header>
 
-        <section className="thermal-receipt-code-row" aria-label="Código e QR Code do recibo">
-          <div className="thermal-receipt-code-copy">
-            <span className="thermal-receipt-label">CÓDIGO DO RECIBO</span>
-            <strong className="thermal-receipt-code">{receiptCode}</strong>
-          </div>
+        <div className="thermal-receipt-divider" />
+        <section className="thermal-receipt-code-row" aria-label="QR Code e dados do recibo">
           {effectiveQrUrl ? (
-            <img className="thermal-receipt-qr" style={qrStyle} src={effectiveQrUrl} alt={`QR Code do recibo ${receiptCode}`} />
+            <img className="thermal-receipt-qr" style={qrStyle} src={effectiveQrUrl} alt={"QR Code do recibo " + receiptCode} />
           ) : (
             <div className="thermal-receipt-qr-placeholder" aria-label="QR Code indisponível">
               QR indisponível
             </div>
           )}
+          <div className="thermal-receipt-code-copy">
+            <span className="thermal-receipt-label">CÓDIGO DO RECIBO</span>
+            <strong className="thermal-receipt-code">{receiptCode}</strong>
+            <span className="thermal-receipt-date">{date}</span>
+            <span className="thermal-receipt-payment">{paymentLabel}</span>
+          </div>
         </section>
 
-        {customerLabel && <p className="thermal-receipt-customer"><span>Cliente:</span> {customerLabel}</p>}
-        {cashierLabel && <p className="thermal-receipt-customer thermal-receipt-cashier"><strong>CAMBISTA: {cashierLabel}</strong></p>}
-
         <div className="thermal-receipt-divider" />
+        {cashierLabel && <p className="thermal-receipt-customer thermal-receipt-cashier"><strong>CAMBISTA: {cashierLabel}</strong></p>}
         <section className="thermal-receipt-items">
           <strong className="thermal-receipt-section-title">APOSTAS</strong>
           {entries.map((entry, index) => (
-            <div className="thermal-receipt-item" key={`${entry.roundCode}-${entry.numberValue}-${index}`}>
+            <div className="thermal-receipt-item" key={entry.roundCode + "-" + entry.numberValue + "-" + index}>
               <div className="thermal-receipt-item-heading">
                 <strong>{entry.numberValue}</strong>
                 <strong>{money(entry.stakeCents)}</strong>
@@ -196,7 +194,7 @@ export function ThermalReceipt({
           {roundDetails.map((entry) => {
             const index = entries.findIndex((candidate) => candidate.roundCode === entry.roundCode);
             return (
-              <div className="thermal-receipt-item" key={`round-${entry.roundCode}`}>
+              <div className="thermal-receipt-item" key={"round-" + entry.roundCode}>
                 <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
                 <strong className="thermal-receipt-draw-time">Sorteio: {drawDateTime(entry.resultAt)}</strong>
                 <span>Rodada {entry.roundCode}</span>
@@ -211,11 +209,10 @@ export function ThermalReceipt({
           <span>TOTAL PAGO</span>
           <strong>{money(totalCents)}</strong>
         </div>
+        <div className="thermal-receipt-divider" />
         <footer className="thermal-receipt-footer">
           <strong>GUARDE ESTE COMPROVANTE</strong>
-          <span>Consulte o resultado pelo código do recibo.</span>
-          <span>Este recibo é um comprovante de pagamento e contém suas apostas.</span>
-          <span className="thermal-receipt-footer-code">{receiptCode}</span>
+          <span>Consulte o resultado pelo QR Code.</span>
         </footer>
       </article>
       <div className="thermal-receipt-actions" aria-label="Ações do recibo">

@@ -17,10 +17,10 @@ type ReceiptData = {
 };
 
 const paymentLabels: Record<string, string> = {
-  PIX: "Pix confirmado",
-  CASH: "Dinheiro recebido",
-  WALLET: "Saldo da conta debitado",
-  CARD: "Cartão confirmado",
+  PIX: "Venda no Pix",
+  CASH: "Venda em dinheiro",
+  WALLET: "Venda em dinheiro",
+  CARD: "Venda em dinheiro",
 };
 
 const MAX_MANUAL_RETRIES = 2;
