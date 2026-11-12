@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val SITE_URL = "https://loteriasupersena.com.br"
         private const val CASHIER_LOGIN_URL = "$SITE_URL/cashier-app-login"
+        private const val MAX_RECEIPT_IMAGE_BASE64_LENGTH = 12_000_000
     }
 
     private lateinit var webView: WebView
@@ -293,6 +296,31 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        @JavascriptInterface
+        fun imprimirImagemBase64(base64: String) {
+            runOnUiThread {
+                if (base64.length !in 1..MAX_RECEIPT_IMAGE_BASE64_LENGTH) {
+                    toast("Imagem do recibo inválida ou muito grande.")
+                    return@runOnUiThread
+                }
+                lifecycleScope.launch {
+                    var bitmap: Bitmap? = null
+                    try {
+                        val bytes = Base64.decode(base64.replace("\\s".toRegex(), ""), Base64.DEFAULT)
+                        bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            ?: throw IllegalArgumentException("Não foi possível decodificar o recibo.")
+                        toast("Imprimindo recibo com layout original...")
+                        val sent = printer.printBitmap(bitmap, 380)
+                        toast("Recibo enviado à impressora ($sent bytes).")
+                    } catch (error: Exception) {
+                        toast(error.message ?: "Falha na impressão gráfica.")
+                    } finally {
+                        bitmap?.recycle()
+                    }
+                }
+            }
+        }
+
         @JavascriptInterface
         fun colunas(): Int = printer.paperColumns()
 
