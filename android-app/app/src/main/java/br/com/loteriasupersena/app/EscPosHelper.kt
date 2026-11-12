@@ -36,10 +36,13 @@ object EscPosHelper {
             esc, 'E'.code.toByte(), 1,
             esc, 'M'.code.toByte(), 0
         ))
+        // Header: larger and bold, while preserving the 58 mm line width.
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x30))
         output.write("SUPER SENA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        output.write(byteArrayOf(esc, '!'.code.toByte(), 0x10))
         output.write("COMPROVANTE DE APOSTA\n".toByteArray(charset))
-        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
+        // Body: double-height + bold for legibility; normal width avoids clipping.
+        output.write(byteArrayOf(esc, 'a'.code.toByte(), 0, esc, 'E'.code.toByte(), 1, esc, '!'.code.toByte(), 0x10))
         val body = text.substringAfter("COMPROVANTE DE APOSTA\n", text)
         val qrMarker = "[[QR]]"
         val qrPosition = body.indexOf(qrMarker)
@@ -50,7 +53,7 @@ object EscPosHelper {
         output.write(qrRaster(qrPayload))
         output.write(byteArrayOf(0x0A, esc, 'a'.code.toByte(), 0, esc, '!'.code.toByte(), 0x10))
         output.write(afterQr.toByteArray(charset))
-        output.write(byteArrayOf(esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
+        output.write(byteArrayOf(esc, 'E'.code.toByte(), 0, esc, '!'.code.toByte(), 0, 0x0A, esc, 'd'.code.toByte(), 4))
         return output.toByteArray()
     }
 
