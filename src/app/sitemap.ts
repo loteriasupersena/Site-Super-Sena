@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = "https://superquina.com";
+const siteUrl = "https://loteriasupersena.com.br";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
