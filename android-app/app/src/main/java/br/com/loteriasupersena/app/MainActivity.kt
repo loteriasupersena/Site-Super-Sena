@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -33,6 +35,7 @@ class MainActivity : ComponentActivity() {
         private const val SITE_URL = "https://loteriasupersena.com.br"
         private const val CASHIER_LOGIN_URL = "$SITE_URL/cashier-app-login"
         private const val MAX_RECEIPT_HTML_LENGTH = 1_500_000
+        private const val MAX_RECEIPT_IMAGE_BASE64_LENGTH = 12_000_000
     }
 
     private lateinit var webView: WebView
@@ -356,6 +359,31 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        @JavascriptInterface
+        fun imprimirImagemBase64(base64: String) {
+            runOnUiThread {
+                if (base64.length !in 1..MAX_RECEIPT_IMAGE_BASE64_LENGTH) {
+                    toast("Imagem do recibo inválida ou muito grande.")
+                    return@runOnUiThread
+                }
+                lifecycleScope.launch {
+                    var bitmap: Bitmap? = null
+                    try {
+                        val payload = base64.substringAfter("base64,", base64).replace("\\s".toRegex(), "")
+                        val bytes = Base64.decode(payload, Base64.DEFAULT)
+                        bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            ?: throw IllegalArgumentException("Não foi possível decodificar a imagem do recibo.")
+                        toast("Imprimindo comprovante gráfico...")
+                        val sent = printer.printBitmap(bitmap, 32)
+                        toast("Comprovante enviado à impressora ($sent bytes).")
+                    } catch (error: Exception) {
+                        toast(error.message ?: "Falha ao imprimir a imagem do recibo.")
+                    } finally {
+                        bitmap?.recycle()
+                    }
+                }
+            }
+        }
         @JavascriptInterface
         fun imprimirHtml(html: String, widthPx: Int) {
             runOnUiThread { renderAndPrintReceipt(html, widthPx) }
