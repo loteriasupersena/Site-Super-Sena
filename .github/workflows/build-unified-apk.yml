@@ -9,6 +9,7 @@ on:
       - fix/thermal-receipt-match-screen
       - fix/android-thermal-receipt-blank-print
       - cleanup/android-thermal-image-only
+      - fix/android-receipt-print-button-margin
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
