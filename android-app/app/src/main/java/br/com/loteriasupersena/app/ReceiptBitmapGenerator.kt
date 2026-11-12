@@ -102,7 +102,7 @@ object ReceiptBitmapGenerator {
             TextLine("SUPER SENA", 32f, true, 2f),
             TextLine("COMPROVANTE DE APOSTA", 28f, true, 2f),
             TextLine(data.optString("issuedAtLabel"), 24f, true, 2f),
-            TextLine(data.optString("paymentLabel", "Dinheiro recebido"), 26f, true, 8f)
+            TextLine(if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) "Venda no Pix" else "Venda em dinheiro", 26f, true, 8f)
         )
         val footer = listOf(
             TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 5f),
