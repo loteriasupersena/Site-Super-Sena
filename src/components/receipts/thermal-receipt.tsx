@@ -124,10 +124,12 @@ export function ThermalReceipt({
 
     const printRoot = document.createElement("div");
     printRoot.setAttribute("aria-hidden", "true");
+    printRoot.id = "thermal-receipt-print-capture";
     Object.assign(printRoot.style, {
       position: "fixed",
-      left: "-10000px",
+      left: "0",
       top: "0",
+      visibility: "hidden",
       width: "384px",
       padding: "4px",
       margin: "0",
@@ -135,7 +137,8 @@ export function ThermalReceipt({
       background: "#FFFFFF",
       color: "#000000",
       overflow: "visible",
-      zIndex: "-1",
+      zIndex: "2147483647",
+      pointerEvents: "none",
     });
 
     const printReceipt = article.cloneNode(true) as HTMLElement;
@@ -197,6 +200,10 @@ export function ThermalReceipt({
         scale: 2,
         useCORS: true,
         logging: false,
+        onclone: (clonedDocument) => {
+          const captureRoot = clonedDocument.getElementById("thermal-receipt-print-capture");
+          if (captureRoot) captureRoot.style.setProperty("visibility", "visible", "important");
+        },
         scrollX: 0,
         scrollY: 0,
       });
