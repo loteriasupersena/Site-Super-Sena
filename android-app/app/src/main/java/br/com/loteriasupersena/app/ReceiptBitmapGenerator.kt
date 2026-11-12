@@ -106,7 +106,7 @@ object ReceiptBitmapGenerator {
         )
         val footer = listOf(
             TextLine("GUARDE ESTE COMPROVANTE", 26f, true, 2f),
-            TextLine("Consulte o resultado pelo QR Code.", 14f, true, 2f, false),
+            TextLine("Consulte o resultado pelo QR Code.", 19f, true, 2f, true),
         )
 
         val cashier = data.optString("cashierName").ifBlank { "—" }
