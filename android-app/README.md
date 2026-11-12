@@ -25,7 +25,7 @@ O APK é exclusivo para cambistas. Ao iniciar, abre diretamente `/cashier-app-lo
 
 - Nome exibido no Android: **Cambista Super Sena**.
 - O ícone do APK é gerado durante o build a partir de `public/images/brand/super-sena-icon.svg`, usando a imagem PNG incorporada nesse SVG.
-- Versão Android: `1.4.0` (código 5).
+- Versão Android: `1.5.0` (código 6).
 
 ## Bluetooth
 
@@ -44,7 +44,7 @@ Saída: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## GitHub Actions
 
-O workflow `.github/workflows/build-unified-apk.yml` executa na `main` e na branch de limpeza da impressão gráfica quando arquivos Android são alterados, ou pode ser iniciado manualmente pela aba **Actions**. O artefato gerado chama-se `Cambista-Super-Sena-APK`.
+O workflow `.github/workflows/build-unified-apk.yml` executa na `main` e na branch de limpeza da impressão térmica em texto nativo e QR raster de 240 pontos quando arquivos Android são alterados, ou pode ser iniciado manualmente pela aba **Actions**. O artefato gerado chama-se `Cambista-Super-Sena-APK`.
 
 ## Requisitos
 
