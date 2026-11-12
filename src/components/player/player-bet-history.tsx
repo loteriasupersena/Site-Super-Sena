@@ -19,8 +19,7 @@ export function PlayerBetHistory() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
-  return <section className="feature-card player-history-card" aria-labelledby="player-history-heading">
-    <span className="feature-label">Suas apostas</span><h2 id="player-history-heading">Histórico de apostas</h2>
+  return <section className="player-history-card">
     <p>Consulte seus números, rodadas e prêmios.</p>
     {loading ? <p>Carregando seu histórico…</p> : error ? <p className="note-inline" role="alert">{error}</p> : history.length === 0 ? <p>Você ainda não tem apostas registradas neste período.</p> : (
       <div className="player-history-list">{history.map((purchase) => <article className="player-history-purchase" key={purchase.id}>
