@@ -108,9 +108,8 @@ export function ThermalReceipt({
     const nativePrinter = (window as Window & {
       AndroidPrinter?: { imprimir: (text: string) => void; imprimirHtml?: (html: string, widthPx: number) => void; colunas?: () => number };
     }).AndroidPrinter;
-    // Prefer native ESC/POS text output on Android. Rendering an off-screen
-    // WebView to a bitmap can produce a white/partial image on some devices;
-    // the native bridge already supports text plus a rasterized QR marker.
+    // Android's HTML bridge renders the official receipt at the same visual structure
+    // shown on screen. Text ESC/POS is retained as a fallback for older APK builds.
     // On Android, prefer printing a rasterized copy of the exact on-screen HTML receipt.
     // This keeps typography, alignment, QR placement and section hierarchy identical.
     // Fall back to ESC/POS text only when the installed bridge lacks HTML rendering.
