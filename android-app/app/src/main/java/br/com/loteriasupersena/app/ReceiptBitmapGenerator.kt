@@ -100,10 +100,14 @@ object ReceiptBitmapGenerator {
 
         val header = listOf(
             TextLine("SUPER SENA", 32f, true, 6f),
-            TextLine("COMPROVANTE DE APOSTA", 26f, true, 1f),
-            TextLine(data.optString("issuedAtLabel"), 22f, true, 2f),
-            TextLine(if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) "Venda no Pix" else "Venda em dinheiro", 24f, true, 4f)
+            TextLine("COMPROVANTE DE APOSTA", 26f, true, 1f)
         )
+        val issuedAt = data.optString("issuedAtLabel")
+        val paymentMethod = if (data.optString("paymentLabel").contains("pix", ignoreCase = true)) {
+            "Venda no Pix"
+        } else {
+            "Venda em dinheiro"
+        }
         val footer = listOf(
             TextLine("GUARDE ESTE COMPROVANTE", 22f, true, 2f),
             TextLine("Consulte o resultado pelo QR Code.", 19f, true, 2f, true),
@@ -161,8 +165,7 @@ object ReceiptBitmapGenerator {
         header.forEach(::drawLine)
         divider()
 
-        // QR Code à esquerda e identificação do recibo na mesma faixa, à direita.
-        // O texto menor evita quebra e aproveita a largura do papel.
+        // QR Code à esquerda; código, data e forma de pagamento à direita.
         val qrTop = y
         val qrLeft = MARGIN
         val qrPaint = Paint().apply {
@@ -185,6 +188,18 @@ object ReceiptBitmapGenerator {
             canvas.drawText(line, codeX, codeY, valuePaint)
             codeY += valuePaint.textSize + 3f
         }
+
+        val datePaint = paint(18f)
+        wrap(issuedAt, datePaint, codeWidth).forEach { line ->
+            codeY += datePaint.textSize + 4f
+            canvas.drawText(line, codeX, codeY, datePaint)
+        }
+        val paymentPaint = paint(18f)
+        wrap(paymentMethod, paymentPaint, codeWidth).forEach { line ->
+            codeY += paymentPaint.textSize + 4f
+            canvas.drawText(line, codeX, codeY, paymentPaint)
+        }
+
         y = qrTop + QR_SIZE + 2f
         qr.recycle()
         divider()
