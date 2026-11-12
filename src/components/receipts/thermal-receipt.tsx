@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
+import html2canvas from "html2canvas";
 
 import type { ThermalReceiptEntry } from "./thermal-receipt-types";
 import { getReceiptRepetitionNumbers } from "./receipt-repetition";
@@ -104,48 +105,62 @@ export function ThermalReceipt({
 
   async function printReceipt() {
     const nativePrinter = (window as Window & {
-      AndroidPrinter?: { imprimirRecibo?: (text: string, qrPayload: string) => void };
+      AndroidPrinter?: { imprimirImagemBase64?: (base64: string) => void };
     }).AndroidPrinter;
-    if (!nativePrinter || typeof nativePrinter.imprimirRecibo !== "function") {
-      window.alert("A impressão Bluetooth não está disponível. Feche e abra novamente o aplicativo Cambista Super Sena.");
+    if (!nativePrinter?.imprimirImagemBase64) {
+      window.alert("A impressão gráfica não está disponível nesta versão do aplicativo.");
       return;
     }
-    const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
-    const lines = [
-      "SUPER SENA",
-      "COMPROVANTE DE APOSTA",
-      date,
-      paymentLabel,
-      "",
-      "CODIGO DO RECIBO",
-      receiptCode,
-      "[[QR]]",
-      cashierLabel ? "CAMBISTA: " + cashierLabel : "",
-      customerLabel ? "CLIENTE: " + customerLabel : "",
-      "--------------------------------",
-      "APOSTAS",
-      ...entries.flatMap((entry, index) => [
-        entry.numberValue + "                 " + money(entry.stakeCents),
-        "Repeticao " + repetitionNumbers[index] + " - Jogo Super Sena",
-        "Unidade: " + money(entry.unitCents ?? 0) + "  Dezena: " + money(entry.tensCents ?? 0),
-        "Centena: " + money(entry.hundredsCents ?? 0) + "  Quadra: " + money(entry.quadraCents ?? 0),
-        "Quina: " + money(entry.quinaCents ?? 0) + "  Sena: " + money(entry.senaCents ?? 0),
-        "Sorteio: " + drawDateTime(entry.resultAt),
-        "Rodada " + entry.roundCode,
-        "--------------------------------",
-      ]),
-      "TOTAL PAGO: " + money(totalCents),
-      "",
-      "GUARDE ESTE COMPROVANTE",
-      "Consulte o resultado pelo codigo do recibo.",
-      "Este recibo comprova o pagamento e contem suas apostas.",
-      receiptCode,
-    ].filter(Boolean).join("\n");
+    const article = document.getElementById("thermal-receipt-" + receiptCode);
+    if (!article) return;
+    const qrImage = article.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
+    if (qrImage && !qrImage.complete) {
+      await new Promise<void>((resolve) => {
+        qrImage.addEventListener("load", () => resolve(), { once: true });
+        qrImage.addEventListener("error", () => resolve(), { once: true });
+      });
+    }
     try {
-      nativePrinter.imprimirRecibo(lines, verificationUrl);
+      const cssWidth = article.getBoundingClientRect().width;
+      if (!cssWidth) throw new Error("Não foi possível medir o recibo.");
+      const outputWidth = 380;
+      const canvas = await html2canvas(article, {
+        backgroundColor: "#FFFFFF",
+        scale: outputWidth / cssWidth,
+        width: cssWidth,
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDocument) => {
+          const cloned = clonedDocument.getElementById("thermal-receipt-" + receiptCode);
+          if (!cloned) return;
+          cloned.style.setProperty("width", cssWidth + "px", "important");
+          cloned.style.setProperty("max-width", "none", "important");
+          cloned.style.setProperty("background", "#fff", "important");
+          cloned.style.setProperty("color", "#000", "important");
+          const qr = cloned.querySelector("img.thermal-receipt-qr") as HTMLImageElement | null;
+          if (qr) {
+            qr.style.setProperty("width", "132px", "important");
+            qr.style.setProperty("height", "132px", "important");
+            qr.style.setProperty("object-fit", "contain", "important");
+            qr.style.setProperty("image-rendering", "pixelated", "important");
+          }
+          cloned.querySelectorAll<HTMLElement>("*").forEach((element) => {
+            element.style.setProperty("color", "#000", "important");
+            element.style.setProperty("border-color", "#000", "important");
+            element.style.setProperty("box-shadow", "none", "important");
+            if (element.tagName !== "IMG") {
+              element.style.setProperty("background-color", "#fff", "important");
+              element.style.setProperty("background-image", "none", "important");
+            }
+          });
+        },
+      });
+      const pngBase64 = canvas.toDataURL("image/png").split(",")[1];
+      if (!pngBase64) throw new Error("Não foi possível gerar a imagem do recibo.");
+      nativePrinter.imprimirImagemBase64(pngBase64);
     } catch (error) {
-      console.error("Falha ao acionar a impressão Bluetooth:", error);
-      window.alert("Não foi possível iniciar a impressão Bluetooth. Verifique a impressora e tente novamente.");
+      console.error("Falha ao preparar recibo gráfico:", error);
+      window.alert(error instanceof Error ? error.message : "Não foi possível preparar a impressão.");
     }
   }
 
