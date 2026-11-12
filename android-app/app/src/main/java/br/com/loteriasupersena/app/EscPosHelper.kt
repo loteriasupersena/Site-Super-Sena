@@ -30,8 +30,8 @@ object EscPosHelper {
         val output = ByteArrayOutputStream()
         output.write(byteArrayOf(
             esc, 0x40,
-            gs, 'L'.code.toByte(), 8, 0,
-            gs, 'W'.code.toByte(), 0x70, 0x01,
+            gs, 'L'.code.toByte(), 1, 0,
+            gs, 'W'.code.toByte(), 0x7E, 0x01,
             esc, 'a'.code.toByte(), 0,
             esc, 'E'.code.toByte(), 1,
             esc, 'M'.code.toByte(), 0
