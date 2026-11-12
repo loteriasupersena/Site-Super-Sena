@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main\n      - fix/cambista-apk-isolation-receipt-layout
+      - main
+      - fix/cambista-apk-isolation-receipt-layout
     paths:
       - "android-app/**"
       - ".github/workflows/build-unified-apk.yml"
