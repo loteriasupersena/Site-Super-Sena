@@ -106,8 +106,8 @@ export function ThermalReceipt({
     const nativePrinter = (window as Window & {
       AndroidPrinter?: { imprimirRecibo?: (text: string, qrPayload: string) => void };
     }).AndroidPrinter;
-    if (!nativePrinter?.imprimirRecibo) {
-      window.print();
+    if (!nativePrinter || typeof nativePrinter.imprimirRecibo !== "function") {
+      window.alert("A impressão Bluetooth não está disponível. Feche e abra novamente o aplicativo Cambista Super Sena.");
       return;
     }
     const verificationUrl = window.location.origin + "/verificar-recibo/" + encodeURIComponent(receiptCode);
@@ -141,7 +141,12 @@ export function ThermalReceipt({
       "Este recibo comprova o pagamento e contem suas apostas.",
       receiptCode,
     ].filter(Boolean).join("\n");
-    nativePrinter.imprimirRecibo(lines, verificationUrl);
+    try {
+      nativePrinter.imprimirRecibo(lines, verificationUrl);
+    } catch (error) {
+      console.error("Falha ao acionar a impressão Bluetooth:", error);
+      window.alert("Não foi possível iniciar a impressão Bluetooth. Verifique a impressora e tente novamente.");
+    }
   }
 
   function downloadReceipt() {
