@@ -137,7 +137,8 @@ object ReceiptBitmapGenerator {
         val bitmap = Bitmap.createBitmap(WIDTH, estimatedHeight, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.WHITE)
         val canvas = Canvas(bitmap)
-        var y = 8f
+        // Começa no primeiro ponto imprimível para evitar margem branca superior extra.
+        var y = 0f
 
         fun drawLine(line: TextLine, maxWidth: Float = CONTENT_WIDTH) {
             val p = paint(line.size, line.bold)
