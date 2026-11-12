@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private lateinit var printer: BluetoothPrinterManager
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingCameraRequest: android.webkit.PermissionRequest? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -42,6 +43,21 @@ class MainActivity : ComponentActivity() {
             showPrinterMenu()
         } else {
             toast("Permita o Bluetooth para conectar e imprimir recibos.")
+        }
+    }
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val request = pendingCameraRequest
+        pendingCameraRequest = null
+        if (request != null) {
+            if (granted && request.resources.contains(android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                request.grant(arrayOf(android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+            } else {
+                request.deny()
+                toast("Permita o acesso à câmera nas configurações do Android para ler placas.")
+            }
         }
     }
 
@@ -155,6 +171,32 @@ class MainActivity : ComponentActivity() {
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+                runOnUiThread {
+                    val cameraRequest = request ?: return@runOnUiThread
+                    val origin = cameraRequest.origin
+                    val siteHost = Uri.parse(SITE_URL).host
+                    val requestsCamera = cameraRequest.resources.contains(
+                        android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE
+                    )
+                    if (origin.scheme != "https" || !origin.host.equals(siteHost, ignoreCase = true) || !requestsCamera) {
+                        cameraRequest.deny()
+                        return@runOnUiThread
+                    }
+                    if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        cameraRequest.grant(arrayOf(android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+                    } else {
+                        pendingCameraRequest?.deny()
+                        pendingCameraRequest = cameraRequest
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
+            }
+
+            override fun onPermissionRequestCanceled(request: android.webkit.PermissionRequest?) {
+                if (pendingCameraRequest == request) pendingCameraRequest = null
+            }
+
             override fun onShowFileChooser(
                 webView: WebView?,
                 callback: ValueCallback<Array<Uri>>?,
@@ -300,6 +342,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
+        pendingCameraRequest?.deny()
+        pendingCameraRequest = null
         webView.removeJavascriptInterface("AndroidPrinter")
         webView.destroy()
         super.onDestroy()
