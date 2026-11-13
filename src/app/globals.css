@@ -3540,3 +3540,35 @@ body:has(.home-page-compact) {
   font-size: 1.5rem;
   font-weight: 850;
 }
+
+
+/* Adicionar e Gerador: cinza em repouso e azul ao toque/foco, sem estado verde. */
+.area-page-compact .numeric-game-purchase .numeric-entry-actions button {
+  background: #59636f !important;
+  background-image: linear-gradient(180deg, #687482 0%, #46515e 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 2px solid #8793a1 !important;
+  box-shadow: 0 4px 0 #303a46, 0 6px 14px rgba(0, 0, 0, .22) !important;
+  filter: none !important;
+}
+.area-page-compact .numeric-game-purchase .numeric-entry-actions button:hover {
+  background: #65717e !important;
+  background-image: linear-gradient(180deg, #758292 0%, #536170 100%) !important;
+  filter: none !important;
+}
+.area-page-compact .numeric-game-purchase .numeric-entry-actions button:active,
+.area-page-compact .numeric-game-purchase .numeric-entry-actions button:focus {
+  background: #258bd3 !important;
+  background-image: linear-gradient(180deg, #42b4f4 0%, #1676c2 100%) !important;
+  border-color: #73c9ff !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transform: translateY(3px) scale(.985);
+  box-shadow: 0 1px 0 #10558e, 0 0 0 4px rgba(89, 213, 242, .24) !important;
+  filter: none !important;
+}
+.area-page-compact .numeric-game-purchase .numeric-entry-actions button:focus-visible {
+  outline: 3px solid #59d5f2 !important;
+  outline-offset: 3px;
+}
