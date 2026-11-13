@@ -7,10 +7,10 @@ export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
       src="/images/brand/super-sena-logo.webp"
       alt="Logomarca Super Sena"
       className="site-header-scenery-image"
-      width={512}
-      height={512}
+      width={900}
+      height={386}
       priority
-      sizes="(max-width: 600px) 80px, 96px"
+      sizes="(max-width: 600px) 186px, 223px"
     />
   );
 
