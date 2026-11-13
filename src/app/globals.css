@@ -2114,24 +2114,6 @@ body {
   padding-top: var(--site-header-height) !important;
 }
 
-@media (max-width: 600px) {
-  :root {
-    --site-header-height: 100px;
-  }
-}
-
-@media (max-width: 600px) {
-}
-
-@media (max-width: 600px) {
-}
-
-@media (max-width: 600px) {
-}
-
-@media (max-width: 600px) {
-}
-
 /* Impressão térmica: texto integral em preto forte e identificação do cambista em negrito. */
 .thermal-receipt,
 .thermal-receipt * {
