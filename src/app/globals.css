@@ -2448,10 +2448,10 @@ html.is-android {
     height: 100% !important;
   }
   html.is-android .site-header.site-header-scenery .site-header-scenery-image {
-    width: min(62vw, 200px) !important;
+    width: min(55.8vw, 180px) !important;
     height: auto !important;
-    max-width: 200px !important;
-    max-height: 68px !important;
+    max-width: 180px !important;
+    max-height: 61px !important;
     object-fit: contain !important;
     object-position: center !important;
   }
@@ -3173,10 +3173,10 @@ body:has(.home-page-compact) {
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
-    width: min(62vw, 200px);
+    width: min(55.8vw, 180px);
     height: auto;
-    max-width: 200px;
-    max-height: 68px;
+    max-width: 90px;
+    max-height: 61px;
   }
 
   html:has(.home-page-compact),
@@ -3249,13 +3249,13 @@ body:has(.home-page-compact) {
   }
 
   .home-page-compact .home-footer-access {
-    width: min(41%, 180px);
+    width: min(20.5%, 90px);
     max-width: 180px;
-    min-height: 27px;
-    max-height: 27px;
+    min-height: 14px;
+    max-height: 14px;
     margin: 0 auto;
-    padding: 3px 12px;
-    font-size: .85rem;
+    padding: 1.5px 6px;
+    font-size: .7rem;
   }
 }
 
