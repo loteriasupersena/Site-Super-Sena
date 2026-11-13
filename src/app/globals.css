@@ -3260,3 +3260,80 @@ body:has(.home-page-compact) {
     margin-top: var(--site-header-height);
   }
 }
+
+
+/* Cards das áreas do jogador, cambista e administrador: fundo claro e texto escuro. */
+:root {
+  --card: #e5e7eb;
+}
+.welcome-card,
+.auth-card,
+.feature-card,
+.ticket-check,
+.player-history-purchase,
+.recent-result,
+.ticket-check-result,
+.cashier-purchase-result,
+.round-option,
+.purchase-form fieldset,
+.admin-round-create,
+.player-collapsible-section,
+.player-menu-card,
+.cashier-summary-menu,
+.admin-accordion,
+.admin-cashier-details,
+.admin-prize-payout .admin-prize-card,
+.cashier-info-card,
+.numeric-game-purchase {
+  background-color: #e5e7eb !important;
+  border-color: #b7c0ca !important;
+  color: #17212b !important;
+  box-shadow: none;
+}
+.welcome-card h1,
+.auth-card h1,
+.feature-card h1,
+.feature-card h2,
+.feature-card h3,
+.ticket-check h1,
+.ticket-check h2,
+.ticket-check h3,
+.player-history-purchase h1,
+.player-history-purchase h2,
+.player-history-purchase h3,
+.recent-result h1,
+.recent-result h2,
+.recent-result h3,
+.cashier-info-card h1,
+.cashier-info-card h2,
+.cashier-info-card h3,
+.numeric-game-purchase h1,
+.numeric-game-purchase h2,
+.numeric-game-purchase h3,
+.admin-accordion,
+.admin-cashier-details,
+.admin-prize-payout .admin-prize-card,
+.player-collapsible-section,
+.player-menu-card,
+.cashier-summary-menu,
+.admin-round-create {
+  color: #17212b !important;
+}
+.feature-card p,
+.ticket-check p,
+.ticket-check-hint,
+.account-name,
+.player-history-purchase span,
+.cashier-info-card p,
+.cashier-info-card label,
+.admin-accordion-description,
+.admin-cashier-details-heading > div > span,
+.admin-prize-payout .admin-prize-card p,
+.cashier-summary-menu-hint {
+  color: #465363;
+}
+.cashier-summary-menu .cashier-summary-tile,
+.admin-cashier-details dl > div {
+  background: #f2f4f7;
+  border-color: #c5ccd4;
+}
