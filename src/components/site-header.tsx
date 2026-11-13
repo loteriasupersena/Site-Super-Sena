@@ -4,13 +4,13 @@ import Link from "next/link";
 export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
   const brand = (
     <Image
-      src="/images/brand/super-sena-logo.webp"
+      src="/images/brand/super-sena-icone.webp"
       alt="Super Sena"
       className="site-header-scenery-image"
-      width={1200}
-      height={400}
+      width={512}
+      height={512}
       priority
-      sizes="(max-width: 600px) 80vw, 60vw"
+      sizes="(max-width: 600px) 80px, 96px"
     />
   );
 
