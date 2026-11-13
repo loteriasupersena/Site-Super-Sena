@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                 request.grant(arrayOf(android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE))
             } else {
                 request.deny()
-                toast("Permita o acesso à câmera nas configurações do Android para ler placas.")
+                toast("Permita o acesso à câmera nas configurações do Android para ler o QR Code do recibo.")
             }
         }
     }
