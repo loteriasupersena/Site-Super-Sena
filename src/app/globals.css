@@ -2883,12 +2883,12 @@ html.is-android .home-page.home-page-compact {
 .home-page-compact .home-kit-whatsapp-link {
   position: absolute;
   z-index: 2;
-  left: 5%;
-  bottom: 5.5%;
+  left: 3%;
+  bottom: 1.5%;
   display: block;
-  width: 90%;
-  height: 16%;
-  border-radius: 12px;
+  width: 94%;
+  height: 12%;
+  border-radius: 999px;
   cursor: pointer;
 }
 .home-page-compact .home-kit-whatsapp-link:focus-visible {
