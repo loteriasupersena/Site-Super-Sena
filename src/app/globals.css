@@ -2028,6 +2028,13 @@ body {
 .cashier-info-card > .cashier-summary-menu > summary {
   padding: 16px 48px 16px 16px;
 }
+/* Padroniza a seta de Resumo financeiro com a seta de Últimos resultados. */
+.cashier-info-card > .cashier-summary-menu > summary::after {
+  width: 10px;
+  height: 10px;
+  border-right-width: 3px;
+  border-bottom-width: 3px;
+}
 .cashier-info-card > .cashier-summary-menu .cashier-compact-summary {
   padding: 0 16px 18px;
 }
