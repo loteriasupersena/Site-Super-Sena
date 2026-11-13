@@ -2448,10 +2448,10 @@ html.is-android {
     height: 100% !important;
   }
   html.is-android .site-header.site-header-scenery .site-header-scenery-image {
-    width: min(70vw, 230px) !important;
+    width: min(62vw, 200px) !important;
     height: auto !important;
-    max-width: 230px !important;
-    max-height: 95px !important;
+    max-width: 200px !important;
+    max-height: 68px !important;
     object-fit: contain !important;
     object-position: center !important;
   }
@@ -3169,14 +3169,14 @@ body:has(.home-page-compact) {
 /* Página inicial mobile: arte em largura total, integrada ao fundo da página. */
 @media (max-width: 600px) {
   :root {
-    --site-header-height: 100px;
+    --site-header-height: 72px;
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
-    width: min(70vw, 230px);
+    width: min(62vw, 200px);
     height: auto;
-    max-width: 230px;
-    max-height: 95px;
+    max-width: 200px;
+    max-height: 68px;
   }
 
   html:has(.home-page-compact),
@@ -3242,18 +3242,20 @@ body:has(.home-page-compact) {
   .home-page-compact .home-entry > .home-access-footer {
     flex: 0 0 auto;
     width: 100%;
-    min-height: 76px;
-    height: 76px;
+    min-height: 38px;
+    height: 38px;
     margin: 0;
-    padding: 10px 0;
+    padding: 4px 0;
   }
 
   .home-page-compact .home-footer-access {
-    width: 84%;
-    max-width: 520px;
-    min-height: 56px;
-    max-height: 56px;
+    width: min(41%, 180px);
+    max-width: 180px;
+    min-height: 27px;
+    max-height: 27px;
     margin: 0 auto;
+    padding: 3px 12px;
+    font-size: .85rem;
   }
 }
 
@@ -3335,19 +3337,3 @@ body:has(.home-page-compact) {
 }
 
 
-/* Botão Entrar compacto na página inicial em celulares. */
-@media (max-width: 600px) {
-  .home-page-compact .home-entry > .home-access-footer {
-    min-height: 58px;
-    height: 58px;
-    padding: 6px 0;
-  }
-
-  .home-page-compact .home-footer-access {
-    width: min(68%, 300px);
-    min-height: 44px;
-    max-height: 44px;
-    padding: 6px 20px;
-    font-size: 1rem;
-  }
-}
