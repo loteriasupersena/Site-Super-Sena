@@ -3265,16 +3265,20 @@ body:has(.home-page-compact) {
 }
 
 
-/* Cor única dos cards nas áreas do jogador, cambista e administrador. */
+/* Sistema visual unificado dos cards: jogador, cambista e administrador. */
 :root {
-  --card: #636c75;
+  --card: #172536;
+  --border: #40536a;
+  --text: #f7f9fc;
+  --muted: #d5dfeb;
 }
+
+/* Cards principais */
 .welcome-card,
 .auth-card,
 .feature-card,
 .ticket-check,
 .player-history-purchase,
-.recent-result,
 .ticket-check-result,
 .cashier-purchase-result,
 .round-option,
@@ -3288,11 +3292,49 @@ body:has(.home-page-compact) {
 .admin-prize-payout .admin-prize-card,
 .cashier-info-card,
 .numeric-game-purchase {
-  background-color: #636c75 !important;
-  border-color: #858e97 !important;
-  color: #f4f6fb !important;
-  box-shadow: none;
+  background: #172536 !important;
+  background-image: none !important;
+  border: 1px solid #40536a !important;
+  color: #f7f9fc !important;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .18);
 }
+
+/* Superfícies internas com separação visual nítida */
+.recent-result,
+.cashier-summary-menu .cashier-summary-tile,
+.admin-cashier-details dl > div,
+.cashier-info-card .cashier-prize-line,
+.admin-accordion-content > .feature-card,
+.player-menu-card .recent-results-content .recent-result,
+.cashier-info-card .recent-results-content .recent-result {
+  background: #26394e !important;
+  background-image: none !important;
+  border: 1px solid #60758d !important;
+  color: #ffffff !important;
+}
+
+/* Títulos e conteúdo: contraste alto em todas as áreas */
+.welcome-card,
+.auth-card,
+.feature-card,
+.ticket-check,
+.player-history-purchase,
+.ticket-check-result,
+.cashier-purchase-result,
+.round-option,
+.admin-round-create,
+.player-collapsible-section,
+.player-menu-card,
+.cashier-summary-menu,
+.admin-accordion,
+.admin-cashier-details,
+.admin-prize-payout .admin-prize-card,
+.cashier-info-card,
+.numeric-game-purchase,
+.recent-result {
+  color: #f7f9fc !important;
+}
+
 .welcome-card h1,
 .auth-card h1,
 .feature-card h1,
@@ -3313,15 +3355,16 @@ body:has(.home-page-compact) {
 .numeric-game-purchase h1,
 .numeric-game-purchase h2,
 .numeric-game-purchase h3,
-.admin-accordion,
+.admin-accordion > summary,
 .admin-cashier-details,
 .admin-prize-payout .admin-prize-card,
 .player-collapsible-section,
 .player-menu-card,
 .cashier-summary-menu,
 .admin-round-create {
-  color: #f4f6fb !important;
+  color: #ffffff !important;
 }
+
 .feature-card p,
 .ticket-check p,
 .ticket-check-hint,
@@ -3332,46 +3375,50 @@ body:has(.home-page-compact) {
 .admin-accordion-description,
 .admin-cashier-details-heading > div > span,
 .admin-prize-payout .admin-prize-card p,
-.cashier-summary-menu-hint {
-  color: #f4f6fb;
-}
-.cashier-summary-menu .cashier-summary-tile,
-.admin-cashier-details dl > div {
-  background: #636c75 !important;
-  border-color: #858e97 !important;
-  color: #f4f6fb !important;
+.cashier-summary-menu-hint,
+.player-collapsible-hint {
+  color: #d5dfeb !important;
 }
 
+/* Datas, horários e informações secundárias dos resultados */
+.recent-result time,
+.player-menu-card .recent-results-content .recent-result time,
+.cashier-info-card .recent-results-content .recent-result time {
+  color: #dce8f5 !important;
+  opacity: 1 !important;
+  font-weight: 650;
+}
 
+/* Resultado numérico em destaque */
+.recent-result strong,
+.recent-result b,
+.recent-result .result-number {
+  color: #ffffff !important;
+  font-weight: 850;
+}
 
-
-/* Repetições e forma de pagamento: painel inteiro em tom escuro uniforme. */
+/* Cards de repetição e pagamento continuam escuros e uniformes */
 .area-page-compact .numeric-game-purchase .round-repeat-fieldset,
 .area-page-compact .numeric-game-purchase .round-payment-fieldset {
-  background: #141b26 !important;
+  background: #101b2a !important;
   background-image: none !important;
-  border-color: #2b3546 !important;
+  border: 1px solid #40536a !important;
+  color: #f7f9fc !important;
   box-shadow: none !important;
 }
 
+.area-page-compact .numeric-game-purchase .round-repeat-fieldset > legend,
+.area-page-compact .numeric-game-purchase .round-payment-fieldset > legend {
+  color: #63d7f2 !important;
+}
 
-/* Reforça o contraste do conteúdo do menu Resultados nas áreas do jogador e cambista. */
+/* Conteúdo expandido do menu Resultados sem transparência ou texto apagado */
 .player-menu-card .recent-results-content,
 .cashier-info-card .recent-results-content {
   color: #ffffff !important;
-}
-.player-menu-card .recent-results-content .recent-result,
-.cashier-info-card .recent-results-content .recent-result {
-  background: #46515c !important;
-  border-color: #aeb8c2 !important;
-  color: #ffffff !important;
+  opacity: 1 !important;
 }
 .player-menu-card .recent-results-content .recent-result *,
 .cashier-info-card .recent-results-content .recent-result * {
-  color: #ffffff !important;
   opacity: 1 !important;
-}
-.player-menu-card .recent-results-content .recent-result time,
-.cashier-info-card .recent-results-content .recent-result time {
-  color: #f4f6fb !important;
 }
