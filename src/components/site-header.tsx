@@ -4,8 +4,8 @@ import Link from "next/link";
 export function SiteHeader({ linkHome = true }: { linkHome?: boolean }) {
   const brand = (
     <Image
-      src="/images/brand/super-sena-icone.webp"
-      alt="Super Sena"
+      src="/images/brand/super-sena-logo.webp"
+      alt="Logomarca Super Sena"
       className="site-header-scenery-image"
       width={512}
       height={512}
