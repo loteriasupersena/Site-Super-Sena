@@ -3343,3 +3343,13 @@ body:has(.home-page-compact) {
 }
 
 
+
+
+/* Repetições e forma de pagamento: painel inteiro em tom escuro uniforme. */
+.area-page-compact .numeric-game-purchase .round-repeat-fieldset,
+.area-page-compact .numeric-game-purchase .round-payment-fieldset {
+  background: #141b26 !important;
+  background-image: none !important;
+  border-color: #2b3546 !important;
+  box-shadow: none !important;
+}
