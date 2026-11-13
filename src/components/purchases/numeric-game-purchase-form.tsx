@@ -127,7 +127,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
           idempotency.current = null;
           setPurchase(null); setPixCheckout(null); setPurchaseMessage(""); setPixModalOpen(false); setReconciliationRequired(false);
           setNumbers([]); setNumberInput(""); setParticipationCount(1);
-          
+
         } else {
           setReconciliationRequired(Boolean(body.reconciliationRequired));
           const terminalFailure = body.paymentTerminal === true
@@ -135,7 +135,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
             || body.purchaseStatus === "CANCELLED";
           if (terminalFailure) {
             setPurchase(null); setPixCheckout(null); setPixModalOpen(false); setReconciliationRequired(false); setPurchaseMessage(""); idempotency.current = null;
-            
+
             setError(typeof body.message === "string" && body.message
               ? body.message
               : "Pagamento não aceito ou não concluído. Este jogo não foi realizado e nenhuma aposta foi alocada.");
@@ -174,13 +174,13 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     } while (existing.has(generated));
     setNumberInput(generated);
     setError("");
-    
+
   }
 
   function addNumber() {
     const normalized = clearInput(numberInput);
     if (!/^[0-9]{6}$/.test(normalized)) { setError("Digite exatamente seis algarismos, incluindo os zeros à esquerda."); return; }
-    setError(""); 
+    setError("");
     if (numbers.includes(normalized)) { setError("Esse número já foi adicionado."); return; }
     setNumbers((current) => [...current, normalized]);
     setNumberInput("");
@@ -194,7 +194,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     setParticipationCount(1);
     setPaymentMethod("PIX");
     setError("");
-    
+
     setPurchaseMessage("");
     setPixCheckout(null);
     setPixCopied(false);
@@ -211,7 +211,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(""); 
+    event.preventDefault(); setError("");
     if (hasPendingNumber && !/^[0-9]{6}$/.test(pendingNumber)) {
       setError("Complete os seis algarismos do número ou apague o campo para continuar com os números já adicionados.");
       return;
@@ -254,17 +254,17 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
         setPurchaseMessage(typeof body.message === "string" ? body.message : "Venda recebida; aguardando a alocação nas próximas rodadas.");
         setPixCheckout(null);
         setPixModalOpen(false);
-        
+
       } else if (paymentMethod === "CASH" || paymentMethod === "WALLET" || body.receiptReady) {
         if (body.allocationPending) {
           idempotency.current = null;
           setNumbers([]); setNumberInput(""); setParticipationCount(1);
-          
+
         } else {
           setReceiptPurchaseId(created.id);
           idempotency.current = null;
           setNumbers([]); setNumberInput(""); setParticipationCount(1);
-          
+
         }
       } else {
         setPurchase(created);
