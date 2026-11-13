@@ -3422,3 +3422,23 @@ body:has(.home-page-compact) {
 .cashier-info-card .recent-results-content .recent-result * {
   opacity: 1 !important;
 }
+
+
+/* Botão Continuar: mesma cor azul-clara do botão Ler QR Code. */
+.area-page-compact .numeric-game-purchase form > button[type="submit"],
+html.is-android .area-page-compact .numeric-game-purchase form > button[type="submit"] {
+  background: #59d5f2 !important;
+  background-image: none !important;
+  color: #08121d !important;
+  -webkit-text-fill-color: #08121d !important;
+  border: 2px solid #159fca !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.area-page-compact .numeric-game-purchase form > button[type="submit"]:disabled,
+html.is-android .area-page-compact .numeric-game-purchase form > button[type="submit"]:disabled {
+  background: #59d5f2 !important;
+  color: #26394e !important;
+  -webkit-text-fill-color: #26394e !important;
+  opacity: .62 !important;
+}
