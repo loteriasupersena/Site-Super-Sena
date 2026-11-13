@@ -17,7 +17,7 @@ export function BrandLogo({
   return (
     <Link href="/" className={className} aria-label={label}>
       <img
-        src="/images/brand/super-sena-icone.png"
+        src="/images/brand/super-sena-icone.webp"
         alt="Super Sena"
         className={imageClassName}
         style={{ display: "block", objectFit: "contain", ...imageStyle }}
