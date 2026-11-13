@@ -3254,3 +3254,9 @@ body:has(.home-page-compact) {
     margin: 0 auto;
   }
 }
+
+@media (max-width: 600px) {
+  .home-page.home-page-compact {
+    margin-top: var(--site-header-height);
+  }
+}
