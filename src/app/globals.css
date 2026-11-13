@@ -2448,10 +2448,10 @@ html.is-android {
     height: 100% !important;
   }
   html.is-android .site-header.site-header-scenery .site-header-scenery-image {
-    width: auto !important;
+    width: min(70vw, 230px) !important;
     height: auto !important;
-    max-width: 80% !important;
-    max-height: 80% !important;
+    max-width: 230px !important;
+    max-height: 95px !important;
     object-fit: contain !important;
     object-position: center !important;
   }
@@ -3169,12 +3169,14 @@ body:has(.home-page-compact) {
 /* Página inicial mobile: arte em largura total, integrada ao fundo da página. */
 @media (max-width: 600px) {
   :root {
-    --site-header-height: 130px;
+    --site-header-height: 100px;
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
-    max-width: 94%;
-    max-height: 95%;
+    width: min(70vw, 230px);
+    height: auto;
+    max-width: 230px;
+    max-height: 95px;
   }
 
   html:has(.home-page-compact),
@@ -3193,7 +3195,7 @@ body:has(.home-page-compact) {
     height: auto;
     min-height: calc(100svh - var(--site-header-height));
     max-height: none;
-    margin: 0;
+    margin: var(--site-header-height) 0 0;
     padding: 0;
     overflow: visible;
     background: #001584;
@@ -3252,12 +3254,6 @@ body:has(.home-page-compact) {
     min-height: 56px;
     max-height: 56px;
     margin: 0 auto;
-  }
-}
-
-@media (max-width: 600px) {
-  .home-page.home-page-compact {
-    margin-top: var(--site-header-height);
   }
 }
 
