@@ -3479,3 +3479,40 @@ body:has(.home-page-compact) {
   outline: 3px solid #59d5f2 !important;
   outline-offset: 3px;
 }
+
+
+/* Padroniza o menu do jogador com a mesma proporção compacta da área do cambista. */
+.area-page-compact .player-menu-card {
+  padding: 0 !important;
+  border-radius: 16px !important;
+}
+.area-page-compact .player-menu-card > .player-collapsible-section > summary {
+  min-height: 76px !important;
+  padding: 16px 48px 16px 16px !important;
+  row-gap: 2px !important;
+}
+.area-page-compact .player-menu-card .player-collapsible-label {
+  font-size: .9rem !important;
+  line-height: 1.2 !important;
+}
+.area-page-compact .player-menu-card .player-collapsible-title {
+  font-size: 1.35rem !important;
+  line-height: 1.25 !important;
+}
+.area-page-compact .player-menu-card > .player-collapsible-section > summary::after {
+  right: 16px !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-right-width: 3px !important;
+  border-bottom-width: 3px !important;
+}
+@media (max-width: 600px) {
+  .area-page-compact .player-menu-card {
+    padding: 0 !important;
+    border-radius: 16px !important;
+  }
+  .area-page-compact .player-menu-card > .player-collapsible-section > summary {
+    min-height: 76px !important;
+    padding: 16px 42px 16px 14px !important;
+  }
+}
