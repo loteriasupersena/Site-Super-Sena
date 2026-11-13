@@ -16,7 +16,7 @@ export default function HomePage() {
       <main className="home-entry">
         <figure className="home-how-infographic numeric-game-infographic">
           <Image
-            src="/images/brand/super-sena-inicio .webp"
+            src="/images/brand/super-sena-inicio.webp"
             alt="Como funciona o jogo Super Sena"
             className="home-how-infographic-image"
             width={1200}
