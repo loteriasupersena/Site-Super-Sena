@@ -9,9 +9,9 @@
   "theme_color": "#07358f",
   "icons": [
     {
-      "src": "/images/brand/super-sena-icone.png",
+      "src": "/images/brand/super-sena-icone.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any maskable"
     }
   ]
