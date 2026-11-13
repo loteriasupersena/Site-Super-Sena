@@ -5,9 +5,9 @@ import { AndroidBrowserClass } from "@/components/android-browser-class";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loteriasupersena.com.br";
 
-const icon = "/images/brand/super-sena-icone.png";
-const appleIcon = "/images/brand/super-sena-icone.png?v=2";
-const shareImage = "/images/brand/super-sena-icone.png";
+const icon = "/images/brand/super-sena-icone.webp";
+const appleIcon = "/images/brand/super-sena-icone.webp?v=2";
+const shareImage = "/images/brand/super-sena-compartilhamento.webp";
 const favicon = "/images/brand/favicon-super-sena.svg";
 
 export const metadata: Metadata = {
@@ -27,11 +27,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: icon, type: "image/png", sizes: "512x512" },
+      { url: icon, type: "image/webp" },
       { url: favicon, type: "image/svg+xml", sizes: "any" },
     ],
     shortcut: [{ url: favicon, type: "image/svg+xml", sizes: "any" }],
-    apple: [{ url: appleIcon, type: "image/png" }],
+    apple: [{ url: appleIcon, type: "image/webp" }],
   },
   openGraph: {
     type: "website",
