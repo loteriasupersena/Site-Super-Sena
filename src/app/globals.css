@@ -3337,3 +3337,21 @@ body:has(.home-page-compact) {
   background: #f2f4f7;
   border-color: #c5ccd4;
 }
+
+
+/* Botão Entrar compacto na página inicial em celulares. */
+@media (max-width: 600px) {
+  .home-page-compact .home-entry > .home-access-footer {
+    min-height: 58px;
+    height: 58px;
+    padding: 6px 0;
+  }
+
+  .home-page-compact .home-footer-access {
+    width: min(68%, 300px);
+    min-height: 44px;
+    max-height: 44px;
+    padding: 6px 20px;
+    font-size: 1rem;
+  }
+}
