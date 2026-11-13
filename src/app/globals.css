@@ -3572,3 +3572,20 @@ body:has(.home-page-compact) {
   outline: 3px solid #59d5f2 !important;
   outline-offset: 3px;
 }
+
+
+/* Botão Sair do Pix: mantém o visual neutro e sinaliza o acionamento em azul. */
+.area-page-compact .numeric-game-purchase .pix-close-button:active,
+.area-page-compact .numeric-game-purchase .pix-close-button:focus {
+  background: #258bd3 !important;
+  background-image: linear-gradient(180deg, #42b4f4 0%, #1676c2 100%) !important;
+  border-color: #73c9ff !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transform: translateY(2px);
+  box-shadow: 0 0 0 4px rgba(89, 213, 242, .24) !important;
+}
+.area-page-compact .numeric-game-purchase .pix-close-button:focus-visible {
+  outline: 3px solid #59d5f2 !important;
+  outline-offset: 3px;
+}
