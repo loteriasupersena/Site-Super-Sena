@@ -3353,3 +3353,25 @@ body:has(.home-page-compact) {
   border-color: #2b3546 !important;
   box-shadow: none !important;
 }
+
+
+/* Reforça o contraste do conteúdo do menu Resultados nas áreas do jogador e cambista. */
+.player-menu-card .recent-results-content,
+.cashier-info-card .recent-results-content {
+  color: #ffffff !important;
+}
+.player-menu-card .recent-results-content .recent-result,
+.cashier-info-card .recent-results-content .recent-result {
+  background: #46515c !important;
+  border-color: #aeb8c2 !important;
+  color: #ffffff !important;
+}
+.player-menu-card .recent-results-content .recent-result *,
+.cashier-info-card .recent-results-content .recent-result * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+.player-menu-card .recent-results-content .recent-result time,
+.cashier-info-card .recent-results-content .recent-result time {
+  color: #f4f6fb !important;
+}
