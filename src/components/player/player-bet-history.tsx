@@ -20,7 +20,6 @@ export function PlayerBetHistory() {
     return () => { active = false; };
   }, []);
   return <section className="player-history-card">
-    <p>Consulte seus números, rodadas e prêmios.</p>
     {loading ? <p>Carregando seu histórico…</p> : error ? <p className="note-inline" role="alert">{error}</p> : history.length === 0 ? <p>Você ainda não tem apostas registradas neste período.</p> : (
       <div className="player-history-list">{history.map((purchase) => <article className="player-history-purchase" key={purchase.id}>
         <div className="player-history-purchase-heading"><div><strong>Compra realizada</strong><span>{date(purchase.createdAt)}</span></div><strong>{money(purchase.totalCents)}</strong></div>
