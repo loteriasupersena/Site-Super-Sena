@@ -3169,16 +3169,14 @@ body:has(.home-page-compact) {
 /* Página inicial mobile: arte em largura total, integrada ao fundo da página. */
 @media (max-width: 600px) {
   :root {
-    --site-header-height: 70px;
+    --site-header-height: 72px;
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
     width: min(55.8vw, 180px);
     height: auto;
-    max-width: 90px;
-    max-height: 61px;
-    transform: scaleY(0.95);
-    transform-origin: center;
+    max-width: 200px;
+    max-height: 68px;
   }
 
   html:has(.home-page-compact),
@@ -3251,8 +3249,8 @@ body:has(.home-page-compact) {
   }
 
   .home-page-compact .home-footer-access {
-    width: min(22.55%, 99px);
-    max-width: 99px;
+    width: min(20.5%, 90px);
+    max-width: 180px;
     min-height: 14px;
     max-height: 14px;
     margin: 0 auto;
