@@ -6,7 +6,7 @@ import { AndroidBrowserClass } from "@/components/android-browser-class";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loteriasupersena.com.br";
 
 const icon = "/images/brand/super-sena-icone.webp";
-const appleIcon = "/images/brand/super-sena-icone.webp?v=2";
+const appleIcon = "/images/brand/super-sena-icone.webp";
 const shareImage = "/images/brand/super-sena-compartilhamento.webp";
 const favicon = "/images/brand/favicon-super-sena.svg";
 
