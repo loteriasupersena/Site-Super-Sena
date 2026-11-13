@@ -18,7 +18,6 @@ export function PlayerWalletWithdrawals() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -36,14 +35,13 @@ export function PlayerWalletWithdrawals() {
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function requestWithdrawal(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(""); setNotice("");
+    event.preventDefault(); setError("");
     if (availableCents <= 0) { setError("Não há saldo disponível para sacar."); return; }
     setBusy(true);
     try {
       const response = await fetch("/api/player/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pixKey: pixKey.trim() }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o saque.");
-      setNotice("Saque solicitado com sucesso. O valor total disponível ficou reservado. O administrador conferirá a chave Pix e fará a transferência manualmente; depois registrará a conclusão no sistema. Se a solicitação for recusada, o motivo aparecerá no histórico e o valor será devolvido ao saldo.");
       setPixKey(""); await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao solicitar o saque."); }
     finally { setBusy(false); }
@@ -52,12 +50,10 @@ export function PlayerWalletWithdrawals() {
   return <section className="player-wallet-withdrawals-content">
     <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
     <form className="admin-round-create" onSubmit={requestWithdrawal}>
-      <p className="wallet-withdrawal-full-balance">O saque será do saldo total disponível.</p>
       <label>Chave Pix<input value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required /></label>
       <button type="submit" disabled={loading || busy || availableCents <= 0}>{busy ? "Solicitando…" : "Solicitar saque"}</button>
     </form>
     {error && <p role="alert" className="note-inline">{error}</p>}
-    {notice && <p role="status" className="note-inline">{notice}</p>}
     <h3>Histórico de saques</h3>
     {loading ? <p>Carregando histórico…</p> : withdrawals.length === 0 ? <p>Nenhum saque solicitado ainda.</p> : <div className="admin-round-list">
       {withdrawals.map((item) => <article className="round-option" key={item.id}>
