@@ -337,7 +337,6 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
         </fieldset>}
 
         {error && <p role="alert" className="note-inline form-feedback-error">{error}</p>}
-        {notice && <p role="status" className="note-inline form-feedback-success">{notice}</p>}
         <button type="submit" disabled={submitting || Boolean(purchase) || (!numbers.length && !/^[0-9]{6}$/.test(pendingNumber))}>
           {submitting ? "Registrando…" : "Continuar"}
         </button>
