@@ -3265,9 +3265,9 @@ body:has(.home-page-compact) {
 }
 
 
-/* Cards das áreas do jogador, cambista e administrador: fundo claro e texto escuro. */
+/* Cor única dos cards nas áreas do jogador, cambista e administrador. */
 :root {
-  --card: #e5e7eb;
+  --card: #636c75;
 }
 .welcome-card,
 .auth-card,
@@ -3288,9 +3288,9 @@ body:has(.home-page-compact) {
 .admin-prize-payout .admin-prize-card,
 .cashier-info-card,
 .numeric-game-purchase {
-  background-color: #e5e7eb !important;
-  border-color: #b7c0ca !important;
-  color: #17212b !important;
+  background-color: #636c75 !important;
+  border-color: #858e97 !important;
+  color: #f4f6fb !important;
   box-shadow: none;
 }
 .welcome-card h1,
@@ -3320,7 +3320,7 @@ body:has(.home-page-compact) {
 .player-menu-card,
 .cashier-summary-menu,
 .admin-round-create {
-  color: #17212b !important;
+  color: #f4f6fb !important;
 }
 .feature-card p,
 .ticket-check p,
@@ -3333,12 +3333,13 @@ body:has(.home-page-compact) {
 .admin-cashier-details-heading > div > span,
 .admin-prize-payout .admin-prize-card p,
 .cashier-summary-menu-hint {
-  color: #465363;
+  color: #f4f6fb;
 }
 .cashier-summary-menu .cashier-summary-tile,
 .admin-cashier-details dl > div {
-  background: #f2f4f7;
-  border-color: #c5ccd4;
+  background: #636c75 !important;
+  border-color: #858e97 !important;
+  color: #f4f6fb !important;
 }
 
 
