@@ -176,21 +176,21 @@ export function AdminGameSimulator() {
 
   const inputStyle: CSSProperties = {
     width: "100%",
-    minHeight: 58,
+    minHeight: 48,
     boxSizing: "border-box",
     borderRadius: 14,
     border: "1px solid var(--border, #334155)",
     background: "var(--input, #0b1421)",
     color: "var(--foreground, #f1f5f9)",
-    padding: "14px 16px",
-    fontSize: 18,
+    padding: "10px 12px",
+    fontSize: 16,
   };
   const cardStyle: CSSProperties = {
     border: "1px solid var(--border, #334155)",
     borderRadius: 20,
     background: "var(--card, #172233)",
-    padding: 20,
-    marginTop: 18,
+    padding: 14,
+    marginTop: 12,
   };
   const labelStyle: CSSProperties = {
     display: "grid",
@@ -201,8 +201,8 @@ export function AdminGameSimulator() {
   };
   const gridStyle: CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-    gap: 16,
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 12,
   };
 
   return (
@@ -253,7 +253,7 @@ export function AdminGameSimulator() {
       </div>
 
       <div style={cardStyle}>
-        <h2 style={{ marginTop: 0, marginBottom: 22 }}>Resultado financeiro</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 14 }}>Resultado financeiro</h2>
         {!result ? (
           <p style={{ color: "var(--muted-foreground, #94a3b8)" }}>Preencha os parâmetros e inicie a simulação para visualizar os resultados.</p>
         ) : (
@@ -266,20 +266,20 @@ export function AdminGameSimulator() {
                 ["Comissão do cambista", money(result.commission), percent(result.totalBet ? result.commission / result.totalBet * 100 : 0) + " do total apostado"],
                 ["Lucro da banca", money(result.net), percent(result.totalBet ? result.net / result.totalBet * 100 : 0) + " do total apostado, antes de impostos e despesas"],
               ].map(([label, value, note]) => (
-                <article key={label} style={{ border: "1px solid var(--border, #334155)", borderRadius: 16, background: "var(--background, #0d1725)", padding: 16, minWidth: 0 }}>
-                  <div style={{ color: "var(--muted-foreground, #94a3b8)", marginBottom: 12 }}>{label}</div>
-                  <strong style={{ display: "block", fontSize: "clamp(21px, 4vw, 30px)", lineHeight: 1.2, overflowWrap: "anywhere" }}>{value}</strong>
-                  <div style={{ color: "var(--muted-foreground, #94a3b8)", marginTop: 10, lineHeight: 1.5 }}>{note}</div>
+                <article key={label} style={{ border: "1px solid var(--border, #334155)", borderRadius: 14, background: "var(--background, #0d1725)", padding: 12, minWidth: 0 }}>
+                  <div style={{ color: "var(--muted-foreground, #94a3b8)", marginBottom: 8 }}>{label}</div>
+                  <strong style={{ display: "block", fontSize: "clamp(17px, 3.5vw, 25px)", lineHeight: 1.2, overflowWrap: "anywhere" }}>{value}</strong>
+                  <div style={{ color: "var(--muted-foreground, #94a3b8)", marginTop: 6, lineHeight: 1.35, fontSize: 13 }}>{note}</div>
                 </article>
               ))}
             </div>
 
-            <div style={{ overflowX: "auto", marginTop: 22 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+            <div style={{ overflowX: "auto", marginTop: 14 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 0, tableLayout: "fixed" }}>
                 <thead>
                   <tr>
                     {["Categoria", "Acertos", "Prob. observada", "Prêmio bruto"].map((heading) => (
-                      <th key={heading} style={{ textAlign: heading === "Categoria" ? "left" : "right", padding: 12, borderBottom: "1px solid var(--border, #334155)", color: "var(--muted-foreground, #94a3b8)" }}>{heading}</th>
+                      <th key={heading} style={{ textAlign: heading === "Categoria" ? "left" : "right", padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)", color: "var(--muted-foreground, #94a3b8)" }}>{heading}</th>
                     ))}
                   </tr>
                 </thead>
@@ -288,7 +288,7 @@ export function AdminGameSimulator() {
                     const data = result.byCategory[category.key];
                     return (
                       <tr key={category.key}>
-                        <td style={{ padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{category.label}</td>
+                        <td style={{ padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)" }}>{category.label}</td>
                         <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{data.hits.toLocaleString("pt-BR")}</td>
                         <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{percent(data.hits / result.attempts * 100)}</td>
                         <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{money(data.prizes)}</td>
@@ -306,7 +306,7 @@ export function AdminGameSimulator() {
       </div>
 
       <div style={cardStyle}>
-        <h2 style={{ marginTop: 0, marginBottom: 22 }}>Auditoria da simulação</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 14 }}>Auditoria da simulação</h2>
         {!result ? (
           <p style={{ color: "var(--muted-foreground, #94a3b8)" }}>Ainda não há simulação executada.</p>
         ) : (
