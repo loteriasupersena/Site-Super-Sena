@@ -6,7 +6,7 @@ export type NumericPrizeMultipliers = Record<NumericPrizeCategory, number>;
 export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v1";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
-  unit: 6, tens: 30, hundreds: 300, quadra: 3_000, quina: 30_000, sena: 300_000,
+  unit: 5, tens: 30, hundreds: 300, quadra: 3_000, quina: 30_000, sena: 300_000,
 };
 
 export const APPROVED_NUMERIC_PRIZE_MULTIPLIERS = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
