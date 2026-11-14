@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
 const categories = [
   { key: "sena", label: "Sena", digits: 6, initial: "300000" },
@@ -174,7 +174,7 @@ export function AdminGameSimulator() {
     setRunning(false);
   }
 
-  const inputStyle: React.CSSProperties = {
+  const inputStyle: CSSProperties = {
     width: "100%",
     minHeight: 58,
     boxSizing: "border-box",
@@ -185,21 +185,21 @@ export function AdminGameSimulator() {
     padding: "14px 16px",
     fontSize: 18,
   };
-  const cardStyle: React.CSSProperties = {
+  const cardStyle: CSSProperties = {
     border: "1px solid var(--border, #334155)",
     borderRadius: 20,
     background: "var(--card, #172233)",
     padding: 20,
     marginTop: 18,
   };
-  const labelStyle: React.CSSProperties = {
+  const labelStyle: CSSProperties = {
     display: "grid",
     gap: 9,
     color: "var(--muted-foreground, #b8c5d6)",
     fontWeight: 600,
     fontSize: 15,
   };
-  const gridStyle: React.CSSProperties = {
+  const gridStyle: CSSProperties = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
     gap: 16,
@@ -229,7 +229,7 @@ export function AdminGameSimulator() {
             </label>
           ))}
           <label style={labelStyle}>
-            Comissão do cambista (%)
+            Comissão simulada sobre o total apostado (%)
             <input style={inputStyle} inputMode="decimal" value={commission} disabled={running} onChange={(event) => setCommission(event.target.value)} />
           </label>
           <label style={labelStyle}>
@@ -299,7 +299,7 @@ export function AdminGameSimulator() {
               </table>
             </div>
             <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginBottom: 0 }}>
-              Referência teórica para números uniformes e independentes: Unidade 1 em 10; Dezena 1 em 100; Centena 1 em 1.000; Quadra 1 em 10.000; Quina 1 em 100.000; Sena 1 em 1.000.000. As frequências observadas variam e não são garantias.
+              Referência teórica para faixas exclusivas, com números uniformes e independentes: Unidade 9%; Dezena 0,9%; Centena 0,09%; Quadra 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
             </p>
           </>
         )}
