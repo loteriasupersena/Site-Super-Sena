@@ -70,6 +70,11 @@ export function CashierSettlementHistory() {
             : "Não houve valor a repassar ou receber."}</p>
         <p className="note-inline">Período encerrado. Um novo período foi iniciado após este acerto.</p>
       </article>)}
+      {totalPages > 1 && <div className="admin-cashier-pagination">
+        <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Anterior</button>
+        <span>Página {page} de {totalPages}</span>
+        <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Próxima</button>
+      </div>}
     </section>
   </details>;
 }
