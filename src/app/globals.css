@@ -1572,7 +1572,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
     grid-template-columns: minmax(0, 1fr);
   }
   .area-page-compact .numeric-entry-row button,
-  .area-page-compact .cashier-prize-lookup-form button,
   .area-page-compact .numeric-game-purchase form > button[type="submit"] {
     width: 100%;
     min-height: 66px;
@@ -2586,43 +2585,6 @@ html.is-android {
   html.is-android .cashier-info-card .cashier-prize-payout-heading h2,
   html.is-android .cashier-info-card .cashier-prize-payout-heading label {
     color: #f4f6fb !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form label {
-    color: #f4f6fb !important;
-    font-size: 1.12rem !important;
-    font-weight: 800 !important;
-    overflow-wrap: normal !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form input {
-    min-height: 62px !important;
-    padding: 14px 16px !important;
-    background: #000 !important;
-    background-image: none !important;
-    color: #f4f6fb !important;
-    border: 2px solid #a3a3a8 !important;
-    border-radius: 14px !important;
-    box-shadow: none !important;
-    -webkit-text-fill-color: #f4f6fb !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form input::placeholder {
-    color: #a3a3a8 !important;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #a3a3a8 !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form button,
-  html.is-android .cashier-info-card .cashier-prize-lookup-form button:disabled {
-    min-height: 68px !important;
-    padding: 14px 18px !important;
-    background: #59b8f5 !important;
-    background-image: none !important;
-    color: #fff !important;
-    border: 2px solid #080808 !important;
-    border-radius: 14px !important;
-    opacity: 1 !important;
-    box-shadow: none !important;
-    -webkit-text-fill-color: #fff !important;
-    font-size: 1.16rem !important;
-    font-weight: 850 !important;
   }
   html.is-android .cashier-info-card > .cashier-info-results {
     background: transparent !important;
