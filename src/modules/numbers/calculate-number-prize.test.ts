@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { allocateNumberStake } from "../../domain/allocate-number-stake";
-import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "../../domain/numeric-prize-rules";
+import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION, LEGACY_NUMERIC_PRIZE_RULE_VERSION, DEFAULT_NUMERIC_PRIZE_MULTIPLIERS } from "../../domain/numeric-prize-rules";
 import { calculateNumberPrizeCents } from "./calculate-number-prize";
 function line(numberValue: string) { return { numberValue, ...allocateNumberStake(600), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() }; }
 
@@ -10,15 +10,13 @@ describe("calculateNumberPrizeCents", () => {
   it("pays only Quadra on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 3_000));
   it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(100 * 300));
   it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(100 * 30));
-  it("returns exactly the R$1.00 stake when only the unit matches", () => {
-    const oneRealLine = {
-      numberValue: "123456",
-      ...allocateNumberStake(100),
-      ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
-      ruleSnapshot: createNumericPrizeRuleSnapshot(),
-    };
-    expect(oneRealLine.unitCents).toBe(20);
-    expect(calculateNumberPrizeCents(oneRealLine, "999996")).toBe(100);
+  it.each([100, 101, 105, 600, 999, 1000])("returns exactly the full stake on a unit-only match for %i cents", (stakeCents) => {
+    const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
+    expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
+  });
+  it("preserves legacy v1 unit calculation", () => {
+    const wager = { numberValue: "123456", ...allocateNumberStake(100), ruleVersion: LEGACY_NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: { version: LEGACY_NUMERIC_PRIZE_RULE_VERSION, multipliers: DEFAULT_NUMERIC_PRIZE_MULTIPLIERS } };
+    expect(calculateNumberPrizeCents(wager, "999996")).toBe(120);
   });
   it("returns zero when no suffix matches", () => expect(calculateNumberPrizeCents(line("123456"), "999994")).toBe(0));
   it("uses leading zeroes literally", () => expect(calculateNumberPrizeCents(line("000007"), "123007")).toBe(allocateNumberStake(600).hundredsCents * 300));
