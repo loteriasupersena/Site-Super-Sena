@@ -47,7 +47,7 @@ async function databaseNow(tx: Prisma.TransactionClient) {
 // confirms, so sales or payouts made after the preview remain in the next period.
 export async function GET(request: NextRequest, context: { params: Promise<{ cashierId: string }> }) {
   const auth = await requireAdmin(request);
-  if (auth.response) return auth.response;
+  if ("response" in auth) return auth.response;
   const { cashierId } = await context.params;
   try {
     const preview = await authPrisma.$transaction(async (tx) => {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cas
 export async function POST(request: NextRequest, context: { params: Promise<{ cashierId: string }> }) {
   if (!validOrigin(request)) return NextResponse.json({ error: "Requisição inválida." }, { status: 403, headers });
   const auth = await requireAdmin(request);
-  if (auth.response) return auth.response;
+  if ("response" in auth) return auth.response;
   let raw: unknown;
   try { raw = await request.json(); } catch {
     return NextResponse.json({ error: "Confirmação de apuração inválida." }, { status: 400, headers });
