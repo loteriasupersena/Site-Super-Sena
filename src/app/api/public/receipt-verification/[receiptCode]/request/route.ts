@@ -54,12 +54,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         (purchase.paymentMethod === "CASH" || purchase.paymentMethod === "WALLET" ||
           (purchase.payment?.status === "CONFIRMED" && purchase.payment.confirmedAt !== null));
       if (!confirmed) throw new Error("PAYMENT_NOT_CONFIRMED");
-      const eligible = purchase.participations.flatMap((part) => part.round.status === "COMPLETED"
+      const unpaid = purchase.participations.flatMap((part) => part.round.status === "COMPLETED"
         ? part.numericLines.filter((line) => (line.prizeCents ?? 0) > 0 && !line.prizeCreditedAt && !line.prizePayout)
         : []);
-      if (!eligible.length) throw new Error("NO_UNPAID_PRIZE");
-      const blocked = eligible.filter((line) => line.prizePaymentRequest?.status === "PENDING" || line.prizePaymentRequest?.status === "PAID");
-      if (blocked.length) throw new Error("REQUEST_ALREADY_EXISTS");
+      const eligible = unpaid.filter((line) => !line.prizePaymentRequest || line.prizePaymentRequest.status === "REJECTED");
+      if (!eligible.length) throw new Error(unpaid.length ? "REQUEST_ALREADY_EXISTS" : "NO_UNPAID_PRIZE");
       let created = 0;
       let grossTotalCents = 0, administrativeTotalCents = 0, transactionTotalCents = 0, netTotalCents = 0;
       for (const line of eligible) {
