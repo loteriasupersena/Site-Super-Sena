@@ -24,15 +24,17 @@ export function CashierSettlementHistory() {
   const [items, setItems] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const controller = new AbortController();
     void (async () => {
       try {
-        const response = await fetch("/api/cashier/settlements", { cache: "no-store", signal: controller.signal });
+        const response = await fetch("/api/cashier/settlements?page=" + page, { cache: "no-store", signal: controller.signal });
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "Não foi possível carregar o histórico.");
-        if (!controller.signal.aborted) setItems(body.settlements as Settlement[]);
+        if (!controller.signal.aborted) { setItems(body.settlements as Settlement[]); setTotalPages(body.pagination.totalPages); }
       } catch (reason) {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Falha ao carregar o histórico.");
       } finally {
@@ -40,7 +42,7 @@ export function CashierSettlementHistory() {
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [page]);
 
   return <details className="player-collapsible-section cashier-settlement-history">
     <summary>
