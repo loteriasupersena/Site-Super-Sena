@@ -61,11 +61,12 @@ export function AdminPrizeRules() {
   return <section className="feature-card" aria-labelledby="admin-prize-rules-heading">
     <span className="feature-label">Regras do jogo</span>
     <h2 id="admin-prize-rules-heading">Multiplicadores de prêmios</h2>
-    <p>Altere os valores abaixo e salve. O servidor passa a usar os novos multiplicadores nas apostas registradas depois da alteração. Apostas anteriores mantêm a regra gravada no momento da compra.</p>
+    <p>O multiplicador da Unidade é fixo em 6: o servidor calcula um sexto da aposta e devolve o valor integral quando somente a Unidade é acertada. Os demais multiplicadores podem ser alterados. Apostas antigas preservam a regra gravada na compra.</p>
     {loading ? <p>Carregando configuração salva…</p> : <form className="admin-round-create" onSubmit={save}>
       {fields.map((field) => <label key={field.key}>{field.label} (vezes)
         <input
           type="number" inputMode="numeric" min="0" max="1000000" step="1" required
+          disabled={saving || loading || field.key === "unit"}
           value={String(values[field.key])}
           onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value === "" ? 0 : Number(event.target.value) }))}
         />
