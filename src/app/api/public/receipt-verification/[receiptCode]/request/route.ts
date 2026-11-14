@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         where: { receiptCode },
         select: { id: true, status: true, paymentMethod: true, confirmedAt: true, cashierId: true, playerId: true,
           payment: { select: { status: true, confirmedAt: true } },
-          participations: { where: { status: "CONFIRMED" }, select: { round: { select: { status: true } }, numericLines: {
+          participations: { where: { status: "CONFIRMED" }, select: { round: { select: { status: true, resultNumber: true } }, numericLines: {
             select: { id: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { id: true } }, prizePaymentRequest: { select: { id: true, status: true } } },
           } } },
         },
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         (purchase.paymentMethod === "CASH" || purchase.paymentMethod === "WALLET" ||
           (purchase.payment?.status === "CONFIRMED" && purchase.payment.confirmedAt !== null));
       if (!confirmed) throw new Error("PAYMENT_NOT_CONFIRMED");
-      const unpaid = purchase.participations.flatMap((part) => part.round.status === "COMPLETED"
+      const unpaid = purchase.participations.flatMap((part) => part.round.status === "COMPLETED" && Boolean(part.round.resultNumber)
         ? part.numericLines.filter((line) => (line.prizeCents ?? 0) > 0 && !line.prizeCreditedAt && !line.prizePayout)
         : []);
       const eligible = unpaid.filter((line) => !line.prizePaymentRequest || line.prizePaymentRequest.status === "REJECTED");
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return NextResponse.json({ success: true, request: result, message: "Solicitação enviada à plataforma. Aguarde a análise do administrador." }, { status: 201, headers });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return NextResponse.json({ error: "O recibo foi atualizado simultaneamente. Atualize a consulta e tente novamente." }, { status: 409, headers });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2034" || error.code === "P2002")) return NextResponse.json({ error: "O recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize a consulta e tente novamente." }, { status: 409, headers });
     const code = error instanceof Error ? error.message : "";
     if (code === "PHYSICAL_RECEIPT_ONLY") return NextResponse.json({ error: "Solicitações Pix por recibo estão disponíveis somente para vendas físicas." }, { status: 403, headers });
     if (code === "PAYMENT_NOT_CONFIRMED") return NextResponse.json({ error: "O pagamento deste recibo ainda não está confirmado." }, { status: 409, headers });
