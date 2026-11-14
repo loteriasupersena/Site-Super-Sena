@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/session", () => ({
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
   authPrisma: { $transaction: mocks.transaction },
 }));
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const cashierId = "cashier-123456";
 const cutoff = new Date("2026-11-04T15:00:00.000Z");
@@ -62,6 +62,32 @@ describe("POST admin cashier settlements", () => {
       numericPrizePayout: { aggregate: mocks.payoutAggregate, updateMany: mocks.payoutUpdateMany },
       auditEvent: { create: mocks.auditCreate },
     }));
+  });
+
+
+  it("returns an apuration preview without closing the period or associating prize payouts", async () => {
+    const previewRequest = new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
+      headers: { cookie: "superquina_session=session-token" },
+    });
+    const response = await GET(previewRequest, context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      preview: {
+        cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
+        commissionCents: 900, cashPrizePayoutCents: 2500,
+        netBalanceCents: 6600, cashierOwesPlatformCents: 6600, platformOwesCashierCents: 0,
+      },
+    });
+    expect(mocks.settlementCreate).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired preview if another settlement already closed the period", async () => {
+    mocks.settlementFindFirst.mockResolvedValueOnce({ settledAt: cutoff });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(409);
+    expect(mocks.settlementCreate).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
   it("requires a valid active ADMIN session and blocks mandatory password changes", async () => {
