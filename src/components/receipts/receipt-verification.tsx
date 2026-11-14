@@ -110,7 +110,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
       setRequestMessage("Solicitação enviada à plataforma. Aguarde a análise do administrador.");
       setPixKey("");
-      const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(data.receiptCode ?? receiptCode.toUpperCase())}`, { cache: "no-store" });
+      const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
       if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
     } catch (reason) { setRequestError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação."); }
     finally { setRequesting(false); }
