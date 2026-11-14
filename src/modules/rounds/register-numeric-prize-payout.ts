@@ -4,7 +4,7 @@ import { getNumericPrizeReview, NUMERIC_PRIZE_CATEGORY_LABELS } from "@/domain/n
 export type NumericPrizePayoutChannel = "PLATFORM_PIX" | "CASHIER_CASH";
 
 export class NumericPrizePayoutError extends Error {
-  constructor(public readonly code: "LINE_NOT_FOUND" | "NOT_ELIGIBLE" | "NOT_OWNED" | "ALREADY_PAID" | "INCONSISTENT_PRIZE") {
+  constructor(public readonly code: "LINE_NOT_FOUND" | "NOT_ELIGIBLE" | "ALREADY_PAID" | "INCONSISTENT_PRIZE") {
     super(code);
   }
 }
@@ -15,7 +15,6 @@ export async function registerNumericPrizePayout(
     lineId: string;
     actorId: string;
     channel: NumericPrizePayoutChannel;
-    cashierId?: string;
     reference?: string | null;
   },
 ) {
@@ -45,8 +44,7 @@ export async function registerNumericPrizePayout(
 
   const purchase = line.participation.purchase;
   const isCashierTicket = Boolean(purchase.cashierId) && purchase.playerId === null;
-  // Both external payout channels are reserved for cashier-issued physical receipts.
-  // Online-player prizes belong to the wallet and must never be paid through this flow.
+  // Online-player prizes remain in the wallet; physical receipts require a platform Pix request.
   if (
     !isCashierTicket ||
     purchase.status !== "CONFIRMED" ||
