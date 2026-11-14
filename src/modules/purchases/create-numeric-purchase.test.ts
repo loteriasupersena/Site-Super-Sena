@@ -4,7 +4,7 @@ import { createNumericPurchase } from "./create-numeric-purchase";
 describe("createNumericPurchase pending Pix intent", () => {
 
   it("snapshots the current admin multipliers into a new pending Pix bet", async () => {
-    const configured = { unit: 7, tens: 30, hundreds: 250, quadra: 2500, quina: 25000, sena: 250000 };
+    const configured = { unit: 6, tens: 20, hundreds: 200, quadra: 2000, quina: 20000, sena: 200000 };
     const purchaseCreate = vi.fn().mockResolvedValue({
       id: "purchase-custom-rules", status: "PENDING_PAYMENT", paymentMethod: "PIX", totalCents: 100,
       receiptCode: null, confirmedAt: null, participations: [],
@@ -27,7 +27,7 @@ describe("createNumericPurchase pending Pix intent", () => {
     });
 
     expect(purchaseCreate.mock.calls[0]![0].data.numericIntent.create.ruleSnapshot).toEqual({
-      version: "numeric-six-digit-v1", multipliers: configured,
+      version: "numeric-six-digit-v2", multipliers: configured,
     });
   });
 
