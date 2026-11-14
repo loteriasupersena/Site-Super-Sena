@@ -19,7 +19,11 @@ function validOrigin(request: NextRequest) {
   } catch { return false; }
 }
 
-type AdminGuard =\n  | { authorized: true; admin: NonNullable<Awaited<ReturnType<typeof getSessionUser>>> }\n  | { authorized: false; response: NextResponse };\n\nasync function requireAdmin(request: NextRequest): Promise<AdminGuard> {
+type AdminGuard =
+  | { authorized: true; admin: NonNullable<Awaited<ReturnType<typeof getSessionUser>>> }
+  | { authorized: false; response: NextResponse };
+
+async function requireAdmin(request: NextRequest): Promise<AdminGuard> {
   const admin = await getSessionUser(request.cookies.get(SESSION_COOKIE)?.value);
   if (!admin) return { authorized: false, response: NextResponse.json({ error: "É necessário entrar na conta." }, { status: 401, headers }) };
   if (admin.role !== "ADMIN" || admin.mustChangePassword) {
