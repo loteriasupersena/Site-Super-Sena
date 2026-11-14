@@ -4,11 +4,13 @@ import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { requireRole } from "@/lib/auth/require-role";
+import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const user = await requireRole("ADMIN");
   return <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
     <div className="admin-page-layout">
+    <AdminGameSimulator />
     <div className="admin-accordion-list">
       <details className="admin-accordion">
         <summary><span>Ganhadores</span></summary>
