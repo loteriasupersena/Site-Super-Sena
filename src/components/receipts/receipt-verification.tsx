@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null };
+type VerifiedNumber = { numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -47,6 +47,10 @@ function formatDate(value: string) {
 export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const [data, setData] = useState<VerifiedReceipt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pixKey, setPixKey] = useState("");
+  const [requesting, setRequesting] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestError, setRequestError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -95,8 +99,24 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   if (!data) return <p role="alert" style={{ color: "#b91c1c", fontWeight: 700 }}>Não foi possível consultar o recibo.</p>;
 
   const rounds = data.valid ? data.rounds ?? [] : [];
-  const hasAvailablePrize = rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
-  const prizeContactUrl = `${prizeSupportUrl}?text=${encodeURIComponent(`Olá! Consultei o recibo ${data.receiptCode ?? receiptCode.toUpperCase()} e tenho um prêmio disponível. Gostaria de orientação para receber.`)}`;
+  const physicalReceipt = Boolean(data.manualPayoutEligible);
+  const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
+  const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+  async function requestPrizePayment() {
+    setRequesting(true); setRequestError(""); setRequestMessage("");
+    try {
+      const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(data.receiptCode ?? receiptCode.toUpperCase())}/request`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
+      setRequestMessage("Solicitação enviada à plataforma. Aguarde a análise do administrador.");
+      setPixKey("");
+      const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(data.receiptCode ?? receiptCode.toUpperCase())}`, { cache: "no-store" });
+      if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
+    } catch (reason) { setRequestError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação."); }
+    finally { setRequesting(false); }
+  }
 
   return (
     <section aria-live="polite" style={{ border: "2px solid #9ca3af", borderRadius: 10, padding: 16, background: "#ffffff", color: "#111827", fontSize: 16, lineHeight: 1.5 }}>
@@ -152,9 +172,26 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
           )) : <p style={{ color: "#374151" }}>Nenhuma rodada confirmada para este recibo.</p>}
         </>
       )}
-      {hasAvailablePrize && <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #d1d5db", textAlign: "center" }}>
-        <p style={{ margin: "0 0 9px", color: "#374151", fontSize: 14 }}>Você tem um prêmio disponível. Entre em contato para combinar o recebimento.</p>
-        <a href={prizeContactUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", boxSizing: "border-box", width: "100%", maxWidth: 380, margin: "0 auto", padding: "13px 18px", borderRadius: 9, background: "#15803d", color: "#ffffff", fontWeight: 850, textAlign: "center", textDecoration: "none" }}>Entrar em contato pelo WhatsApp para receber o prêmio</a>
+      {hasAvailablePrize && <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #d1d5db" }}>
+        <h3 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18 }}>Solicitar recebimento do prêmio</h3>
+        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>Informe uma chave Pix para este recibo. A solicitação será enviada à plataforma para conferência e pagamento pelo administrador.</p>
+        {rounds.flatMap((round) => round.numbers.filter((number) => number.resultStatus === "PREMIADA" && !number.prizePaid).map((number) => {
+          const gross = number.prizeCents ?? 0;
+          const adminFee = gross >= 100000 ? Math.round(gross * 0.05) : 0;
+          const bankFee = gross >= 100000 ? Math.round(gross * 0.05) : 0;
+          const request = number.paymentRequest;
+          return <div key={round.roundCode + number.numberValue} style={{ padding: 10, margin: "8px 0", borderRadius: 7, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+            <strong style={{ color: "#111827" }}>{number.numberValue} · Prêmio bruto: {money(gross)}</strong>
+            {gross >= 100000 && <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa (5%): {money(adminFee)}<br />Taxa de transação bancária (5%): {money(bankFee)}<br /><strong>Líquido a receber: {money(gross - adminFee - bankFee)}</strong></p>}
+            {request?.status === "PENDING" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise</p>}
+            {request?.status === "REJECTED" && <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Você pode enviar novamente</p>}
+          </div>;
+        }))}
+        {requestError && <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>{requestError}</p>}
+        {requestMessage && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{requestMessage}</p>}
+        <label htmlFor="receipt-prize-pix-key" style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Sua chave Pix</label>
+        <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || pixKey.trim().length < 3 || rounds.some((round) => round.numbers.some((number) => number.paymentRequest?.status === "PENDING"))} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "Solicitar pagamento do prêmio"}</button>
       </div>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
