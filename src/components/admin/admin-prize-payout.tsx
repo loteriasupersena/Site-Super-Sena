@@ -27,6 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
+  paymentRequest: { id: string; status: "PENDING" | "PAID" | "REJECTED"; pixKeyMasked: string; pixKey: string | null; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; requestedAt: string; paymentReference: string | null } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -59,25 +60,13 @@ export function AdminPrizePayout() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const response = await fetch("/api/admin/prizes/pending", { cache: "no-store" });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? "Não foi possível carregar os ganhadores.");
-        if (active) setWinners(body.winners as Winner[]);
-      } catch (reason) {
-        if (active) setError(reason instanceof Error ? reason.message : "Falha ao carregar os ganhadores.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => { active = false; };
-  }, []);
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function confirmPaid(winner: Winner) {
     if (!window.confirm(
-      "Confirma que você já fez o Pix de " + money(winner.prizeCents) +
+      "Confirma que você já fez o Pix de " + money(winner.paymentRequest?.netCents ?? winner.prizeCents) +
       " para " + winner.playerName + " e conferiu o comprovante?"
     )) return;
 
@@ -94,7 +83,7 @@ export function AdminPrizePayout() {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
       setWinners((current) => current.map((item) =>
         item.id === winner.id
-          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: references[winner.id]?.trim() || null }
+          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: references[winner.id]?.trim() || null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID" } : null }
           : item
       ));
       setReferences((current) => ({ ...current, [winner.id]: "" }));
@@ -107,19 +96,36 @@ export function AdminPrizePayout() {
     }
   }
 
+  async function rejectRequest(winner: Winner) {
+    if (!winner.paymentRequest || !window.confirm("Recusar a solicitação Pix deste prêmio? O ganhador poderá enviar uma nova solicitação.")) return;
+    setBusy(winner.id); setError(""); setNotice("");
+    try {
+      const response = await fetch("/api/admin/prize-payment-requests/" + encodeURIComponent(winner.paymentRequest.id) + "/reject", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível recusar a solicitação.");
+      setWinners((current) => current.map((item) => item.id === winner.id && item.paymentRequest
+        ? { ...item, paymentRequest: { ...item.paymentRequest, status: "REJECTED" } }
+        : item));
+      setNotice("Solicitação recusada. O ganhador poderá enviar outra.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao recusar solicitação."); }
+    finally { setBusy(""); }
+  }
+
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
-  // Only cashier prizes require an outgoing Pix from the administrator.
-  const manualPending = pending.filter((winner) => winner.manualEligible);
-  const totalToPayCents = manualPending.reduce((total, winner) => total + winner.prizeCents, 0);
+  // Only physical cashier prizes with a pending request require an outgoing Pix from the administrator.
+  const manualPending = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PENDING");
+  const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
+  const allPhysicalPending = pending.filter((winner) => winner.manualEligible);
+  const totalPhysicalGrossCents = allPhysicalPending.reduce((total, winner) => total + winner.prizeCents, 0);
   const reviewPending = pending.filter((winner) => !winner.manualEligible);
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
     <span className="feature-label">Central de pagamentos</span>
     <h2 id="admin-prize-payout-heading">Ganhadores</h2>
-    <p>Todos os ganhadores das rodadas concluídas ficam reunidos aqui. Faça o Pix fora da plataforma e confirme somente depois que a transferência estiver concluída.</p>
+    <p>Acompanhe todos os prêmios e processe somente solicitações enviadas pelo ganhador na consulta do QR Code do recibo. A confirmação deve ocorrer depois que o Pix estiver concluído.</p>
 
     {tab === "pending" && <div className="admin-prize-total-panel" style={{
       margin: "1rem 0", padding: "1rem 1.1rem", borderRadius: "16px",
@@ -134,8 +140,13 @@ export function AdminPrizePayout() {
         {money(totalToPayCents)}
       </strong>
       <span style={{ display: "block", marginTop: ".35rem", color: "#c5d2e4", fontSize: ".85rem" }}>
-        {manualPending.length} {manualPending.length === 1 ? "prêmio aguardando Pix" : "prêmios aguardando Pix"}
+        {manualPending.length} {manualPending.length === 1 ? "solicitação aguardando pagamento" : "solicitações aguardando pagamento"}
       </span>
+      <div style={{ marginTop: ".8rem", paddingTop: ".8rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
+        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Total bruto de prêmios físicos ainda não pagos</span>
+        <strong style={{ display: "block", marginTop: ".2rem", fontSize: "1.25rem", color: "#fff" }}>{money(totalPhysicalGrossCents)}</strong>
+        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>{allPhysicalPending.length} prêmios físicos pendentes, incluindo os que ainda aguardam solicitação do ganhador.</span>
+      </div>
       {reviewPending.length > 0 && <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
         <strong style={{ color: "#ffd27a" }}>Em conferência: {money(reviewTotalCents)}</strong>
         <span style={{ display: "block", marginTop: ".25rem", color: "#c5d2e4" }}>
@@ -169,20 +180,24 @@ export function AdminPrizePayout() {
           <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
           <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
           <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
+          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
           {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
           {winner.phone && <p>Telefone: {winner.phone}</p>}
           {winner.paid
             ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
             : <>
-              {winner.manualEligible ? <>
+              {winner.manualEligible && winner.paymentRequest?.status === "PENDING" ? <>
                 <label htmlFor={"winner-reference-" + winner.id}>Referência do comprovante (opcional)</label>
                 <input className="admin-prize-reference" id={"winner-reference-" + winner.id} value={references[winner.id] ?? ""}
                   onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} maxLength={300}
                   placeholder="Identificador do Pix" />
-                <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
-                  {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
-                </button>
-              </> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
+                <div className="admin-prize-confirm-actions">
+                  <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
+                    {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
+                  </button>
+                  <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void rejectRequest(winner)}>Recusar solicitação</button>
+                </div>
+              </> : winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
       </div>}

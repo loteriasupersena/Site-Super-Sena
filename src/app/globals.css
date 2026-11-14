@@ -1395,10 +1395,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .numeric-game-purchase form,
 .numeric-entry-row,
 .cashier-prize-payout,
-.cashier-prize-payout form {
-  min-width: 0;
-  max-width: 100%;
-}
 
 .numeric-game-purchase form {
   width: 100%;
@@ -1436,8 +1432,7 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   overflow: hidden;
 }
 
-.cashier-prize-payout-heading,
-.cashier-prize-lookup-form {
+.cashier-prize-payout-heading {
   min-width: 0;
   width: 100%;
 }
@@ -1450,32 +1445,9 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   display: block;
   margin: 0;
 }
-.cashier-prize-lookup-form {
-  margin-top: 0;
-}
-
 .cashier-prize-payout-heading h2,
 .cashier-prize-payout-heading p {
   overflow-wrap: anywhere;
-}
-
-.cashier-prize-lookup-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-}
-
-.cashier-prize-lookup-form label {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.cashier-prize-lookup-form input,
-.cashier-prize-lookup-form button {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  margin: 0;
 }
 
 .cashier-prize-lines,
@@ -1492,28 +1464,10 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   overflow-wrap: anywhere;
 }
 
-.cashier-prize-line button {
-  width: 100%;
-  white-space: normal;
-}
-
 @media (min-width: 700px) {
-  .cashier-prize-lookup-form {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: end;
-  }
-
-  .cashier-prize-lookup-form button {
-    grid-column: 1 / -1;
-  }
-
   .cashier-prize-line {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-
-  .cashier-prize-line button {
-    width: auto;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
   }
 }
 
@@ -1545,13 +1499,11 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   gap: 12px;
   margin-top: 0;
 }
-.area-page-compact .numeric-game-purchase form > label,
-.area-page-compact .cashier-prize-lookup-form label {
+.area-page-compact .numeric-game-purchase form > label {
   font-size: 1.12rem;
   font-weight: 800;
 }
-.area-page-compact .numeric-game-purchase input:not([type="checkbox"]),
-.area-page-compact .cashier-prize-lookup-form input {
+.area-page-compact .numeric-game-purchase input:not([type="checkbox"]) {
   min-height: 62px;
   padding: 14px 16px;
   border-radius: 12px;
@@ -1566,8 +1518,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   letter-spacing: .2em;
 }
 .area-page-compact .numeric-entry-row button,
-.area-page-compact .cashier-prize-lookup-form button,
-.area-page-compact .cashier-prize-line button,
 .area-page-compact .numeric-game-purchase form > button[type="submit"] {
   min-height: 64px;
   padding: 14px 20px;
@@ -1581,9 +1531,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .area-page-compact .numeric-game-purchase .round-repeat-fieldset > select {
   min-height: 64px;
   font-size: 1.15rem;
-}
-.area-page-compact .cashier-prize-lookup-form {
-  gap: 12px;
 }
 .area-page-compact .cashier-prize-payout {
   padding: clamp(18px, 3vw, 30px);
@@ -1614,7 +1561,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
     grid-template-columns: minmax(0, 1fr);
   }
   .area-page-compact .numeric-entry-row button,
-  .area-page-compact .cashier-prize-lookup-form button,
   .area-page-compact .numeric-game-purchase form > button[type="submit"] {
     width: 100%;
     min-height: 66px;
@@ -2629,43 +2575,6 @@ html.is-android {
   html.is-android .cashier-info-card .cashier-prize-payout-heading label {
     color: #f4f6fb !important;
   }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form label {
-    color: #f4f6fb !important;
-    font-size: 1.12rem !important;
-    font-weight: 800 !important;
-    overflow-wrap: normal !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form input {
-    min-height: 62px !important;
-    padding: 14px 16px !important;
-    background: #000 !important;
-    background-image: none !important;
-    color: #f4f6fb !important;
-    border: 2px solid #a3a3a8 !important;
-    border-radius: 14px !important;
-    box-shadow: none !important;
-    -webkit-text-fill-color: #f4f6fb !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form input::placeholder {
-    color: #a3a3a8 !important;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #a3a3a8 !important;
-  }
-  html.is-android .cashier-info-card .cashier-prize-lookup-form button,
-  html.is-android .cashier-info-card .cashier-prize-lookup-form button:disabled {
-    min-height: 68px !important;
-    padding: 14px 18px !important;
-    background: #59b8f5 !important;
-    background-image: none !important;
-    color: #fff !important;
-    border: 2px solid #080808 !important;
-    border-radius: 14px !important;
-    opacity: 1 !important;
-    box-shadow: none !important;
-    -webkit-text-fill-color: #fff !important;
-    font-size: 1.16rem !important;
-    font-weight: 850 !important;
-  }
   html.is-android .cashier-info-card > .cashier-info-results {
     background: transparent !important;
     border-bottom: 1px solid #2b3546 !important;
@@ -2915,7 +2824,7 @@ html.is-android .home-page.home-page-compact {
   content: "";
 }
 
-/* Leitura de recibo e pagamento individual de prêmios pelo cambista. */
+/* Consulta de recibo pelo QR Code na área do cambista. */
 .cashier-qr-scanner { display: grid; gap: 8px; }
 .cashier-qr-start, .cashier-qr-cancel { width: 100%; min-height: 44px; padding: 9px 14px; border: 1px solid var(--accent); border-radius: 9px; background: var(--accent); color: #fff; font: inherit; font-weight: 750; }
 .cashier-qr-start:disabled { opacity: .65; }
@@ -2937,18 +2846,8 @@ html.is-android .home-page.home-page-compact {
 .cashier-prize-status.is-pending { color: #a8aeb8; }
 .cashier-prize-status.is-winner { color: #35b875; }
 .cashier-prize-status.is-loser { color: #e27b7b; }
-.cashier-prize-paid-detail { color: #35b875; }
 .cashier-prize-review { color: #e7a33c; font-weight: 700; }
-.cashier-info-card .cashier-prize-pay-button { width: auto; min-width: 68px; min-height: 34px; padding: 6px 12px; flex: 0 0 auto; border: 0; border-radius: 7px; background: #16834d; color: #fff; font: inherit; font-size: .84rem; font-weight: 800; }
-.cashier-info-card .cashier-prize-pay-button:disabled { opacity: .55; }
-.cashier-prize-confirm-backdrop { z-index: 1100; }
-.cashier-prize-confirm { width: min(100%, 360px); padding: 18px; }
-.cashier-prize-confirm h3 { margin: 0; font-size: 1.05rem; line-height: 1.4; }
-.cashier-prize-confirm p { margin: 8px 0 0; color: var(--muted); }
-.cashier-prize-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-.cashier-prize-confirm-actions button { min-height: 36px; padding: 7px 13px; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: inherit; font: inherit; font-weight: 700; }
-.cashier-prize-confirm-actions .cashier-prize-confirm-submit { background: var(--accent); border-color: var(--accent); color: #fff; }
-@media (max-width: 420px) { .cashier-info-card .cashier-prize-line { align-items: flex-start; } .cashier-prize-confirm-actions button { flex: 1; } }
+@media (max-width: 420px) { .cashier-info-card .cashier-prize-line { align-items: flex-start; } }
 
 /* Página inicial: cabeçalho preservado, cartaz maximizado e botão sem sobra inferior. */
 .home-page.home-page-compact {
