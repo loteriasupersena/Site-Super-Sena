@@ -108,6 +108,21 @@ export function AdminPrizePayout() {
     }
   }
 
+  async function rejectRequest(winner: Winner) {
+    if (!winner.paymentRequest || !window.confirm("Recusar a solicitação Pix deste prêmio? O ganhador poderá enviar uma nova solicitação.")) return;
+    setBusy(winner.id); setError(""); setNotice("");
+    try {
+      const response = await fetch("/api/admin/prize-payment-requests/" + encodeURIComponent(winner.paymentRequest.id) + "/reject", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível recusar a solicitação.");
+      setWinners((current) => current.map((item) => item.id === winner.id && item.paymentRequest
+        ? { ...item, paymentRequest: { ...item.paymentRequest, status: "REJECTED" } }
+        : item));
+      setNotice("Solicitação recusada. O ganhador poderá enviar outra.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao recusar solicitação."); }
+    finally { setBusy(""); }
+  }
+
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
@@ -181,9 +196,12 @@ export function AdminPrizePayout() {
                 <input className="admin-prize-reference" id={"winner-reference-" + winner.id} value={references[winner.id] ?? ""}
                   onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} maxLength={300}
                   placeholder="Identificador do Pix" />
-                <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
-                  {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
-                </button>
+                <div className="admin-prize-confirm-actions">
+                  <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
+                    {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
+                  </button>
+                  <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void rejectRequest(winner)}>Recusar solicitação</button>
+                </div>
               </> : winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
