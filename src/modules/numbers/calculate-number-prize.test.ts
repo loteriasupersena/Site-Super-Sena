@@ -14,9 +14,10 @@ describe("calculateNumberPrizeCents", () => {
     const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
   });
-  it("preserves legacy v1 unit calculation", () => {
-    const wager = { numberValue: "123456", ...allocateNumberStake(100), ruleVersion: LEGACY_NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: { version: LEGACY_NUMERIC_PRIZE_RULE_VERSION, multipliers: DEFAULT_NUMERIC_PRIZE_MULTIPLIERS } };
-    expect(calculateNumberPrizeCents(wager, "999996")).toBe(120);
+  it("preserves legacy v1 unit calculation for existing bets", () => {
+    const legacyMultipliers = { ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 5 };
+    const wager = { numberValue: "123456", ...allocateNumberStake(100), ruleVersion: LEGACY_NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: { version: LEGACY_NUMERIC_PRIZE_RULE_VERSION, multipliers: legacyMultipliers } };
+    expect(calculateNumberPrizeCents(wager, "999996")).toBe(100);
   });
   it("returns zero when no suffix matches", () => expect(calculateNumberPrizeCents(line("123456"), "999994")).toBe(0));
   it("uses leading zeroes literally", () => expect(calculateNumberPrizeCents(line("000007"), "123007")).toBe(allocateNumberStake(600).hundredsCents * 300));
