@@ -17,13 +17,6 @@ export type CashierSettlementCalculation = {
   platformOwesCashierCents: number;
 };
 
-export class CashierSettlementPendingSalesError extends Error {
-  constructor() {
-    super("CASHIER_PENDING_CASH_SALES");
-    this.name = "CashierSettlementPendingSalesError";
-  }
-}
-
 export class CashierSettlementIntegrityError extends Error {
   constructor() {
     super("CASHIER_COMMISSION_INTEGRITY_ERROR");
