@@ -50,7 +50,7 @@ describe("calculateCashierSettlement", () => {
     expect(result.platformOwesCashierCents).toBe(3000);
   });
 
-  it("reports cash already received but not yet allocated so the administrator can block closing", async () => {
+  it("reports cash already received but not yet allocated for the next settlement period", async () => {
     const tx = transactionFixture({ pending: 12000, pendingCount: 2 });
     const result = await calculateCashierSettlement(tx, "cashier-1", new Date(0), new Date("2026-11-13T00:00:00.000Z"));
     expect(result.pendingCashSalesCount).toBe(2);
