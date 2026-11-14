@@ -95,7 +95,7 @@ export function AdminPrizePayout() {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
       setWinners((current) => current.map((item) =>
         item.id === winner.id
-          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: references[winner.id]?.trim() || null }
+          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: references[winner.id]?.trim() || null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID" } : null }
           : item
       ));
       setReferences((current) => ({ ...current, [winner.id]: "" }));
@@ -129,6 +129,8 @@ export function AdminPrizePayout() {
   // Only cashier prizes require an outgoing Pix from the administrator.
   const manualPending = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PENDING");
   const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
+  const allPhysicalPending = pending.filter((winner) => winner.manualEligible);
+  const totalPhysicalGrossCents = allPhysicalPending.reduce((total, winner) => total + winner.prizeCents, 0);
   const reviewPending = pending.filter((winner) => !winner.manualEligible);
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
 
@@ -150,8 +152,13 @@ export function AdminPrizePayout() {
         {money(totalToPayCents)}
       </strong>
       <span style={{ display: "block", marginTop: ".35rem", color: "#c5d2e4", fontSize: ".85rem" }}>
-        {manualPending.length} {manualPending.length === 1 ? "prêmio aguardando Pix" : "prêmios aguardando Pix"}
+        {manualPending.length} {manualPending.length === 1 ? "solicitação aguardando pagamento" : "solicitações aguardando pagamento"}
       </span>
+      <div style={{ marginTop: ".8rem", paddingTop: ".8rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
+        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Total bruto de prêmios físicos ainda não pagos</span>
+        <strong style={{ display: "block", marginTop: ".2rem", fontSize: "1.25rem", color: "#fff" }}>{money(totalPhysicalGrossCents)}</strong>
+        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>{allPhysicalPending.length} prêmios físicos pendentes, incluindo os que ainda aguardam solicitação do ganhador.</span>
+      </div>
       {reviewPending.length > 0 && <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
         <strong style={{ color: "#ffd27a" }}>Em conferência: {money(reviewTotalCents)}</strong>
         <span style={{ display: "block", marginTop: ".25rem", color: "#c5d2e4" }}>
