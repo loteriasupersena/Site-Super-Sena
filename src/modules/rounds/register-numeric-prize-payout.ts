@@ -41,6 +41,7 @@ export async function registerNumericPrizePayout(
         },
       },
       prizePayout: { select: { id: true } },
+      prizePaymentRequest: { select: { id: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true } },
     },
   });
   if (!line) throw new NumericPrizePayoutError("LINE_NOT_FOUND");
@@ -60,6 +61,10 @@ export async function registerNumericPrizePayout(
     line.prizeCents <= 0
   ) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
+  if (input.channel === "CASHIER_CASH") throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+  if (input.channel === "PLATFORM_PIX" && (!line.prizePaymentRequest || line.prizePaymentRequest.status !== "PENDING")) {
+    throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+  }
   if (input.channel === "CASHIER_CASH" && (!input.cashierId || purchase.cashierId !== input.cashierId)) {
     throw new NumericPrizePayoutError("NOT_OWNED");
   }
@@ -79,7 +84,7 @@ export async function registerNumericPrizePayout(
     data: {
       participationLineId: line.id,
       channel: input.channel,
-      amountCents: line.prizeCents,
+      amountCents: line.prizePaymentRequest?.netCents ?? line.prizeCents,
       actorId: input.actorId,
       cashierId: input.channel === "CASHIER_CASH" ? input.cashierId : null,
       reference: input.reference?.trim() || null,
@@ -94,6 +99,12 @@ export async function registerNumericPrizePayout(
     },
   });
 
+  if (input.channel === "PLATFORM_PIX" && line.prizePaymentRequest) {
+    await tx.prizePaymentRequest.update({
+      where: { id: line.prizePaymentRequest.id },
+      data: { status: "PAID", reviewedAt: payout.paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
+    });
+  }
   await tx.auditEvent.create({
     data: {
       actorId: input.actorId,
@@ -115,6 +126,10 @@ export async function registerNumericPrizePayout(
         roundCode: line.participation.round.code,
         cashierId: purchase.cashierId,
         channel: input.channel,
+        grossCents: line.prizePaymentRequest?.grossCents ?? line.prizeCents,
+        administrativeFeeCents: line.prizePaymentRequest?.administrativeFeeCents ?? 0,
+        transactionFeeCents: line.prizePaymentRequest?.transactionFeeCents ?? 0,
+        netCents: payout.amountCents,
         amountCents: payout.amountCents,
         reference: payout.reference,
         paidAt: payout.paidAt.toISOString(),
