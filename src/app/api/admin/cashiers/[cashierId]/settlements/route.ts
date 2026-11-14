@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { calculateCashierSettlement, CashierSettlementIntegrityError, CashierSettlementPendingSalesError } from "@/modules/cashier-settlement";
+import { calculateCashierSettlement, CashierSettlementIntegrityError } from "@/modules/cashier-settlement";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cas
 export async function POST(request: NextRequest, context: { params: Promise<{ cashierId: string }> }) {
   if (!validOrigin(request)) return NextResponse.json({ error: "Requisição inválida." }, { status: 403, headers });
   const auth = await requireAdmin(request);
-  if ("response" in auth) return auth.response;
+  if (!auth.authorized) return auth.response;
   let raw: unknown;
   try { raw = await request.json(); } catch {
     return NextResponse.json({ error: "Confirmação de apuração inválida." }, { status: 400, headers });
@@ -96,7 +96,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       if (cutoffAt <= since || cutoffAt > now) throw new Error("STALE_SETTLEMENT_PREVIEW");
 
       const calculation = await calculateCashierSettlement(tx, cashierId, since, cutoffAt);
-      if (calculation.pendingCashSalesCount > 0) throw new CashierSettlementPendingSalesError();
       const snapshot = await tx.cashierSettlement.create({
         data: {
           cashierId, adminId: auth.admin.id, settledAt: cutoffAt,
@@ -137,9 +136,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     }
     if (error instanceof Error && error.message === "STALE_SETTLEMENT_PREVIEW") {
       return NextResponse.json({ error: "Este período já foi fechado ou a apuração expirou. Faça uma nova apuração antes de confirmar." }, { status: 409, headers });
-    }
-    if (error instanceof CashierSettlementPendingSalesError) {
-      return NextResponse.json({ error: "Liquidação bloqueada: existem vendas em dinheiro recebidas que ainda aguardam alocação. Conclua ou resolva essas vendas e faça uma nova apuração." }, { status: 409, headers });
     }
     if (error instanceof CashierSettlementIntegrityError) {
       return NextResponse.json({ error: "Acerto bloqueado: existe venda confirmada sem comissão ou com comissão inconsistente. Corrija os dados antes de fechar." }, { status: 409, headers });
