@@ -70,6 +70,16 @@ export async function calculateCashierSettlement(
       where: { cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff } },
       _sum: { amountCents: true }, _count: { _all: true },
     }),
+    tx.purchase.aggregate({
+      where: {
+        cashierId, paymentMethod: "CASH", createdAt: { lte: cutoff },
+        OR: [
+          { status: "PENDING_PAYMENT" },
+          { status: "CONFIRMED", confirmedAt: { gt: cutoff } },
+        ],
+      },
+      _sum: { totalCents: true }, _count: { _all: true },
+    }),
     tx.purchase.findMany({
       where: eligibleForFinancials,
       select: {
@@ -107,6 +117,8 @@ export async function calculateCashierSettlement(
     commissionCents,
     cashPrizePayoutCount: cashPrizePayouts._count._all,
     cashPrizePayoutCents,
+    pendingCashSalesCount: pendingCashSales._count._all,
+    pendingCashSalesCents: pendingCashSales._sum.totalCents ?? 0,
     netBalanceCents,
     cashierOwesPlatformCents: Math.max(0, netBalanceCents),
     platformOwesCashierCents: Math.max(0, -netBalanceCents),
