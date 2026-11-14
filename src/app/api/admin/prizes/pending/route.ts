@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
+        prizePaymentRequest: { select: { id: true, status: true, pixKeyMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
         participation: {
           select: {
             totalCents: true,
@@ -86,6 +87,16 @@ export async function GET(request: NextRequest) {
           payoutChannel: line.prizePayout?.channel ?? (line.prizeCreditedAt ? "WALLET" : null),
           paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null,
           reference: line.prizePayout?.reference ?? null,
+          paymentRequest: line.prizePaymentRequest ? {
+            id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
+            pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
+            grossCents: line.prizePaymentRequest.grossCents,
+            administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
+            transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
+            netCents: line.prizePaymentRequest.netCents,
+            requestedAt: line.prizePaymentRequest.requestedAt.toISOString(),
+            paymentReference: line.prizePaymentRequest.paymentReference,
+          } : null,
         };
       }),
     }, { headers: { "Cache-Control": "no-store, private" } });
