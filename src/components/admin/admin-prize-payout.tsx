@@ -60,21 +60,8 @@ export function AdminPrizePayout() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const response = await fetch("/api/admin/prizes/pending", { cache: "no-store" });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? "Não foi possível carregar os ganhadores.");
-        if (active) setWinners(body.winners as Winner[]);
-      } catch (reason) {
-        if (active) setError(reason instanceof Error ? reason.message : "Falha ao carregar os ganhadores.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => { active = false; };
-  }, []);
+    void load();
+  }, [load]);
 
   async function confirmPaid(winner: Winner) {
     if (!window.confirm(
@@ -126,7 +113,7 @@ export function AdminPrizePayout() {
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
-  // Only cashier prizes require an outgoing Pix from the administrator.
+  // Only physical cashier prizes with a pending request require an outgoing Pix from the administrator.
   const manualPending = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PENDING");
   const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
   const allPhysicalPending = pending.filter((winner) => winner.manualEligible);
