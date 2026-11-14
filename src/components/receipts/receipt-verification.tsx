@@ -101,6 +101,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const rounds = data.valid ? data.rounds ?? [] : [];
   const physicalReceipt = Boolean(data.manualPayoutEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
+  const canRequest = rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid && number.paymentRequest?.status !== "PENDING" && number.paymentRequest?.status !== "PAID"));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   async function requestPrizePayment() {
     setRequesting(true); setRequestError(""); setRequestMessage("");
@@ -191,7 +192,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
         {requestMessage && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{requestMessage}</p>}
         <label htmlFor="receipt-prize-pix-key" style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Sua chave Pix</label>
         <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
-        <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || pixKey.trim().length < 3 || rounds.some((round) => round.numbers.some((number) => number.paymentRequest?.status === "PENDING"))} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "Solicitar pagamento do prêmio"}</button>
+        <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || !canRequest || pixKey.trim().length < 3} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "Solicitar pagamento do prêmio"}</button>
       </div>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
