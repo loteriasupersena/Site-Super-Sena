@@ -10,10 +10,19 @@ export type CashierSettlementCalculation = {
   commissionCents: number;
   cashPrizePayoutCount: number;
   cashPrizePayoutCents: number;
+  pendingCashSalesCount: number;
+  pendingCashSalesCents: number;
   netBalanceCents: number;
   cashierOwesPlatformCents: number;
   platformOwesCashierCents: number;
 };
+
+export class CashierSettlementPendingSalesError extends Error {
+  constructor() {
+    super("CASHIER_PENDING_CASH_SALES");
+    this.name = "CashierSettlementPendingSalesError";
+  }
+}
 
 export class CashierSettlementIntegrityError extends Error {
   constructor() {
@@ -41,7 +50,7 @@ export async function calculateCashierSettlement(
     ],
   };
 
-  const [cash, pix, commissions, games, cashPrizePayouts, eligibleSales] = await Promise.all([
+  const [cash, pix, commissions, games, cashPrizePayouts, pendingCashSales, eligibleSales] = await Promise.all([
     tx.purchase.aggregate({
       where: { ...eligible, paymentMethod: "CASH" },
       _sum: { totalCents: true }, _count: { _all: true },
