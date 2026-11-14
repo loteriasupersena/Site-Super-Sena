@@ -19,10 +19,6 @@ export async function registerNumericPrizePayout(
     reference?: string | null;
   },
 ) {
-  if (input.channel === "CASHIER_CASH" && input.cashierId) {
-    const cashierRows = await tx.$queryRaw<Array<{ id: string }>>`SELECT "id" FROM "User" WHERE "id" = ${input.cashierId} AND "role" = 'CASHIER' FOR UPDATE`;
-    if (cashierRows.length === 0) throw new NumericPrizePayoutError("NOT_OWNED");
-  }
   await tx.$queryRaw`SELECT "id" FROM "NumericParticipationLine" WHERE "id" = ${input.lineId} FOR UPDATE`;
   const line = await tx.numericParticipationLine.findUnique({
     where: { id: input.lineId },
@@ -65,9 +61,6 @@ export async function registerNumericPrizePayout(
   if (input.channel === "PLATFORM_PIX" && (!line.prizePaymentRequest || line.prizePaymentRequest.status !== "PENDING")) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
-  if (input.channel === "CASHIER_CASH" && (!input.cashierId || purchase.cashierId !== input.cashierId)) {
-    throw new NumericPrizePayoutError("NOT_OWNED");
-  }
 
   const prizeReview = getNumericPrizeReview({
     numberValue: line.numberValue,
@@ -86,7 +79,7 @@ export async function registerNumericPrizePayout(
       channel: input.channel,
       amountCents: line.prizePaymentRequest?.netCents ?? line.prizeCents,
       actorId: input.actorId,
-      cashierId: input.channel === "CASHIER_CASH" ? input.cashierId : null,
+      cashierId: null,
       reference: input.reference?.trim() || null,
     },
     select: {
@@ -108,7 +101,7 @@ export async function registerNumericPrizePayout(
   await tx.auditEvent.create({
     data: {
       actorId: input.actorId,
-      action: input.channel === "CASHIER_CASH" ? "CASHIER_PRIZE_PAID_CASH" : "PLATFORM_PRIZE_PAID_PIX",
+      action: "PLATFORM_PRIZE_PAID_PIX",
       entityType: "NumericPrizePayout",
       entityId: payout.id,
       metadata: {
