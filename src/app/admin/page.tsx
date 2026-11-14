@@ -5,6 +5,7 @@ import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-mana
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
+import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,13 @@ export default async function AdminPage() {
             <summary><span>Gestão de cambistas</span></summary>
             <div className="admin-accordion-content">
               <AdminCashierManager mode="manage" />
+            </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Multiplicadores de prêmios</span></summary>
+            <div className="admin-accordion-content">
+              <AdminPrizeRules />
             </div>
           </details>
 
