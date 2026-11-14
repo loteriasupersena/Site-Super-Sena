@@ -27,6 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
+  paymentRequest: { id: string; status: "PENDING" | "PAID" | "REJECTED"; pixKeyMasked: string; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; requestedAt: string; paymentReference: string | null } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -111,7 +112,7 @@ export function AdminPrizePayout() {
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
   // Only cashier prizes require an outgoing Pix from the administrator.
-  const manualPending = pending.filter((winner) => winner.manualEligible);
+  const manualPending = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PENDING");
   const totalToPayCents = manualPending.reduce((total, winner) => total + winner.prizeCents, 0);
   const reviewPending = pending.filter((winner) => !winner.manualEligible);
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
@@ -119,7 +120,7 @@ export function AdminPrizePayout() {
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
     <span className="feature-label">Central de pagamentos</span>
     <h2 id="admin-prize-payout-heading">Ganhadores</h2>
-    <p>Todos os ganhadores das rodadas concluídas ficam reunidos aqui. Faça o Pix fora da plataforma e confirme somente depois que a transferência estiver concluída.</p>
+    <p>Acompanhe todos os prêmios e processe somente solicitações enviadas pelo ganhador na consulta do QR Code do recibo. A confirmação deve ocorrer depois que o Pix estiver concluído.</p>
 
     {tab === "pending" && <div className="admin-prize-total-panel" style={{
       margin: "1rem 0", padding: "1rem 1.1rem", borderRadius: "16px",
@@ -169,12 +170,13 @@ export function AdminPrizePayout() {
           <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
           <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
           <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
+          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: {winner.paymentRequest.pixKeyMasked} · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
           {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
           {winner.phone && <p>Telefone: {winner.phone}</p>}
           {winner.paid
             ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
             : <>
-              {winner.manualEligible ? <>
+              {winner.manualEligible && winner.paymentRequest?.status === "PENDING" ? <>
                 <label htmlFor={"winner-reference-" + winner.id}>Referência do comprovante (opcional)</label>
                 <input className="admin-prize-reference" id={"winner-reference-" + winner.id} value={references[winner.id] ?? ""}
                   onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} maxLength={300}
@@ -182,7 +184,7 @@ export function AdminPrizePayout() {
                 <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
                   {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
                 </button>
-              </> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
+              </> : winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
       </div>}
