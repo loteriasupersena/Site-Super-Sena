@@ -78,7 +78,7 @@ export function AdminPrizePayout() {
 
   async function confirmPaid(winner: Winner) {
     if (!window.confirm(
-      "Confirma que você já fez o Pix de " + money(winner.prizeCents) +
+      "Confirma que você já fez o Pix de " + money(winner.paymentRequest?.netCents ?? winner.prizeCents) +
       " para " + winner.playerName + " e conferiu o comprovante?"
     )) return;
 
@@ -113,7 +113,7 @@ export function AdminPrizePayout() {
   const visible = tab === "pending" ? pending : paid;
   // Only cashier prizes require an outgoing Pix from the administrator.
   const manualPending = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PENDING");
-  const totalToPayCents = manualPending.reduce((total, winner) => total + winner.prizeCents, 0);
+  const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
   const reviewPending = pending.filter((winner) => !winner.manualEligible);
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
 
