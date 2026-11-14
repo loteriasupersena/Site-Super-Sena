@@ -77,7 +77,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           catch { throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION"); }
           const validated = parseNumericPrizeMultipliers(parsedValue);
           if (!validated) throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION");
-          currentMultipliers = validated;
+          currentMultipliers = { ...validated, unit: 6 };
         }
         const snapshot = createNumericPrizeRuleSnapshot(currentMultipliers);
         const maximumLinePrizeCents = Math.max(
