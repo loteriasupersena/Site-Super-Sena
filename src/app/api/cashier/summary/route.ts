@@ -27,11 +27,26 @@ export async function GET(request: NextRequest) {
         _sum: { totalCents: true },
       }),
       authPrisma.cashierCommission.aggregate({
-        where: { cashierId: user.id, purchase: { is: { status: "CONFIRMED", confirmedAt: { gt: since } } } },
+        where: {
+          cashierId: user.id,
+          purchase: { is: {
+            cashierId: user.id, status: "CONFIRMED", confirmedAt: { gt: since },
+            OR: [
+              { paymentMethod: "CASH" },
+              { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
+            ],
+          } },
+        },
         _sum: { amountCents: true },
       }),
       authPrisma.user.findUnique({ where: { id: user.id }, select: { commissionRateBasisPoints: true } }),
-      authPrisma.numericParticipationLine.count({ where: { participation: { is: { status: "CONFIRMED", purchase: { is: { cashierId: user.id, status: "CONFIRMED", confirmedAt: { gt: since } } } } } } }),
+      authPrisma.numericParticipationLine.count({ where: { participation: { is: { status: "CONFIRMED", purchase: { is: {
+        cashierId: user.id, status: "CONFIRMED", confirmedAt: { gt: since },
+        OR: [
+          { paymentMethod: "CASH" },
+          { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
+        ],
+      } } } } } }),
       authPrisma.numericPrizePayout.aggregate({ where: { cashierId: user.id, channel: "CASHIER_CASH", paidAt: { gt: since }, settlementId: null }, _sum: { amountCents: true }, _count: { _all: true } }),
     ]);
     const cashSalesCents = cash._sum.totalCents ?? 0;
