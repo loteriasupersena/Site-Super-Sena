@@ -28,7 +28,7 @@ function validOrigin(request: NextRequest) {
 export async function POST(request: NextRequest, context: { params: Promise<{ receiptCode: string }> }) {
   if (!validOrigin(request)) return NextResponse.json({ error: "Requisição inválida." }, { status: 403, headers });
   const { receiptCode: raw } = await context.params;
-  const receiptCode = raw.replace(/\\s/g, "").toUpperCase();
+  const receiptCode = raw.replace(/\s/g, "").toUpperCase();
   if (!/^SQ-[A-Z0-9]{8,32}$/.test(receiptCode)) return NextResponse.json({ error: "Código de recibo inválido." }, { status: 400, headers });
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
