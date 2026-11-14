@@ -20,7 +20,7 @@ function request(method = "GET", body?: unknown, origin = "https://example.test"
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
-const valid = { unit: 1, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 };
+const valid = { unit: 6, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 };
 
 describe("admin prize rules API", () => {
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe("admin prize rules API", () => {
     const response = (await GET(request()))!;
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(await response.json()).toMatchObject({ multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 }, updatedAt: null });
+    expect(await response.json()).toMatchObject({ multipliers: { unit: 6, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 }, updatedAt: null });
   });
 
   it("rejects cross-origin and invalid multiplier updates", async () => {
@@ -89,7 +89,7 @@ describe("admin prize rules API", () => {
     expect(await response.json()).toMatchObject({ multipliers: valid });
     expect(mocks.settingUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { key: "numeric_prize_multipliers" },
-      create: { key: "numeric_prize_multipliers", value: JSON.stringify({ unit: 1, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 }) },
+      create: { key: "numeric_prize_multipliers", value: JSON.stringify({ unit: 6, tens: 2, hundreds: 3, quadra: 4, quina: 5, sena: 6 }) },
     }));
     expect(mocks.settingChangeCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ settingKey: "numeric_prize_multipliers", changedById: "admin-1" }) });
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ actorId: "admin-1", action: "NUMERIC_PRIZE_MULTIPLIERS_UPDATED" }) });
