@@ -42,6 +42,7 @@ function receiptCodeFromQr(value: string): string | null {
 
 export function CashierPrizePayout() {
   const [receiptCode, setReceiptCode] = useState("");
+  const [receiptInput, setReceiptInput] = useState("");
   const [lines, setLines] = useState<PrizeLine[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -154,6 +155,23 @@ export function CashierPrizePayout() {
       <span className="player-collapsible-label">Premiações · Consulta informativa</span>
     </div>
 
+    <form className="cashier-receipt-lookup" onSubmit={(event) => { event.preventDefault(); const code = receiptInput.trim().toUpperCase(); if (code) void lookup(code); }}>
+      <label htmlFor="cashier-receipt-code">Código do recibo</label>
+      <input
+        id="cashier-receipt-code"
+        type="text"
+        value={receiptInput}
+        onChange={(event) => setReceiptInput(event.target.value.toUpperCase())}
+        placeholder="Digite o código do recibo"
+        autoComplete="off"
+        maxLength={35}
+        disabled={loading}
+      />
+      <button type="submit" className="cashier-qr-start" disabled={loading || !receiptInput.trim()}>
+        {loading ? "Consultando recibo…" : "Consultar recibo"}
+      </button>
+    </form>
+
     <div className="cashier-qr-scanner">
       <div className="cashier-qr-camera" hidden={!scanning}>
         <video ref={videoRef} muted playsInline aria-label="Câmera para leitura do QR Code" />
@@ -161,7 +179,7 @@ export function CashierPrizePayout() {
         <button type="button" className="cashier-qr-cancel" onClick={stopScanner}>Cancelar leitura</button>
       </div>
       {!scanning && <button type="button" className="cashier-qr-start" onClick={() => void startScanner()} disabled={loading}>
-        {loading ? "Consultando recibo…" : "Ler QR Code do recibo"}
+        {loading ? "Consultando recibo…" : "Ler QR Code pela câmera"}
       </button>}
       <canvas ref={canvasRef} className="cashier-qr-canvas" aria-hidden="true" />
     </div>
