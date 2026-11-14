@@ -268,7 +268,7 @@ export function AdminGameSimulator() {
               ].map(([label, value, note]) => (
                 <article key={label} style={{ border: "1px solid var(--border, #334155)", borderRadius: 14, background: "var(--background, #0d1725)", padding: 12, minWidth: 0 }}>
                   <div style={{ color: "var(--muted-foreground, #94a3b8)", marginBottom: 8 }}>{label}</div>
-                  <strong style={{ display: "block", fontSize: "clamp(17px, 3.5vw, 25px)", lineHeight: 1.2, overflowWrap: "anywhere", color: label === "Lucro da banca" ? (result.net > 0 ? "#34d399" : result.net < 0 ? "#f87171" : "var(--foreground, #f1f5f9)") : "var(--foreground, #f1f5f9)" }}>{value}</strong>
+                  <strong style={{ display: "block", fontSize: "clamp(17px, 3.5vw, 25px)", lineHeight: 1.2, overflowWrap: "anywhere", color: label === "Lucro da banca" ? (result.net > 0 ? "#34d399" : "#f87171") : "var(--foreground, #f1f5f9)" }}>{value}</strong>
                   <div style={{ color: "var(--muted-foreground, #94a3b8)", marginTop: 6, lineHeight: 1.35, fontSize: 13 }}>{note}</div>
                 </article>
               ))}
