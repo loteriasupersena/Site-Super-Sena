@@ -12,6 +12,8 @@ type SettlementPreview = {
   commissionCents: number;
   cashPrizePayoutCount: number;
   cashPrizePayoutCents: number;
+  pendingCashSalesCount: number;
+  pendingCashSalesCents: number;
   netBalanceCents: number;
   cashierOwesPlatformCents: number;
   platformOwesCashierCents: number;
