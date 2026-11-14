@@ -27,7 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
-  paymentRequest: { id: string; status: "PENDING" | "PAID" | "REJECTED"; pixKeyMasked: string; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; requestedAt: string; paymentReference: string | null } | null;
+  paymentRequest: { id: string; status: "PENDING" | "PAID" | "REJECTED"; pixKeyMasked: string; pixKey: string | null; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; requestedAt: string; paymentReference: string | null } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -185,7 +185,7 @@ export function AdminPrizePayout() {
           <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
           <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
           <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
-          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: {winner.paymentRequest.pixKeyMasked} · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
+          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
           {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
           {winner.phone && <p>Telefone: {winner.phone}</p>}
           {winner.paid
