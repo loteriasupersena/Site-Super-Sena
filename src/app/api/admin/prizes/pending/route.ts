@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { getNumericPrizeReview, NUMERIC_PRIZE_CATEGORY_LABELS } from "@/domain/numeric-prize-review";
+import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, pixKeyMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
+        prizePaymentRequest: { select: { id: true, status: true, pixKeyMasked: true, pixKeyEncrypted: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
         participation: {
           select: {
             totalCents: true,
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
           paymentRequest: line.prizePaymentRequest ? {
             id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
+            pixKey: (() => { try { return decryptPixKey(line.prizePaymentRequest.pixKeyEncrypted); } catch { return null; } })(),
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
