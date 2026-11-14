@@ -102,7 +102,7 @@ describe("registerNumericPrizePayout", () => {
     const { tx, payoutCreate } = setup();
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "cashier-456",
-      cashierId: "cashier-456", channel: "CASHIER_CASH",
+      channel: "CASHIER_CASH",
     })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
     expect(payoutCreate).not.toHaveBeenCalled();
   });
