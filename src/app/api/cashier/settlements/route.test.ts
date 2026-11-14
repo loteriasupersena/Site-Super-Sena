@@ -42,6 +42,8 @@ describe("GET cashier settlement history", () => {
       commissionCents: 8000,
       cashPrizePayoutCount: 2,
       cashPrizePayoutCents: 5000,
+      pendingCashSalesCount: 1,
+      pendingCashSalesCents: 12000,
     }]);
   });
 
