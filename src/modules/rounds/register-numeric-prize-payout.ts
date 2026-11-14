@@ -71,14 +71,23 @@ export async function registerNumericPrizePayout(
     throw new NumericPrizePayoutError("INCONSISTENT_PRIZE");
   }
 
+  const paidAt = new Date();
+  if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+  const requestUpdated = await tx.prizePaymentRequest.updateMany({
+    where: { id: line.prizePaymentRequest.id, status: "PENDING" },
+    data: { status: "PAID", reviewedAt: paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
+  });
+  if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+
   const payout = await tx.numericPrizePayout.create({
     data: {
       participationLineId: line.id,
-      channel: input.channel,
-      amountCents: line.prizePaymentRequest?.netCents ?? line.prizeCents,
+      channel: "PLATFORM_PIX",
+      amountCents: line.prizePaymentRequest.netCents,
       actorId: input.actorId,
       cashierId: null,
       reference: input.reference?.trim() || null,
+      paidAt,
     },
     select: {
       id: true,
@@ -89,13 +98,6 @@ export async function registerNumericPrizePayout(
       reference: true,
     },
   });
-
-  if (input.channel === "PLATFORM_PIX" && line.prizePaymentRequest) {
-    await tx.prizePaymentRequest.update({
-      where: { id: line.prizePaymentRequest.id },
-      data: { status: "PAID", reviewedAt: payout.paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
-    });
-  }
   await tx.auditEvent.create({
     data: {
       actorId: input.actorId,
