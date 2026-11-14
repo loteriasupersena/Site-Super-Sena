@@ -26,9 +26,6 @@ type VerifiedReceipt = {
   message: string;
 };
 
-const prizeSupportWhatsapp = (process.env.NEXT_PUBLIC_PRIZE_SUPPORT_WHATSAPP || "5577991601217").replace(/\D/g, "");
-const prizeSupportUrl = `https://wa.me/${prizeSupportWhatsapp}`;
-
 const roundStatusLabels: Record<VerifiedRound["status"], string> = {
   SORTEIO_AGUARDANDO: "Aguardando sorteio",
   AGUARDANDO_RESULTADO_OFICIAL: "Aguardando resultado",
@@ -106,7 +103,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   async function requestPrizePayment() {
     setRequesting(true); setRequestError(""); setRequestMessage("");
     try {
-      const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(data.receiptCode ?? receiptCode.toUpperCase())}/request`, {
+      const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey }),
       });
       const body = await response.json();
