@@ -16,7 +16,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "test:postgres": "vitest run src/lib/auth/login-rate-limit.postgres.integration.test.ts src/modules/rounds/round-lifecycle.postgres.integration.test.ts src/modules/payments/pix-terminal-race.postgres.integration.test.ts src/modules/payments/webhook-event-claim.postgres.integration.test.ts src/modules/purchases/allocate-paid-purchases.postgres.integration.test.ts src/modules/wallet/withdrawal-concurrency.postgres.integration.test.ts src/modules/cashier-settlement-concurrency.postgres.integration.test.ts",
+    "test:postgres": "vitest run --no-file-parallelism src/lib/auth/login-rate-limit.postgres.integration.test.ts src/modules/rounds/round-lifecycle.postgres.integration.test.ts src/modules/payments/pix-terminal-race.postgres.integration.test.ts src/modules/payments/webhook-event-claim.postgres.integration.test.ts src/modules/purchases/allocate-paid-purchases.postgres.integration.test.ts src/modules/wallet/withdrawal-concurrency.postgres.integration.test.ts src/modules/cashier-settlement-concurrency.postgres.integration.test.ts",
     "admin:provision": "npx --yes tsx@4.20.6 scripts/provision-admin.mjs",
     "admin:recover": "node scripts/recover-admin.mjs"
   },
