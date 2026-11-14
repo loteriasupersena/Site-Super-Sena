@@ -41,7 +41,7 @@ function setup(line = makeLine()) {
     numericParticipationLine: { findUnique: vi.fn().mockResolvedValue(line) },
     numericPrizePayout: { create: payoutCreate },
     auditEvent: { create: auditCreate },
-    prizePaymentRequest: { update: vi.fn().mockResolvedValue({}) },
+    prizePaymentRequest: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
   };
   return { tx, payoutCreate, auditCreate };
 }
