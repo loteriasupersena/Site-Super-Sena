@@ -40,7 +40,8 @@ describe("POST admin cashier settlements", () => {
     mocks.settlementFindFirst.mockResolvedValue({ settledAt: since });
     mocks.purchaseAggregate
       .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })
-      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })\n      .mockResolvedValueOnce({ _sum: { totalCents: 0 }, _count: { _all: 0 } });
+      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 0 }, _count: { _all: 0 } });
     mocks.purchaseFindMany.mockResolvedValue([
       { id: "cash-1", totalCents: 5000, commission: { cashierId, rateBasisPoints: 600, amountCents: 300 } },
       { id: "cash-2", totalCents: 5000, commission: { cashierId, rateBasisPoints: 600, amountCents: 300 } },
@@ -82,7 +83,19 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("blocks liquidation while cash received by the cashier is still awaiting allocation", async () => {\n    mocks.purchaseAggregate.mockReset()\n      .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })\n      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })\n      .mockResolvedValueOnce({ _sum: { totalCents: 12000 }, _count: { _all: 2 } });\n    const response = await POST(request(), context);\n    expect(response.status).toBe(409);\n    expect(await response.json()).toMatchObject({ error: expect.stringContaining("vendas em dinheiro recebidas") });\n    expect(mocks.settlementCreate).not.toHaveBeenCalled();\n    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();\n  });\n\n  it("rejects an expired preview if another settlement already closed the period", async () => {
+  it("blocks liquidation while cash received by the cashier is still awaiting allocation", async () => {
+    mocks.purchaseAggregate.mockReset()
+      .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 12000 }, _count: { _all: 2 } });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: expect.stringContaining("vendas em dinheiro recebidas") });
+    expect(mocks.settlementCreate).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired preview if another settlement already closed the period", async () => {
     mocks.settlementFindFirst.mockResolvedValueOnce({ settledAt: cutoff });
     const response = await POST(request(), context);
     expect(response.status).toBe(409);
