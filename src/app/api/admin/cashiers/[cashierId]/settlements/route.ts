@@ -107,6 +107,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
           commissionCents: calculation.commissionCents,
           cashPrizePayoutCount: calculation.cashPrizePayoutCount,
           cashPrizePayoutCents: calculation.cashPrizePayoutCents,
+          pendingCashSalesCount: calculation.pendingCashSalesCount,
+          pendingCashSalesCents: calculation.pendingCashSalesCents,
         },
       });
       await tx.numericPrizePayout.updateMany({
