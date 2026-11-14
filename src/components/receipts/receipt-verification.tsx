@@ -182,7 +182,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
           const request = number.paymentRequest;
           return <div key={round.roundCode + number.numberValue} style={{ padding: 10, margin: "8px 0", borderRadius: 7, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
             <strong style={{ color: "#111827" }}>{number.numberValue} · Prêmio bruto: {money(gross)}</strong>
-            {gross >= 100000 && <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa (5%): {money(adminFee)}<br />Taxa de transação bancária (5%): {money(bankFee)}<br /><strong>Líquido a receber: {money(gross - adminFee - bankFee)}</strong></p>}
+            <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {gross >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {gross >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(gross - adminFee - bankFee)}</strong></p>
             {request?.status === "PENDING" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise</p>}
             {request?.status === "REJECTED" && <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Você pode enviar novamente</p>}
           </div>;
