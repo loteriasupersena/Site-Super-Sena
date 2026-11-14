@@ -44,8 +44,6 @@ export function CashierPrizePayout() {
   const [receiptCode, setReceiptCode] = useState("");
   const [lines, setLines] = useState<PrizeLine[]>([]);
   const [loading, setLoading] = useState(false);
-  const [busyLine, setBusyLine] = useState("");
-  const [confirmLine, setConfirmLine] = useState<PrizeLine | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -150,33 +148,10 @@ export function CashierPrizePayout() {
     }
   }
 
-  async function pay(lineId: string) {
-    setBusyLine(lineId);
-    setError("");
-    setMessage("");
-    try {
-      const response = await fetch("/api/cashier/prizes/" + encodeURIComponent(lineId) + "/cash", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
-      setLines((current) => current.map((line) => line.id === lineId
-        ? { ...line, paid: true, payoutChannel: "CASHIER_CASH", paidAt: body.payout.paidAt }
-        : line));
-      setMessage("Prêmio pago e registrado no financeiro.");
-      setConfirmLine(null);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao registrar o pagamento.");
-    } finally {
-      setBusyLine("");
-    }
-  }
 
-  return <section className="player-collapsible-section cashier-prize-payout" aria-label="Pagamento de prêmios em dinheiro">
+  return <section className="player-collapsible-section cashier-prize-payout" aria-label="Consulta informativa de premiações">
     <div className="cashier-prize-payout-heading">
-      <span className="player-collapsible-label">Premiações</span>
+      <span className="player-collapsible-label">Premiações · Consulta informativa</span>
     </div>
 
     <div className="cashier-qr-scanner">
@@ -215,21 +190,11 @@ export function CashierPrizePayout() {
             </>}
           </div>
           {line.roundCompleted && line.prizeCents > 0 && !line.paid && line.calculationConsistent && (
-            <button type="button" className="cashier-prize-pay-button" onClick={() => setConfirmLine(line)} disabled={Boolean(busyLine)}>Pagar</button>
+            <p className="cashier-prize-review">Pagamento e solicitações são tratados exclusivamente pela plataforma.</p>
           )}
         </article>;
       })}
     </div>}
 
-    {confirmLine && <div className="modal-backdrop cashier-prize-confirm-backdrop">
-      <section className="modal-panel cashier-prize-confirm" role="dialog" aria-modal="true" aria-labelledby="cashier-prize-confirm-title">
-        <h3 id="cashier-prize-confirm-title">Confirma o pagamento deste prêmio?</h3>
-        <p>{confirmLine.numberValue} · {money(confirmLine.prizeCents)}</p>
-        <div className="cashier-prize-confirm-actions">
-          <button type="button" className="cashier-prize-confirm-cancel" onClick={() => setConfirmLine(null)} disabled={Boolean(busyLine)}>Cancelar</button>
-          <button type="button" className="cashier-prize-confirm-submit" onClick={() => void pay(confirmLine.id)} disabled={Boolean(busyLine)}>{busyLine === confirmLine.id ? "Confirmando…" : "Confirmar"}</button>
-        </div>
-      </section>
-    </div>}
   </section>;
 }
