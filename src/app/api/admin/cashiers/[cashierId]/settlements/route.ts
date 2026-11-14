@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { calculateCashierSettlement, CashierSettlementIntegrityError } from "@/modules/cashier-settlement";
+import { calculateCashierSettlement, CashierSettlementIntegrityError, CashierSettlementPendingSalesError } from "@/modules/cashier-settlement";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
