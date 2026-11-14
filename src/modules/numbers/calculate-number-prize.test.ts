@@ -10,7 +10,16 @@ describe("calculateNumberPrizeCents", () => {
   it("pays only Quadra on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 3_000));
   it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(100 * 300));
   it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(100 * 30));
-  it("pays only Unidade on the final digit", () => expect(calculateNumberPrizeCents(line("123456"), "999996")).toBe(100 * 6));
+  it("returns exactly the R$1.00 stake when only the unit matches", () => {
+    const oneRealLine = {
+      numberValue: "123456",
+      ...allocateNumberStake(100),
+      ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
+      ruleSnapshot: createNumericPrizeRuleSnapshot(),
+    };
+    expect(oneRealLine.unitCents).toBe(20);
+    expect(calculateNumberPrizeCents(oneRealLine, "999996")).toBe(100);
+  });
   it("returns zero when no suffix matches", () => expect(calculateNumberPrizeCents(line("123456"), "999994")).toBe(0));
   it("uses leading zeroes literally", () => expect(calculateNumberPrizeCents(line("000007"), "123007")).toBe(allocateNumberStake(600).hundredsCents * 300));
   it("rejects invalid snapshots and allocations", () => {
