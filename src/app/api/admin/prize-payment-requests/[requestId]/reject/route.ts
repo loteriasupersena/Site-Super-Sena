@@ -22,14 +22,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) return NextResponse.json({ error: "Solicitação não encontrada." }, { status: 404 });
   try {
     const result = await authPrisma.$transaction(async (tx) => {
-      const item = await tx.prizePaymentRequest.findUnique({ where: { id: requestId }, select: { id: true, status: true, purchaseId: true, participationLineId: true } });
+      const item = await tx.prizePaymentRequest.findUnique({ where: { id: requestId }, select: { id: true, purchaseId: true, participationLineId: true } });
       if (!item) throw new Error("NOT_FOUND");
-      if (item.status !== "PENDING") throw new Error("NOT_PENDING");
-      const updated = await tx.prizePaymentRequest.update({
-        where: { id: item.id },
-        data: { status: "REJECTED", reviewedAt: new Date(), reviewerId: user.id, note: "Solicitação recusada pela administração." },
-        select: { id: true, status: true, reviewedAt: true },
+      const reviewedAt = new Date();
+      const changed = await tx.prizePaymentRequest.updateMany({
+        where: { id: item.id, status: "PENDING" },
+        data: { status: "REJECTED", reviewedAt, reviewerId: user.id, note: "Solicitação recusada pela administração." },
       });
+      if (changed.count !== 1) throw new Error("NOT_PENDING");
+      const updated = { id: item.id, status: "REJECTED" as const, reviewedAt };
       await tx.auditEvent.create({ data: {
         actorId: user.id, action: "PRIZE_PIX_REQUEST_REJECTED", entityType: "PrizePaymentRequest", entityId: item.id,
         metadata: { purchaseId: item.purchaseId, participationLineId: item.participationLineId, status: "REJECTED" },
