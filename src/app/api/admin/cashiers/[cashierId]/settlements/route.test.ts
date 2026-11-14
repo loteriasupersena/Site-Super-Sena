@@ -20,7 +20,7 @@ const snapshot = {
   id: "settlement-1", cashierId, adminId: "admin-1", settledAt: cutoff,
   cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
   salesCount: 3, gamesCount: 7, commissionCents: 900,
-  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500,
+  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
 };
 function request(origin = "https://example.test") {
   return new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
