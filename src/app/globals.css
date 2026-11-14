@@ -1395,10 +1395,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .numeric-game-purchase form,
 .numeric-entry-row,
 .cashier-prize-payout,
-.cashier-prize-payout form {
-  min-width: 0;
-  max-width: 100%;
-}
 
 .numeric-game-purchase form {
   width: 100%;
@@ -1503,13 +1499,11 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   gap: 12px;
   margin-top: 0;
 }
-.area-page-compact .numeric-game-purchase form > label,
-.area-page-compact .cashier-prize-lookup-form label {
+.area-page-compact .numeric-game-purchase form > label {
   font-size: 1.12rem;
   font-weight: 800;
 }
-.area-page-compact .numeric-game-purchase input:not([type="checkbox"]),
-.area-page-compact .cashier-prize-lookup-form input {
+.area-page-compact .numeric-game-purchase input:not([type="checkbox"]) {
   min-height: 62px;
   padding: 14px 16px;
   border-radius: 12px;
