@@ -90,8 +90,12 @@ describe("POST admin cashier settlements", () => {
       .mockResolvedValueOnce({ _sum: { totalCents: 12000 }, _count: { _all: 2 } });
     const response = await POST(request(), context);
     expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      settlement: { pendingCashSalesCount: 2, pendingCashSalesCents: 12000 },
+    });
     expect(mocks.settlementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
+      pendingCashSalesCount: 2, pendingCashSalesCents: 12000,
     }) });
     expect(mocks.auditCreate).toHaveBeenCalled();
   });
