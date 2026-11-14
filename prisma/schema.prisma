@@ -72,6 +72,12 @@ enum NumericPrizePayoutChannel {
   CASHIER_CASH
 }
 
+enum PrizePaymentRequestStatus {
+  PENDING
+  PAID
+  REJECTED
+}
+
 enum WithdrawalStatus {
   PENDING
   APPROVED
@@ -125,6 +131,7 @@ model User {
   numericPrizePayoutsCreated NumericPrizePayout[] @relation("NumericPrizePayoutActor")
   numericPrizePayoutsAsCashier NumericPrizePayout[] @relation("NumericPrizePayoutCashier")
   printJobsRequested PrintJob[] @relation("PrintJobRequester")
+  prizePaymentRequestsReviewed PrizePaymentRequest[] @relation("PrizePaymentRequestReviewer")
 
   @@index([role, status])
 }
@@ -196,6 +203,7 @@ model Purchase {
   ledgerEntries     LedgerEntry[]
   commission        CashierCommission?
   printJobs         PrintJob[]
+  prizePaymentRequests PrizePaymentRequest[]
 
   @@index([playerId, createdAt])
   @@index([cashierId, createdAt])
@@ -251,6 +259,7 @@ model NumericParticipationLine {
   createdAt        DateTime @default(now())
   participation    PurchaseParticipation @relation(fields: [participationId], references: [id], onDelete: Restrict)
   prizePayout      NumericPrizePayout?
+  prizePaymentRequest PrizePaymentRequest?
 
   @@index([numberValue])
   @@index([participationId])
@@ -476,4 +485,31 @@ model PrintJob {
   @@index([purchaseId, createdAt])
   @@index([status, updatedAt])
   @@index([requestedById, createdAt])
+}
+
+
+model PrizePaymentRequest {
+  id                     String   @id @default(cuid())
+  participationLineId    String   @unique
+  purchaseId             String
+  pixKeyEncrypted        String
+  pixKeyMasked           String
+  grossCents             Int
+  administrativeFeeCents Int      @default(0)
+  transactionFeeCents    Int      @default(0)
+  netCents               Int
+  feeRuleVersion         String
+  status                 PrizePaymentRequestStatus @default(PENDING)
+  requestedAt            DateTime @default(now())
+  reviewedAt             DateTime?
+  reviewerId             String?
+  paymentReference       String?
+  note                   String?
+  participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
+  purchase               Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  reviewer               User? @relation("PrizePaymentRequestReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@index([status, requestedAt])
+  @@index([purchaseId, requestedAt])
+  @@index([reviewerId, reviewedAt])
 }
