@@ -33,31 +33,27 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       const settledAt = await tx.$queryRaw<Array<{ now: Date }>>`SELECT clock_timestamp() AS now`;
       const cutoff = settledAt[0]!.now;
       const eligible = { cashierId, status: "CONFIRMED" as const, confirmedAt: { gt: since, lte: cutoff } };
+      const eligibleForFinancials = {
+        ...eligible,
+        OR: [
+          { paymentMethod: "CASH" as const },
+          { paymentMethod: "PIX" as const, payment: { is: { status: "CONFIRMED" as const } } },
+        ],
+      };
       const [cash, pix, commissions, games, cashPrizePayouts, eligibleSales] = await Promise.all([
         tx.purchase.aggregate({ where: { ...eligible, paymentMethod: "CASH" }, _sum: { totalCents: true }, _count: { _all: true } }),
         tx.purchase.aggregate({ where: { ...eligible, paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } }, _sum: { totalCents: true }, _count: { _all: true } }),
         tx.cashierCommission.aggregate({
           where: {
             cashierId,
-            purchase: {
-              is: {
-                ...eligible,
-                OR: [
-                  { paymentMethod: "CASH" },
-                  { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
-                ],
-              },
-            },
+            purchase: { is: eligibleForFinancials },
           },
           _sum: { amountCents: true },
         }),
-        tx.numericParticipationLine.count({ where: { participation: { is: { status: "CONFIRMED", purchase: { is: { cashierId, status: "CONFIRMED", confirmedAt: { gt: since, lte: cutoff } } } } } } }),
+        tx.numericParticipationLine.count({ where: { participation: { is: { status: "CONFIRMED", purchase: { is: eligibleForFinancials } } } } }),
         tx.numericPrizePayout.aggregate({ where: { cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff } }, _sum: { amountCents: true }, _count: { _all: true } }),
         tx.purchase.findMany({
-          where: { ...eligible, OR: [
-            { paymentMethod: "CASH" },
-            { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
-          ] },
+          where: eligibleForFinancials,
           select: { id: true, totalCents: true, commission: { select: { cashierId: true, rateBasisPoints: true, amountCents: true } } },
         }),
       ]);
