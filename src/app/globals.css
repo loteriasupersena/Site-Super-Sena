@@ -1524,8 +1524,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
   letter-spacing: .2em;
 }
 .area-page-compact .numeric-entry-row button,
-.area-page-compact .cashier-prize-lookup-form button,
-.area-page-compact .cashier-prize-line button,
 .area-page-compact .numeric-game-purchase form > button[type="submit"] {
   min-height: 64px;
   padding: 14px 20px;
@@ -1539,9 +1537,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
 .area-page-compact .numeric-game-purchase .round-repeat-fieldset > select {
   min-height: 64px;
   font-size: 1.15rem;
-}
-.area-page-compact .cashier-prize-lookup-form {
-  gap: 12px;
 }
 .area-page-compact .cashier-prize-payout {
   padding: clamp(18px, 3vw, 30px);
