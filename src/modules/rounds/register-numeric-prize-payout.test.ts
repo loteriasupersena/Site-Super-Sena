@@ -12,6 +12,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
+    prizePaymentRequest: { id: "request-123", status: "PENDING", netCents: 3000, grossCents: 3000, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
     participation: {
       status: "CONFIRMED",
       purchase: {
@@ -40,6 +41,7 @@ function setup(line = makeLine()) {
     numericParticipationLine: { findUnique: vi.fn().mockResolvedValue(line) },
     numericPrizePayout: { create: payoutCreate },
     auditEvent: { create: auditCreate },
+    prizePaymentRequest: { update: vi.fn().mockResolvedValue({}) },
   };
   return { tx, payoutCreate, auditCreate };
 }
@@ -96,12 +98,12 @@ describe("registerNumericPrizePayout", () => {
     })).rejects.toMatchObject({ code: "ALREADY_PAID" });
   });
 
-  it("requires the cashier to own the ticket before recording cash payout", async () => {
+  it("blocks cash payout through the cashier channel", async () => {
     const { tx, payoutCreate } = setup();
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "cashier-456",
       cashierId: "cashier-456", channel: "CASHIER_CASH",
-    })).rejects.toMatchObject({ code: "NOT_OWNED" });
+    })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
     expect(payoutCreate).not.toHaveBeenCalled();
   });
 });
