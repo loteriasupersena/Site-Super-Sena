@@ -66,7 +66,7 @@ export function CashierSettlementHistory() {
         <p><strong>Resultado do acerto:</strong> {item.cashierOwesPlatformCents > 0
           ? "Você repassou à plataforma " + money(item.cashierOwesPlatformCents) + "."
           : item.platformOwesCashierCents > 0
-            ? "A plataforma ficou devendo a você " + money(item.platformOwesCashierCents) + "."
+            ? "A plataforma pagou a você " + money(item.platformOwesCashierCents) + "."
             : "Não houve valor a repassar ou receber."}</p>
         <p className="note-inline">Período encerrado. Um novo período foi iniciado após este acerto.</p>
       </article>)}
