@@ -83,16 +83,17 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("blocks liquidation while cash received by the cashier is still awaiting allocation", async () => {
+  it("closes the current period while unallocated cash sales remain pending for the next period", async () => {
     mocks.purchaseAggregate.mockReset()
       .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })
       .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })
       .mockResolvedValueOnce({ _sum: { totalCents: 12000 }, _count: { _all: 2 } });
     const response = await POST(request(), context);
-    expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: expect.stringContaining("vendas em dinheiro recebidas") });
-    expect(mocks.settlementCreate).not.toHaveBeenCalled();
-    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
+    expect(response.status).toBe(201);
+    expect(mocks.settlementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
+    }) });
+    expect(mocks.auditCreate).toHaveBeenCalled();
   });
 
   it("rejects an expired preview if another settlement already closed the period", async () => {
