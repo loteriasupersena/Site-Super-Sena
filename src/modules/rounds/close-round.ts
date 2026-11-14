@@ -11,11 +11,27 @@ export class RoundClosureError extends Error {
 }
 
 function isSerializationConflict(error: unknown): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  return error.code === "P2034" ||
-    (error.code === "P2010" &&
-      (error.meta?.code === "40001" ||
-        error.message.toLowerCase().includes("could not serialize access")));
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as {
+    code?: unknown;
+    meta?: { code?: unknown };
+    message?: unknown;
+    originalCode?: unknown;
+    originalMessage?: unknown;
+    kind?: unknown;
+    cause?: unknown;
+  };
+  if (candidate.code === "P2034" || candidate.meta?.code === "40001" ||
+      candidate.originalCode === "40001" || candidate.kind === "TransactionWriteConflict") return true;
+  const message = [candidate.message, candidate.originalMessage]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+  if (message.includes("could not serialize access") ||
+      message.includes("transactionwriteconflict") ||
+      message.includes("write conflict") ||
+      message.includes("deadlock")) return true;
+  return candidate.cause ? isSerializationConflict(candidate.cause) : false;
 }
 
 /**
