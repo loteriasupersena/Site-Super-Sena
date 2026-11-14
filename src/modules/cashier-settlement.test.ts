@@ -12,7 +12,8 @@ function transactionFixture({
     purchase: {
       aggregate: vi.fn()
         .mockResolvedValueOnce({ _sum: { totalCents: cash }, _count: { _all: cash ? 1 : 0 } })
-        .mockResolvedValueOnce({ _sum: { totalCents: pix }, _count: { _all: pix ? 1 : 0 } })\n        .mockResolvedValueOnce({ _sum: { totalCents: pending }, _count: { _all: pendingCount } }),
+        .mockResolvedValueOnce({ _sum: { totalCents: pix }, _count: { _all: pix ? 1 : 0 } })
+        .mockResolvedValueOnce({ _sum: { totalCents: pending }, _count: { _all: pendingCount } }),
       findMany: vi.fn().mockResolvedValue(sales),
     },
     cashierCommission: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: commission } }) },
@@ -49,7 +50,14 @@ describe("calculateCashierSettlement", () => {
     expect(result.platformOwesCashierCents).toBe(3000);
   });
 
-  it("reports cash already received but not yet allocated so the administrator can block closing", async () => {\n    const tx = transactionFixture({ pending: 12000, pendingCount: 2 });\n    const result = await calculateCashierSettlement(tx, "cashier-1", new Date(0), new Date("2026-11-13T00:00:00.000Z"));\n    expect(result.pendingCashSalesCount).toBe(2);\n    expect(result.pendingCashSalesCents).toBe(12000);\n  });\n\n  it("blocks an inconsistent commission rather than producing a misleading balance", async () => {
+  it("reports cash already received but not yet allocated so the administrator can block closing", async () => {
+    const tx = transactionFixture({ pending: 12000, pendingCount: 2 });
+    const result = await calculateCashierSettlement(tx, "cashier-1", new Date(0), new Date("2026-11-13T00:00:00.000Z"));
+    expect(result.pendingCashSalesCount).toBe(2);
+    expect(result.pendingCashSalesCents).toBe(12000);
+  });
+
+  it("blocks an inconsistent commission rather than producing a misleading balance", async () => {
     const tx = transactionFixture({
       sales: [{ id: "bad-sale", totalCents: 50000, commission: { cashierId: "cashier-1", rateBasisPoints: 1000, amountCents: 4999 } }],
     });
