@@ -4,6 +4,7 @@ import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { requireRole } from "@/lib/auth/require-role";
+import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const user = await requireRole("ADMIN");
@@ -28,6 +29,7 @@ export default async function AdminPage() {
       </details>
     </div>
     <article className="feature-card"><span className="feature-label">Controles protegidos</span><h2>Operação administrativa</h2><p>O painel de rodadas permite acompanhar os horários e resultados. O scheduler mantém a fila móvel de 48 rodadas futuras, fecha as apostas, publica os resultados e apura os prêmios automaticamente. A central Ganhadores reúne os pagamentos manuais pendentes e o histórico. O painel de saques permite aprovar ou recusar solicitações. A aprovação não marca o saque como pago nem envia Pix: a transferência é feita manualmente fora da plataforma.</p></article>
+      <AdminGameSimulator />
     </div>
   </AreaShell>;
 }
