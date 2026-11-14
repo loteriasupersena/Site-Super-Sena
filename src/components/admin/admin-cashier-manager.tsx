@@ -70,9 +70,10 @@ export function AdminCashierManager({ mode }: { mode: "create" | "manage" }) {
   }, [page, searchTerm]);
 
   useEffect(() => {
+    if (mode !== "manage") return;
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => { window.clearTimeout(timer); loadController.current?.abort(); };
-  }, [load]);
+  }, [load, mode]);
 
   function beginEdit(cashier: Cashier) {
     setEditingId(cashier.id);
@@ -123,7 +124,10 @@ export function AdminCashierManager({ mode }: { mode: "create" | "manage" }) {
       resetForm();
       await load();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao salvar o cambista.");
+      const message = reason instanceof Error ? reason.message : "";
+      setError(message === "The string did not match the expected pattern."
+        ? "O formato informado é inválido. Verifique os dados preenchidos."
+        : message || "Não foi possível salvar o cambista. Verifique os dados e tente novamente.");
     } finally { setBusy(false); }
   }
 
