@@ -25,7 +25,8 @@ const snapshot = {
 function request(origin = "https://example.test") {
   return new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
     method: "POST",
-    headers: { cookie: "superquina_session=session-token", origin, host: "example.test" },
+    headers: { cookie: "superquina_session=session-token", origin, host: "example.test", "content-type": "application/json" },
+    body: JSON.stringify({ cutoffAt: cutoff.toISOString() }),
   });
 }
 const context = { params: Promise.resolve({ cashierId }) };
