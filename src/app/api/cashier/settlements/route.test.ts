@@ -60,6 +60,8 @@ describe("GET cashier settlement history", () => {
       settlements: [{
         id: "settlement-1",
         totalSalesCents: 80000,
+        pendingCashSalesCount: 1,
+        pendingCashSalesCents: 12000,
         netBalanceCents: 37000,
         cashierOwesPlatformCents: 37000,
         platformOwesCashierCents: 0,
