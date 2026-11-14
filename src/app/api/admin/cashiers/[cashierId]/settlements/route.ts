@@ -19,13 +19,13 @@ function validOrigin(request: NextRequest) {
   } catch { return false; }
 }
 
-async function requireAdmin(request: NextRequest) {
+type AdminGuard =\n  | { authorized: true; admin: NonNullable<Awaited<ReturnType<typeof getSessionUser>>> }\n  | { authorized: false; response: NextResponse };\n\nasync function requireAdmin(request: NextRequest): Promise<AdminGuard> {
   const admin = await getSessionUser(request.cookies.get(SESSION_COOKIE)?.value);
-  if (!admin) return { response: NextResponse.json({ error: "É necessário entrar na conta." }, { status: 401, headers }) };
+  if (!admin) return { authorized: false, response: NextResponse.json({ error: "É necessário entrar na conta." }, { status: 401, headers }) };
   if (admin.role !== "ADMIN" || admin.mustChangePassword) {
-    return { response: NextResponse.json({ error: "Somente o administrador pode acessar o acerto." }, { status: 403, headers }) };
+    return { authorized: false, response: NextResponse.json({ error: "Somente o administrador pode acessar o acerto." }, { status: 403, headers }) };
   }
-  return { admin };
+  return { authorized: true, admin };
 }
 
 async function lockCashier(tx: Prisma.TransactionClient, cashierId: string) {
@@ -47,7 +47,7 @@ async function databaseNow(tx: Prisma.TransactionClient) {
 // confirms, so sales or payouts made after the preview remain in the next period.
 export async function GET(request: NextRequest, context: { params: Promise<{ cashierId: string }> }) {
   const auth = await requireAdmin(request);
-  if ("response" in auth) return auth.response;
+  if (!auth.authorized) return auth.response;
   const { cashierId } = await context.params;
   try {
     const preview = await authPrisma.$transaction(async (tx) => {
