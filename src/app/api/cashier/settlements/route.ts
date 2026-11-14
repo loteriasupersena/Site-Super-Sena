@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         select: {
           id: true, settledAt: true, cashSalesCents: true, pixSalesCents: true,
           totalSalesCents: true, salesCount: true, gamesCount: true,
-          commissionCents: true, cashPrizePayoutCount: true, cashPrizePayoutCents: true,
+          commissionCents: true, cashPrizePayoutCount: true, cashPrizePayoutCents: true,\n          pendingCashSalesCount: true, pendingCashSalesCents: true,
         },
       }),
     ]);
