@@ -4,6 +4,7 @@ import { CashierSaleForm } from "@/components/cashier/cashier-sale-form";
 import { PlayerRecentResults } from "@/components/player/player-recent-results";
 import { CashierSalesSummary } from "@/components/cashier/cashier-sales-summary";
 import { CashierPrizePayout } from "@/components/cashier/cashier-prize-payout";
+import { CashierSettlementHistory } from "@/components/cashier/cashier-settlement-history";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
           <PlayerRecentResults />
         </details>
         <CashierSalesSummary />
+        <CashierSettlementHistory />
       </section>
     </AreaShell>
   );

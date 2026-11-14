@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/session", () => ({
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
   authPrisma: { $transaction: mocks.transaction },
 }));
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const cashierId = "cashier-123456";
 const cutoff = new Date("2026-11-04T15:00:00.000Z");
@@ -20,12 +20,13 @@ const snapshot = {
   id: "settlement-1", cashierId, adminId: "admin-1", settledAt: cutoff,
   cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
   salesCount: 3, gamesCount: 7, commissionCents: 900,
-  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500,
+  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
 };
 function request(origin = "https://example.test") {
   return new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
     method: "POST",
-    headers: { cookie: "superquina_session=session-token", origin, host: "example.test" },
+    headers: { cookie: "superquina_session=session-token", origin, host: "example.test", "content-type": "application/json" },
+    body: JSON.stringify({ cutoffAt: cutoff.toISOString() }),
   });
 }
 const context = { params: Promise.resolve({ cashierId }) };
@@ -39,7 +40,8 @@ describe("POST admin cashier settlements", () => {
     mocks.settlementFindFirst.mockResolvedValue({ settledAt: since });
     mocks.purchaseAggregate
       .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })
-      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } });
+      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 0 }, _count: { _all: 0 } });
     mocks.purchaseFindMany.mockResolvedValue([
       { id: "cash-1", totalCents: 5000, commission: { cashierId, rateBasisPoints: 600, amountCents: 300 } },
       { id: "cash-2", totalCents: 5000, commission: { cashierId, rateBasisPoints: 600, amountCents: 300 } },
@@ -61,6 +63,49 @@ describe("POST admin cashier settlements", () => {
       numericPrizePayout: { aggregate: mocks.payoutAggregate, updateMany: mocks.payoutUpdateMany },
       auditEvent: { create: mocks.auditCreate },
     }));
+  });
+
+
+  it("returns an apuration preview without closing the period or associating prize payouts", async () => {
+    const previewRequest = new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
+      headers: { cookie: "superquina_session=session-token" },
+    });
+    const response = await GET(previewRequest, context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      preview: {
+        cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
+        commissionCents: 900, cashPrizePayoutCents: 2500,
+        netBalanceCents: 6600, cashierOwesPlatformCents: 6600, platformOwesCashierCents: 0,
+      },
+    });
+    expect(mocks.settlementCreate).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("closes the current period while unallocated cash sales remain pending for the next period", async () => {
+    mocks.purchaseAggregate.mockReset()
+      .mockResolvedValueOnce({ _sum: { totalCents: 10000 }, _count: { _all: 2 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 5000 }, _count: { _all: 1 } })
+      .mockResolvedValueOnce({ _sum: { totalCents: 12000 }, _count: { _all: 2 } });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      settlement: { pendingCashSalesCount: 2, pendingCashSalesCents: 12000 },
+    });
+    expect(mocks.settlementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
+      pendingCashSalesCount: 2, pendingCashSalesCents: 12000,
+    }) });
+    expect(mocks.auditCreate).toHaveBeenCalled();
+  });
+
+  it("rejects an expired preview if another settlement already closed the period", async () => {
+    mocks.settlementFindFirst.mockResolvedValueOnce({ settledAt: cutoff });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(409);
+    expect(mocks.settlementCreate).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
   it("requires a valid active ADMIN session and blocks mandatory password changes", async () => {
@@ -105,13 +150,21 @@ describe("POST admin cashier settlements", () => {
       select: { id: true, totalCents: true, commission: { select: { cashierId: true, rateBasisPoints: true, amountCents: true } } },
     });
     expect(mocks.commissionAggregate).toHaveBeenCalledWith({ where: {
-      cashierId, purchase: { is: { cashierId, status: "CONFIRMED", confirmedAt: { gt: since, lte: cutoff }, OR: [
-        { paymentMethod: "CASH" }, { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
-      ] } },
+      cashierId, purchase: { is: {
+        cashierId, status: "CONFIRMED", confirmedAt: { gt: since, lte: cutoff },
+        OR: [
+          { paymentMethod: "CASH" },
+          { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
+        ],
+      } },
     }, _sum: { amountCents: true } });
     expect(mocks.lineCount).toHaveBeenCalledWith({ where: {
       participation: { is: { status: "CONFIRMED", purchase: { is: {
         cashierId, status: "CONFIRMED", confirmedAt: { gt: since, lte: cutoff },
+        OR: [
+          { paymentMethod: "CASH" },
+          { paymentMethod: "PIX", payment: { is: { status: "CONFIRMED" } } },
+        ],
       } } } },
     } });
     expect(mocks.payoutAggregate).toHaveBeenCalledWith({ where: {

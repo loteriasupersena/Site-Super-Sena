@@ -346,6 +346,8 @@ model CashierSettlement {
   commissionCents       Int
   cashPrizePayoutCount  Int      @default(0)
   cashPrizePayoutCents  Int      @default(0)
+  pendingCashSalesCount Int      @default(0)
+  pendingCashSalesCents Int      @default(0)
   cashier               User     @relation("CashierSettlementCashier", fields: [cashierId], references: [id], onDelete: Restrict)
   admin                 User     @relation("CashierSettlementAdmin", fields: [adminId], references: [id], onDelete: Restrict)
   cashPrizePayouts      NumericPrizePayout[]
