@@ -92,6 +92,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       if (cutoffAt <= since || cutoffAt > now) throw new Error("STALE_SETTLEMENT_PREVIEW");
 
       const calculation = await calculateCashierSettlement(tx, cashierId, since, cutoffAt);
+      if (calculation.pendingCashSalesCount > 0) throw new CashierSettlementPendingSalesError();
       const snapshot = await tx.cashierSettlement.create({
         data: {
           cashierId, adminId: auth.admin.id, settledAt: cutoffAt,
@@ -132,6 +133,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     }
     if (error instanceof Error && error.message === "STALE_SETTLEMENT_PREVIEW") {
       return NextResponse.json({ error: "Este período já foi fechado ou a apuração expirou. Faça uma nova apuração antes de confirmar." }, { status: 409, headers });
+    }
+    if (error instanceof CashierSettlementPendingSalesError) {
+      return NextResponse.json({ error: "Liquidação bloqueada: existem vendas em dinheiro recebidas que ainda aguardam alocação. Conclua ou resolva essas vendas e faça uma nova apuração." }, { status: 409, headers });
     }
     if (error instanceof CashierSettlementIntegrityError) {
       return NextResponse.json({ error: "Acerto bloqueado: existe venda confirmada sem comissão ou com comissão inconsistente. Corrija os dados antes de fechar." }, { status: 409, headers });
