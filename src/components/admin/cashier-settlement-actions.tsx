@@ -89,7 +89,7 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
         <article className="cashier-summary-tile"><span>Total vendido</span><strong>{money(preview.totalSalesCents)}</strong></article>
         <article className="cashier-summary-tile"><span>Comissão devida ao cambista</span><strong>{money(preview.commissionCents)}</strong></article>
         <article className="cashier-summary-tile"><span>Prêmios pagos em dinheiro pelo cambista ({preview.cashPrizePayoutCount})</span><strong>{money(preview.cashPrizePayoutCents)}</strong></article>
-        <article className="cashier-summary-tile"><span>Vendas confirmadas · jogos</span><strong>{preview.salesCount} · {preview.gamesCount}</strong></article>
+        <article className="cashier-summary-tile"><span>Vendas confirmadas · jogos</span><strong>{preview.salesCount} · {preview.gamesCount}</strong></article>\n        <article className="cashier-summary-tile"><span>Vendas em dinheiro aguardando alocação</span><strong>{preview.pendingCashSalesCount} · {money(preview.pendingCashSalesCents)}</strong></article>
       </div>
       <div className="admin-settlement-final-balance">
         <h4>Resultado financeiro final</h4>
@@ -100,7 +100,7 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
             : <p><strong>ACERTO ZERADO: não há valor a repassar ou pagar.</strong></p>}
         <p>O cálculo considera dinheiro recebido menos comissão e prêmios pagos pelo cambista. O Pix é demonstrado separadamente porque já está no caixa da plataforma.</p>
       </div>
-      <button type="button" className="primary-button" disabled={Boolean(busy)} onClick={() => void finalize()}>
+      {preview.pendingCashSalesCount > 0 && <p role="alert" className="form-error">Liquidação bloqueada: há dinheiro recebido pelo cambista em vendas ainda não concluídas. Aguarde a alocação das rodadas ou resolva essas vendas antes de fechar o período.</p>}\n      <button type="button" className="primary-button" disabled={Boolean(busy) || preview.pendingCashSalesCount > 0} onClick={() => void finalize()}>
         {busy === "finalize" ? "Confirmando…" : "Confirmar liquidação e zerar período"}
       </button>
       <p className="note-inline">Só confirme depois de conferir os valores e realizar o repasse ou pagamento fora do sistema. A confirmação grava o histórico e inicia um novo período; não movimenta dinheiro automaticamente.</p>
