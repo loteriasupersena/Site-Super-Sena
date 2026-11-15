@@ -26,7 +26,8 @@ suite("PostgreSQL login rate limit", () => {
     `it-login-window-${suffix}`,
     `it-login-clear-${suffix}`,
   ];
-  const ips = ["198.51.100.11", "198.51.100.12", "198.51.100.13"];\n  const aggregateUsers = Array.from({ length: LOGIN_MAX_ATTEMPTS }, (_, index) => `it-login-ip-${index}-${suffix}`);
+  const ips = ["198.51.100.11", "198.51.100.12", "198.51.100.13"];
+  const aggregateUsers = Array.from({ length: LOGIN_MAX_ATTEMPTS }, (_, index) => `it-login-ip-${index}-${suffix}`);
 
   const accountIpKey = (username: string, ip: string) =>
     createHash("sha256").update(`login-account-ip:v2:${username.trim().toLocaleLowerCase("en-US")}:${ip}`).digest("hex");
@@ -38,7 +39,10 @@ suite("PostgreSQL login rate limit", () => {
 
   afterAll(async () => {
     await prisma.loginAttemptBucket.deleteMany({
-      where: { keyHash: { in: [\n        ...usernames.flatMap((username, index) => [accountIpKey(username, ips[index]!), ipKey(ips[index]!)]),\n        ...aggregateUsers.map((username) => accountIpKey(username, ips[1]!)),\n      ] } },
+      where: { keyHash: { in: [
+        ...usernames.flatMap((username, index) => [accountIpKey(username, ips[index]!), ipKey(ips[index]!)]),
+        ...aggregateUsers.map((username) => accountIpKey(username, ips[1]!)),
+      ] } },
     });
     await prisma.$disconnect();
   });
@@ -74,7 +78,7 @@ suite("PostgreSQL login rate limit", () => {
     const ip = ips[1]!;
     const now = new Date("2035-01-01T12:00:00.000Z");
     for (let attempt = 0; attempt < LOGIN_MAX_ATTEMPTS; attempt += 1) {
-      await recordLoginFailure(aggregateUsers[attempt]!, ip, now);
+      await recordLoginFailure(prisma, aggregateUsers[attempt]!, ip, now);
     }
     expect(await getLoginBlock(prisma, "some-other-user", ip, now)).not.toBeNull();
   });
