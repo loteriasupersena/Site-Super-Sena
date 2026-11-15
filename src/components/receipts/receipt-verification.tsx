@@ -45,6 +45,9 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const [data, setData] = useState<VerifiedReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [pixKey, setPixKey] = useState("");
+  const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
+  const [showPixKeyReview, setShowPixKeyReview] = useState(false);
+  const [pixKeyConfirmed, setPixKeyConfirmed] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [requestError, setRequestError] = useState("");
@@ -105,12 +108,15 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
     setRequesting(true); setRequestError(""); setRequestMessage("");
     try {
       const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey, pixKeyConfirmation }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
       setRequestMessage("Solicitação enviada à plataforma. Aguarde a análise do administrador.");
       setPixKey("");
+      setPixKeyConfirmation("");
+      setShowPixKeyReview(false);
+      setPixKeyConfirmed(false);
       const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
       if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
     } catch (reason) { setRequestError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação."); }
@@ -188,9 +194,20 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
         }))}
         {requestError && <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>{requestError}</p>}
         {requestMessage && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{requestMessage}</p>}
-        <label htmlFor="receipt-prize-pix-key" style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Sua chave Pix</label>
-        <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
-        <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || !canRequest || pixKey.trim().length < 3} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "Solicitar pagamento do prêmio"}</button>
+        <label htmlFor="receipt-prize-pix-key" style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Digite sua chave Pix</label>
+        <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => { setPixKey(event.target.value); setShowPixKeyReview(false); setPixKeyConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        <label htmlFor="receipt-prize-pix-key-confirmation" style={{ display: "block", margin: "12px 0 5px", color: "#111827", fontWeight: 700 }}>Confirme sua chave Pix</label>
+        <input id="receipt-prize-pix-key-confirmation" value={pixKeyConfirmation} onChange={(event) => { setPixKeyConfirmation(event.target.value); setShowPixKeyReview(false); setPixKeyConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="Digite novamente a mesma chave Pix" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        {pixKeyConfirmation.length > 0 && pixKey.trim() !== pixKeyConfirmation.trim() && <p role="alert" style={{ color: "#991b1b", fontWeight: 700, fontSize: 13 }}>As chaves Pix não coincidem. Confira os dois campos.</p>}
+        {!showPixKeyReview ? <button type="button" onClick={() => setShowPixKeyReview(true)} disabled={requesting || !canRequest || pixKey.trim().length < 3 || pixKey.trim() !== pixKeyConfirmation.trim()} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Revisar chave Pix</button> : <div style={{ marginTop: 14, padding: 13, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb" }}>
+          <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME O DESTINO DO PRÊMIO</strong>
+          <p style={{ margin: "0 0 6px", color: "#374151", fontSize: 14 }}>O pagamento será realizado para esta chave Pix:</p>
+          <p style={{ margin: "0 0 10px", padding: 10, borderRadius: 6, background: "#fff", border: "1px solid #d1d5db", color: "#111827", fontWeight: 800, overflowWrap: "anywhere", userSelect: "text" }}>{pixKey.trim()}</p>
+          <p style={{ margin: "0 0 12px", color: "#92400e", fontSize: 13, fontWeight: 700 }}>Confira todos os caracteres. Se a chave estiver incorreta, o Pix poderá ser enviado para outra pessoa.</p>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={pixKeyConfirmed} onChange={(event) => setPixKeyConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber meu prêmio.</label>
+          <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || !canRequest || !pixKeyConfirmed} style={{ display: "block", width: "100%", padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "CONFIRMAR E ENVIAR SOLICITAÇÃO"}</button>
+          <button type="button" onClick={() => { setShowPixKeyReview(false); setPixKeyConfirmed(false); }} disabled={requesting} style={{ display: "block", width: "100%", marginTop: 8, padding: 11, border: "1px solid #6b7280", borderRadius: 8, background: "#fff", color: "#111827", fontWeight: 700, fontSize: 14 }}>Voltar e corrigir a chave</button>
+        </div>}
       </div>}
       {hasPaidPrize && <details style={{ marginTop: 14, textAlign: "center" }}>
         <summary style={{ display: "inline-block", color: "#1d4ed8", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Saiba mais sobre pagamentos de prêmios</summary>
