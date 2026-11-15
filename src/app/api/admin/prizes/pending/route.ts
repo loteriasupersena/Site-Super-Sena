@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
           paymentRequest: line.prizePaymentRequest ? {
             id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
-            pixKey: (() => { try { return decryptPixKey(line.prizePaymentRequest.pixKeyEncrypted); } catch { return null; } })(),
+            pixKey: line.prizePaymentRequest.status === "PENDING" && !line.prizePayout && !line.prizeCreditedAt && line.prizePaymentRequest.pixKeyEncrypted
+              ? (() => { try { return decryptPixKey(line.prizePaymentRequest.pixKeyEncrypted); } catch { return null; } })()
+              : null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
