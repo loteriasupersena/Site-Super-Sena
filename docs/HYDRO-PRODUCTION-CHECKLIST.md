@@ -59,7 +59,7 @@ Configure no painel do serviço, sem colocar segredos no Git:
 - Verifique nos logs que as rodadas são abertas/fechadas/sorteadas e que reconciliação Pix, alocação e apuração não acumulam falhas.
 - Não confunda a quantidade de repetições escolhida pelo jogador (1–10) com a fila de até 48 rodadas futuras.
 
-## 6. Critérios de liberação
+## 6. Cabeçalhos HTTP e identificação do IP\n\n- O Next.js adiciona `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` e `Permissions-Policy`. Depois do deploy, confirme os cinco cabeçalhos com uma requisição HTTPS ao domínio público.\n- O proxy confiável deve sobrescrever `CF-Connecting-IP`, `X-Real-IP` ou `X-Forwarded-For` com o IP real do cliente. O login usa esses cabeçalhos para limitar tentativas; em produção, a ausência de um IP válido retorna HTTP 503 em vez de aplicar bloqueio global por nome de usuário.\n- Não aceite esses cabeçalhos diretamente de clientes sem que o proxy os substitua. Confirme no ambiente Hydro qual deles é fornecido e faça um login válido e um teste de tentativas inválidas.\n- HSTS exige HTTPS. Confirme que HTTP é redirecionado para HTTPS antes de considerar o cabeçalho validado.\n\n## 7. Dados necessários para concluir os documentos legais\n\nAntes de publicar Termos de Uso definitivos e Política de Privacidade, confirme com o responsável legal: razão social/nome do controlador, CNPJ/CPF aplicável, endereço e contato oficial para privacidade, eventual encarregado de dados, prazos de retenção, fornecedores que recebem dados (incluindo hospedagem, banco e pagamento), transferências internacionais e regras comerciais/legais definitivas do jogo. Não preencher esses itens por suposição.\n\n## 8. Critérios de liberação
 
 Não considerar produção pronta até confirmar:
 - [ ] App inicia sem erro Prisma P1013.
@@ -71,6 +71,6 @@ Não considerar produção pronta até confirmar:
 - [ ] Sorteio e apuração idempotentes.
 - [ ] Carteira, comissão, acerto e saque conferidos.
 - [ ] Domínio HTTPS, favicon, manifest e metadados corretos.
-- [ ] Logs sem segredos ou dados financeiros sensíveis.
+- [ ] Logs sem segredos ou dados financeiros sensíveis.\n- [ ] Cabeçalhos HTTP de segurança confirmados no domínio público.\n- [ ] Proxy fornece IP confiável para o rate limit do login.\n- [ ] Termos de Uso e Política de Privacidade revisados e aprovados pelo responsável legal.
 
 A aprovação da CI não substitui esses testes no ambiente real. Não alterar DNS, credenciais, banco ou serviço sem autorização explícita do responsável.
