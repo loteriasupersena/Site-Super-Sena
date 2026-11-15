@@ -21,7 +21,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-              select: { numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true } } },
+              select: { id: true, numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true } } },
             },
           },
         },
@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
           } catch { /* Never guess if saved rules are inconsistent. */ }
         }
         const prize = line.prizeCents ?? calculated;
-        return { numberValue: line.numberValue,
+        return { participationLineId: line.id, numberValue: line.numberValue,
           resultStatus: !completed ? "AGUARDANDO" : prize !== null ? prize > 0 ? "PREMIADA" : "NAO_PREMIADA" : "AGUARDANDO_APURACAO",
           prizeCents: completed && prize !== null && prize > 0 ? prize : null, prizePaid: Boolean(line.prizeCreditedAt || line.prizePayout), payoutChannel: line.prizePayout?.channel ?? null, paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null, paymentRequest: line.prizePaymentRequest ? { status: line.prizePaymentRequest.status, grossCents: line.prizePaymentRequest.grossCents, administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents, transactionFeeCents: line.prizePaymentRequest.transactionFeeCents, netCents: line.prizePaymentRequest.netCents, pixKeyMasked: line.prizePaymentRequest.pixKeyMasked } : null };
       });
