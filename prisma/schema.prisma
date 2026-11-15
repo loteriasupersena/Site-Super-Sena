@@ -492,7 +492,7 @@ model PrizePaymentRequest {
   id                     String   @id @default(cuid())
   participationLineId    String   @unique
   purchaseId             String
-  pixKeyEncrypted        String
+  pixKeyEncrypted        String?
   pixKeyMasked           String
   grossCents             Int
   administrativeFeeCents Int      @default(0)
