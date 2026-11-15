@@ -82,7 +82,7 @@ export function AdminPrizePayout() {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
       setWinners((current) => current.map((item) =>
         item.id === winner.id
-          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID" } : null }
+          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID", pixKey: null } : null }
           : item
       ));
       setNotice("Pix registrado. O ganhador foi movido para o histórico de pagos.");
@@ -102,7 +102,7 @@ export function AdminPrizePayout() {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível recusar a solicitação.");
       setWinners((current) => current.map((item) => item.id === winner.id && item.paymentRequest
-        ? { ...item, paymentRequest: { ...item.paymentRequest, status: "REJECTED" } }
+        ? { ...item, paymentRequest: { ...item.paymentRequest, status: "REJECTED", pixKey: null } }
         : item));
       setNotice("Solicitação recusada. O ganhador poderá enviar outra.");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao recusar solicitação."); }
