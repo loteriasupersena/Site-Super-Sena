@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyPassword } from "@/lib/auth/password";
@@ -10,7 +11,7 @@ const schema = z.object({
   password: z.string().min(1).max(1024),
 }).strict();
 
-function secureCookie(request: NextRequest) {
+function getClientIp(request: NextRequest) {\n  const realIp = request.headers.get("x-real-ip")?.trim();\n  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean).at(-1);\n  const candidate = realIp || forwarded;\n  return candidate && isIP(candidate) ? candidate : null;\n}\n\nfunction secureCookie(request: NextRequest) {
   return request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
 }
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
 
-  const blocked = await getLoginBlock(authPrisma, parsed.data.username);
+  const clientIp = getClientIp(request) ?? (process.env.NODE_ENV === "production" ? null : "127.0.0.1");\n  if (!clientIp) {\n    return NextResponse.json({ error: "Não foi possível validar a conexão. Tente novamente." }, { status: 503, headers: { "Cache-Control": "no-store" } });\n  }\n\n  const blocked = await getLoginBlock(authPrisma, parsed.data.username, clientIp);
   if (blocked) {
     const limited = NextResponse.json({ error: "Muitas tentativas. Aguarde antes de tentar novamente." }, { status: 429 });
     limited.headers.set("Retry-After", String(blocked.retryAfterSeconds));
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
   });
   const validPassword = await verifyPassword(parsed.data.password, user?.passwordHash ?? "");
   if (!user || user.status !== "ACTIVE" || !validPassword) {
-    const failure = await recordLoginFailure(authPrisma, parsed.data.username);
+    const failure = await recordLoginFailure(authPrisma, parsed.data.username, clientIp);
     if (failure.blocked) {
       const limited = NextResponse.json({ error: "Muitas tentativas. Aguarde antes de tentar novamente." }, { status: 429 });
       limited.headers.set("Retry-After", String(failure.retryAfterSeconds));
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Usuário ou senha inválidos." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  await clearLoginFailures(authPrisma, parsed.data.username);
+  await clearLoginFailures(authPrisma, parsed.data.username, clientIp);
   const { token, expiresAt } = await createSession(user.id);
   const response = NextResponse.json({ authenticated: true });
   response.cookies.set(SESSION_COOKIE, token, {
