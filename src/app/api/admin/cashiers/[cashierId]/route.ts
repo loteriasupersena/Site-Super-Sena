@@ -63,6 +63,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         select: { id: true, username: true, fullName: true, whatsapp: true, city: true, address: true, referencePoint: true, suppliesMaterial: true, commissionRateBasisPoints: true, status: true },
       });
       if (!previous) throw new Error("NOT_FOUND");
+      const mustRevokeSessions = Boolean(passwordHash) || (previous.status !== "BLOCKED" && parsed.data.status === "BLOCKED");
+      if (mustRevokeSessions) {
+        await tx.session.updateMany({
+          where: { userId: cashierId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      }
       const nextRate = parsed.data.suppliesMaterial ? 1000 : 2000;
       const nextUsername = parsed.data.username.toLowerCase();
       const cashier = await tx.user.update({
