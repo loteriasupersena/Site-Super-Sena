@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client";
@@ -30,9 +30,10 @@ suite("PostgreSQL login rate limit", () => {
   const ips = ["198.51.100.11", "198.51.100.12", "198.51.100.13"];
   const aggregateUsers = Array.from({ length: LOGIN_IP_MAX_ATTEMPTS }, (_, index) => `it-login-ip-${index}-${suffix}`);
 
+  const hmacKey = (value: string) => createHmac("sha256", process.env.AUTH_SECRET ?? "development-only-login-rate-limit-key").update(value).digest("hex");
   const accountIpKey = (username: string, ip: string) =>
-    createHash("sha256").update(`login-account-ip:v2:${username.trim().toLocaleLowerCase("en-US")}:${ip}`).digest("hex");
-  const ipKey = (ip: string) => createHash("sha256").update(`login-ip:v1:${ip}`).digest("hex");
+    hmacKey(`login-account-ip:v2:${username.trim().toLocaleLowerCase("en-US")}:${ip}`);
+  const ipKey = (ip: string) => hmacKey(`login-ip:v1:${ip}`);
 
   beforeAll(async () => {
     await prisma.$connect();
