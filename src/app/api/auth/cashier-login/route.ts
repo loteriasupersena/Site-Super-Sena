@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   // Crucial: reject every non-CASHIER profile before creating a session.
   if (user.role !== "CASHIER") {
-    await recordLoginFailure(authPrisma, parsed.data.username);
+    await recordLoginFailure(authPrisma, parsed.data.username, clientIp);
     return NextResponse.json({ error: "Este aplicativo é exclusivo para cambistas." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
 
