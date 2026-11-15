@@ -108,7 +108,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
     setRequesting(true); setRequestError(""); setRequestMessage("");
     try {
       const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey, pixKeyConfirmation }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey, pixKeyConfirmation, pixKeyConfirmed }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
