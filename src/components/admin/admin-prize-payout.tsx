@@ -39,7 +39,6 @@ const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", {
 
 export function AdminPrizePayout() {
   const [winners, setWinners] = useState<Winner[]>([]);
-  const [references, setReferences] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<"pending" | "paid">("pending");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
@@ -67,7 +66,7 @@ export function AdminPrizePayout() {
   async function confirmPaid(winner: Winner) {
     if (!window.confirm(
       "Confirma que você já fez o Pix de " + money(winner.paymentRequest?.netCents ?? winner.prizeCents) +
-      " para " + winner.playerName + " e conferiu o comprovante?"
+      " para " + winner.playerName + "?"
     )) return;
 
     setBusy(winner.id);
@@ -77,16 +76,15 @@ export function AdminPrizePayout() {
       const response = await fetch("/api/admin/prizes/" + encodeURIComponent(winner.id) + "/payout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ reference: references[winner.id]?.trim() || undefined }),
+        body: JSON.stringify({}),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
       setWinners((current) => current.map((item) =>
         item.id === winner.id
-          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: references[winner.id]?.trim() || null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID" } : null }
+          ? { ...item, paid: true, payoutChannel: "PLATFORM_PIX", paidAt: new Date().toISOString(), reference: null, paymentRequest: item.paymentRequest ? { ...item.paymentRequest, status: "PAID" } : null }
           : item
       ));
-      setReferences((current) => ({ ...current, [winner.id]: "" }));
       setNotice("Pix registrado. O ganhador foi movido para o histórico de pagos.");
       setTab("pending");
     } catch (reason) {
@@ -180,17 +178,13 @@ export function AdminPrizePayout() {
           <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
           <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
           <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
-          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
+          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PAID" ? "PAGA" : "RECUSADA"}</strong></p><p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> <button type="button" className="admin-prize-refresh" disabled={!winner.paymentRequest.pixKey} onClick={() => { if (winner.paymentRequest?.pixKey) void navigator.clipboard.writeText(winner.paymentRequest.pixKey); }}>Copiar chave Pix</button> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p><p>Prêmio bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p></div>}
           {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
           {winner.phone && <p>Telefone: {winner.phone}</p>}
           {winner.paid
             ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
             : <>
               {winner.manualEligible && winner.paymentRequest?.status === "PENDING" ? <>
-                <label htmlFor={"winner-reference-" + winner.id}>Referência do comprovante (opcional)</label>
-                <input className="admin-prize-reference" id={"winner-reference-" + winner.id} value={references[winner.id] ?? ""}
-                  onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} maxLength={300}
-                  placeholder="Identificador do Pix" />
                 <div className="admin-prize-confirm-actions">
                   <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
                     {busy === winner.id ? "Registrando…" : winner.calculationConsistent ? "Confirmar Pix pago" : "Pagamento bloqueado — conferir cálculo"}
