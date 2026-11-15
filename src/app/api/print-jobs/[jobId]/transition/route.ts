@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasSameOrigin } from "@/lib/http/same-origin";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { PrintJobServiceError, transitionPrintJob } from "@/modules/printing/print-job-service";
 
@@ -16,6 +17,7 @@ const failureCodes = new Set([
 ]);
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  if (!hasSameOrigin(request)) return NextResponse.json({ error: "Requisição inválida." }, { status: 403, headers });
   const user = await getSessionUser(request.cookies.get(SESSION_COOKIE)?.value);
   if (!user) return NextResponse.json({ error: "É necessário entrar na conta." }, { status: 401, headers });
   if (user.mustChangePassword || !["ADMIN", "CASHIER", "PLAYER"].includes(user.role)) {
