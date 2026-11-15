@@ -7,7 +7,7 @@ export const LEGACY_NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v1";
 export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v2";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
-  unit: 6, tens: 30, hundreds: 300, quadra: 3_000, quina: 30_000, sena: 300_000,
+  unit: 6, tens: 20, hundreds: 200, quadra: 2_000, quina: 20_000, sena: 200_000,
 };
 
 export const APPROVED_NUMERIC_PRIZE_MULTIPLIERS = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
