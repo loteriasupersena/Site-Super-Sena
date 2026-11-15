@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
+type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -41,16 +41,74 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+type PrizePixRequestFormProps = {
+  receiptCode: string;
+  participationLineId: string;
+  numberValue: string;
+  grossCents: number;
+  paymentRequest?: VerifiedNumber["paymentRequest"];
+  onSubmitted: () => Promise<void>;
+};
+
+function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, grossCents, paymentRequest, onSubmitted }: PrizePixRequestFormProps) {
+  const [pixKey, setPixKey] = useState("");
+  const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
+  const [showReview, setShowReview] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+  const adminFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
+  const bankFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
+  const canSubmit = pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
+
+  async function submit() {
+    setRequesting(true); setError(""); setMessage("");
+    try {
+      const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participationLineId, pixKey, pixKeyConfirmation, pixKeyConfirmed: confirmed }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
+      setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false);
+      setMessage("Solicitação deste prêmio enviada. Aguarde a análise do administrador.");
+      await onSubmitted();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação.");
+    } finally { setRequesting(false); }
+  }
+
+  return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
+    <strong style={{ color: "#111827" }}>{numberValue} · Prêmio bruto: {money(grossCents)}</strong>
+    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(grossCents - adminFee - bankFee)}</strong></p>
+    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise</p>
+      : paymentRequest?.status === "REJECTED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Preencha novamente para solicitar este prêmio</p>
+      : <form onSubmit={(event) => { event.preventDefault(); setShowReview(true); setConfirmed(false); }}>
+        <label htmlFor={`pix-key-${participationLineId}`} style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Digite sua chave Pix para este prêmio</label>
+        <input id={`pix-key-${participationLineId}`} value={pixKey} onChange={(event) => { setPixKey(event.target.value); setShowReview(false); setConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        <label htmlFor={`pix-key-confirm-${participationLineId}`} style={{ display: "block", margin: "12px 0 5px", color: "#111827", fontWeight: 700 }}>Confirme a chave Pix</label>
+        <input id={`pix-key-confirm-${participationLineId}`} value={pixKeyConfirmation} onChange={(event) => { setPixKeyConfirmation(event.target.value); setShowReview(false); setConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="Digite novamente a mesma chave" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        {pixKeyConfirmation.length > 0 && pixKey.trim() !== pixKeyConfirmation.trim() && <p role="alert" style={{ color: "#991b1b", fontWeight: 700, fontSize: 13 }}>As chaves Pix não coincidem.</p>}
+        {!showReview ? <button type="submit" disabled={!canSubmit || requesting} style={{ display: "block", width: "100%", marginTop: 10, padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>Revisar chave Pix deste prêmio</button>
+          : <div style={{ marginTop: 12, padding: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb" }}>
+            <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME O DESTINO DESTE PRÊMIO</strong>
+            <p style={{ margin: "0 0 8px", color: "#111827", fontWeight: 800, overflowWrap: "anywhere" }}>{pixKey.trim()}</p>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber este prêmio.</label>
+            <button type="button" onClick={() => void submit()} disabled={!confirmed || requesting} style={{ display: "block", width: "100%", padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>{requesting ? "Enviando…" : "CONFIRMAR E ENVIAR ESTA SOLICITAÇÃO"}</button>
+            <button type="button" onClick={() => { setShowReview(false); setConfirmed(false); }} disabled={requesting} style={{ display: "block", width: "100%", marginTop: 8, padding: 10, border: "1px solid #6b7280", borderRadius: 8, background: "#fff", color: "#111827", fontWeight: 700 }}>Voltar e corrigir</button>
+          </div>}
+      </form>}
+    {error && <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>{error}</p>}
+    {message && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{message}</p>}
+  </div>;
+}
+
 export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const [data, setData] = useState<VerifiedReceipt | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pixKey, setPixKey] = useState("");
-  const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
-  const [showPixKeyReview, setShowPixKeyReview] = useState(false);
-  const [pixKeyConfirmed, setPixKeyConfirmed] = useState(false);
-  const [requesting, setRequesting] = useState(false);
-  const [requestMessage, setRequestMessage] = useState("");
-  const [requestError, setRequestError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -101,28 +159,8 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const rounds = data.valid ? data.rounds ?? [] : [];
   const physicalReceipt = Boolean(data.manualPayoutEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
-  const canRequest = rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid && number.paymentRequest?.status !== "PENDING" && number.paymentRequest?.status !== "PAID"));
   const hasPaidPrize = rounds.some((round) => round.numbers.some((number) => number.prizePaid));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-  async function requestPrizePayment() {
-    setRequesting(true); setRequestError(""); setRequestMessage("");
-    try {
-      const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pixKey, pixKeyConfirmation, pixKeyConfirmed }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
-      setRequestMessage("Solicitação enviada à plataforma. Aguarde a análise do administrador.");
-      setPixKey("");
-      setPixKeyConfirmation("");
-      setShowPixKeyReview(false);
-      setPixKeyConfirmed(false);
-      const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
-      if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
-    } catch (reason) { setRequestError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação."); }
-    finally { setRequesting(false); }
-  }
-
   return (
     <section aria-live="polite" style={{ border: "2px solid #9ca3af", borderRadius: 10, padding: 16, background: "#ffffff", color: "#111827", fontSize: 16, lineHeight: 1.5 }}>
       <div style={{ padding: "13px 10px", borderRadius: 7, background: "#92400e", color: "#ffffff", textAlign: "center", marginBottom: 16 }}>
@@ -179,35 +217,21 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
       )}
       {hasAvailablePrize && <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #d1d5db" }}>
         <h3 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18 }}>Solicitar recebimento do prêmio</h3>
-        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>Informe uma chave Pix para este recibo. A solicitação será enviada à plataforma para conferência e pagamento pelo administrador.</p>
-        {rounds.flatMap((round) => round.numbers.filter((number) => number.resultStatus === "PREMIADA" && !number.prizePaid).map((number) => {
-          const gross = number.prizeCents ?? 0;
-          const adminFee = gross >= 100000 ? Math.round(gross * 0.05) : 0;
-          const bankFee = gross >= 100000 ? Math.round(gross * 0.05) : 0;
-          const request = number.paymentRequest;
-          return <div key={round.roundCode + number.numberValue} style={{ padding: 10, margin: "8px 0", borderRadius: 7, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
-            <strong style={{ color: "#111827" }}>{number.numberValue} · Prêmio bruto: {money(gross)}</strong>
-            <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {gross >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {gross >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(gross - adminFee - bankFee)}</strong></p>
-            {request?.status === "PENDING" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise</p>}
-            {request?.status === "REJECTED" && <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Você pode enviar novamente</p>}
-          </div>;
-        }))}
-        {requestError && <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>{requestError}</p>}
-        {requestMessage && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{requestMessage}</p>}
-        <label htmlFor="receipt-prize-pix-key" style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Digite sua chave Pix</label>
-        <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => { setPixKey(event.target.value); setShowPixKeyReview(false); setPixKeyConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
-        <label htmlFor="receipt-prize-pix-key-confirmation" style={{ display: "block", margin: "12px 0 5px", color: "#111827", fontWeight: 700 }}>Confirme sua chave Pix</label>
-        <input id="receipt-prize-pix-key-confirmation" value={pixKeyConfirmation} onChange={(event) => { setPixKeyConfirmation(event.target.value); setShowPixKeyReview(false); setPixKeyConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="Digite novamente a mesma chave Pix" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
-        {pixKeyConfirmation.length > 0 && pixKey.trim() !== pixKeyConfirmation.trim() && <p role="alert" style={{ color: "#991b1b", fontWeight: 700, fontSize: 13 }}>As chaves Pix não coincidem. Confira os dois campos.</p>}
-        {!showPixKeyReview ? <button type="button" onClick={() => setShowPixKeyReview(true)} disabled={requesting || !canRequest || pixKey.trim().length < 3 || pixKey.trim() !== pixKeyConfirmation.trim()} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Revisar chave Pix</button> : <div style={{ marginTop: 14, padding: 13, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb" }}>
-          <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME O DESTINO DO PRÊMIO</strong>
-          <p style={{ margin: "0 0 6px", color: "#374151", fontSize: 14 }}>O pagamento será realizado para esta chave Pix:</p>
-          <p style={{ margin: "0 0 10px", padding: 10, borderRadius: 6, background: "#fff", border: "1px solid #d1d5db", color: "#111827", fontWeight: 800, overflowWrap: "anywhere", userSelect: "text" }}>{pixKey.trim()}</p>
-          <p style={{ margin: "0 0 12px", color: "#92400e", fontSize: 13, fontWeight: 700 }}>Confira todos os caracteres. Se a chave estiver incorreta, o Pix poderá ser enviado para outra pessoa.</p>
-          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={pixKeyConfirmed} onChange={(event) => setPixKeyConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber meu prêmio.</label>
-          <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || !canRequest || !pixKeyConfirmed} style={{ display: "block", width: "100%", padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "CONFIRMAR E ENVIAR SOLICITAÇÃO"}</button>
-          <button type="button" onClick={() => { setShowPixKeyReview(false); setPixKeyConfirmed(false); }} disabled={requesting} style={{ display: "block", width: "100%", marginTop: 8, padding: 11, border: "1px solid #6b7280", borderRadius: 8, background: "#fff", color: "#111827", fontWeight: 700, fontSize: 14 }}>Voltar e corrigir a chave</button>
-        </div>}
+        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>Cada prêmio possui uma solicitação independente. Informe e confirme novamente a chave Pix em cada pedido.</p>
+        {rounds.flatMap((round) => round.numbers.filter((number) => number.resultStatus === "PREMIADA" && !number.prizePaid).map((number) => (
+          <PrizePixRequestForm
+            key={number.participationLineId}
+            receiptCode={receiptCode}
+            participationLineId={number.participationLineId}
+            numberValue={number.numberValue}
+            grossCents={number.prizeCents ?? 0}
+            paymentRequest={number.paymentRequest}
+            onSubmitted={async () => {
+              const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
+              if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
+            }}
+          />
+        )))}
       </div>}
       {hasPaidPrize && <details style={{ marginTop: 14, textAlign: "center" }}>
         <summary style={{ display: "inline-block", color: "#1d4ed8", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Saiba mais sobre pagamentos de prêmios</summary>
