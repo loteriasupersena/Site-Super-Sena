@@ -31,7 +31,7 @@ const clearFailures = vi.mocked(clearLoginFailures);
 function request(body: unknown, origin = "https://example.test") {
   return new NextRequest("https://example.test/api/auth/login", {
     method: "POST",
-    headers: { "content-type": "application/json", origin, host: "example.test" },
+    headers: { "content-type": "application/json", origin, host: "example.test", "x-real-ip": "198.51.100.50" },
     body: JSON.stringify(body),
   });
 }
@@ -63,7 +63,7 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Usuário ou senha inválidos." });
     expect(sessionCreate).not.toHaveBeenCalled();
-    expect(loginFailure).toHaveBeenCalledWith(expect.anything(), "unknown");
+    expect(loginFailure).toHaveBeenCalledWith(expect.anything(), "unknown", "198.51.100.50");
   });
 
   it("does not create a session for a blocked account", async () => {
@@ -86,7 +86,7 @@ describe("POST /api/auth/login", () => {
     expect(response.headers.get("set-cookie")).toContain("SameSite=lax");
     expect(response.headers.get("set-cookie")).toContain("opaque-token");
     expect(sessionCreate).toHaveBeenCalledWith("user-1");
-    expect(clearFailures).toHaveBeenCalledWith(expect.anything(), "active");
+    expect(clearFailures).toHaveBeenCalledWith(expect.anything(), "active", "198.51.100.50");
   });
 
   it("returns 429 with Retry-After when the account is already rate limited", async () => {
