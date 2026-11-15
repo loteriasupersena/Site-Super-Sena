@@ -11,8 +11,8 @@ const schema = zodSchema();
 
 function zodSchema() {
   return { safeParse(value: unknown): { success: true; data: { pixKey: string } } | { success: false } {
-    if (!value || typeof value !== "object" || !("pixKey" in value) || !("pixKeyConfirmation" in value) ||
-      typeof value.pixKey !== "string" || typeof value.pixKeyConfirmation !== "string") return { success: false };
+    if (!value || typeof value !== "object" || !("pixKey" in value) || !("pixKeyConfirmation" in value) || !("pixKeyConfirmed" in value) ||
+      typeof value.pixKey !== "string" || typeof value.pixKeyConfirmation !== "string" || value.pixKeyConfirmed !== true) return { success: false };
     const pixKey = value.pixKey.trim();
     const pixKeyConfirmation = value.pixKeyConfirmation.trim();
     return pixKey.length >= 3 && pixKey.length <= 200 && pixKey === pixKeyConfirmation && isPlausiblePixKey(pixKey)
