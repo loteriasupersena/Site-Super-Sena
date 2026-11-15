@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import type { PrismaClient } from "../../generated/prisma/client";
 
 export const LOGIN_MAX_ATTEMPTS = 5;
@@ -8,7 +8,11 @@ export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const LOGIN_BLOCK_MS = 15 * 60 * 1000;
 
 function hashKey(value: string) {
-  return createHash("sha256").update(value).digest("hex");
+  const secret = process.env.AUTH_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET is required to protect login rate-limit identifiers.");
+  }
+  return createHmac("sha256", secret ?? "development-only-login-rate-limit-key").update(value).digest("hex");
 }
 
 function accountIpKey(username: string, clientIp: string) {
@@ -70,7 +74,7 @@ export async function getLoginBlock(prisma: PrismaClient, username: string, clie
 /**
  * Atomically records both per-account/per-IP and per-IP failures. A remote
  * caller can no longer lock a victim's username from a different IP address.
- * Only keyed hashes are persisted; raw IP addresses and usernames are not.
+ * Only HMAC digests keyed with AUTH_SECRET are persisted; raw IP addresses and usernames are not.
  */
 export async function recordLoginFailure(prisma: PrismaClient, username: string, clientIp: string, now = new Date()) {
   const accountIp = await upsertFailure(prisma, accountIpKey(username, clientIp), now, LOGIN_MAX_ATTEMPTS);
