@@ -75,7 +75,7 @@ export async function registerNumericPrizePayout(
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
     where: { id: line.prizePaymentRequest.id, status: "PENDING" },
-    data: { status: "PAID", reviewedAt: paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
+    data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
