@@ -31,7 +31,7 @@ const passwordVerify = vi.mocked(verifyPassword);
 function request(body: unknown, origin = "https://example.test") {
   return new NextRequest("https://example.test/api/auth/cashier-login", {
     method: "POST",
-    headers: { "content-type": "application/json", origin, host: "example.test" },
+    headers: { "content-type": "application/json", origin, host: "example.test", "x-real-ip": "198.51.100.51" },
     body: JSON.stringify(body),
   });
 }
@@ -57,6 +57,7 @@ describe("POST /api/auth/cashier-login", () => {
     const response = await POST(request({ username: "account", password: "secret" }));
     expect(response.status).toBe(403);
     expect(sessionCreate).not.toHaveBeenCalled();
+    expect(mocks.recordLoginFailure).toHaveBeenCalledWith(expect.anything(), "account", "198.51.100.51");
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
@@ -67,6 +68,8 @@ describe("POST /api/auth/cashier-login", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ authenticated: true, role: "CASHIER" });
     expect(sessionCreate).toHaveBeenCalledWith("cashier-1");
+    expect(mocks.getLoginBlock).toHaveBeenCalledWith(expect.anything(), "cashier", "198.51.100.51");
+    expect(mocks.clearLoginFailures).toHaveBeenCalledWith(expect.anything(), "cashier", "198.51.100.51");
     expect(response.headers.get("set-cookie")).toContain("HttpOnly");
   });
 });
