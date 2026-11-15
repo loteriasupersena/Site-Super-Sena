@@ -12,9 +12,10 @@ const schema = z.object({
 }).strict();
 
 function getClientIp(request: NextRequest) {
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean).at(-1);
-  const candidate = realIp || forwarded;
+  // These headers must be overwritten by the trusted edge/proxy, not passed through from clients.
+  const candidate = request.headers.get("cf-connecting-ip")?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean)[0];
   return candidate && isIP(candidate) ? candidate : null;
 }
 
