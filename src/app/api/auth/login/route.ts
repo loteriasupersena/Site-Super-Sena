@@ -11,7 +11,14 @@ const schema = z.object({
   password: z.string().min(1).max(1024),
 }).strict();
 
-function getClientIp(request: NextRequest) {\n  const realIp = request.headers.get("x-real-ip")?.trim();\n  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean).at(-1);\n  const candidate = realIp || forwarded;\n  return candidate && isIP(candidate) ? candidate : null;\n}\n\nfunction secureCookie(request: NextRequest) {
+function getClientIp(request: NextRequest) {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean).at(-1);
+  const candidate = realIp || forwarded;
+  return candidate && isIP(candidate) ? candidate : null;
+}
+
+function secureCookie(request: NextRequest) {
   return request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production";
 }
 
@@ -40,7 +47,12 @@ export async function POST(request: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
 
-  const clientIp = getClientIp(request) ?? (process.env.NODE_ENV === "production" ? null : "127.0.0.1");\n  if (!clientIp) {\n    return NextResponse.json({ error: "Não foi possível validar a conexão. Tente novamente." }, { status: 503, headers: { "Cache-Control": "no-store" } });\n  }\n\n  const blocked = await getLoginBlock(authPrisma, parsed.data.username, clientIp);
+  const clientIp = getClientIp(request) ?? (process.env.NODE_ENV === "production" ? null : "127.0.0.1");
+  if (!clientIp) {
+    return NextResponse.json({ error: "Não foi possível validar a conexão. Tente novamente." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+
+  const blocked = await getLoginBlock(authPrisma, parsed.data.username, clientIp);
   if (blocked) {
     const limited = NextResponse.json({ error: "Muitas tentativas. Aguarde antes de tentar novamente." }, { status: 429 });
     limited.headers.set("Retry-After", String(blocked.retryAfterSeconds));
