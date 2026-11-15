@@ -7,7 +7,7 @@ import { NumericPrizePayoutError, registerNumericPrizePayout } from "@/modules/r
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, private" };
-const bodySchema = z.object({ reference: z.string().trim().max(300).optional() }).strict();
+const bodySchema = z.object({}).strict();
 
 function validOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -29,10 +29,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
   let raw: unknown;
   try { raw = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const parsed = bodySchema.safeParse(raw);
-  if (!parsed.success) return NextResponse.json({ error: "Referência inválida." }, { status: 400, headers });
+  if (!parsed.success) return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers });
   try {
     const payout = await authPrisma.$transaction((tx) => registerNumericPrizePayout(tx, {
-      lineId, actorId: user.id, channel: "PLATFORM_PIX", reference: parsed.data.reference,
+      lineId, actorId: user.id, channel: "PLATFORM_PIX",
     }), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return NextResponse.json({ payout }, { status: 201, headers });
   } catch (error) {
