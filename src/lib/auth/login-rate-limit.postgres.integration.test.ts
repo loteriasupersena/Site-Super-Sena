@@ -79,7 +79,7 @@ suite("PostgreSQL login rate limit", () => {
   it("also limits aggregate failures from a single IP across different usernames", async () => {
     const ip = ips[1]!;
     const now = new Date("2035-01-01T12:00:00.000Z");
-    for (let attempt = 0; attempt < LOGIN_MAX_ATTEMPTS; attempt += 1) {
+    for (let attempt = 0; attempt < LOGIN_IP_MAX_ATTEMPTS; attempt += 1) {
       await recordLoginFailure(prisma, aggregateUsers[attempt]!, ip, now);
     }
     expect(await getLoginBlock(prisma, "some-other-user", ip, now)).not.toBeNull();
