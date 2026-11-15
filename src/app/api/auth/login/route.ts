@@ -13,10 +13,12 @@ const schema = z.object({
 
 function getClientIp(request: NextRequest) {
   // These headers must be overwritten by the trusted edge/proxy, not passed through from clients.
-  const candidate = request.headers.get("cf-connecting-ip")?.trim()
-    || request.headers.get("x-real-ip")?.trim()
-    || request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean)[0];
-  return candidate && isIP(candidate) ? candidate : null;
+  const candidates = [
+    request.headers.get("cf-connecting-ip")?.trim(),
+    request.headers.get("x-real-ip")?.trim(),
+    request.headers.get("x-forwarded-for")?.split(",").map((value) => value.trim()).filter(Boolean)[0],
+  ];
+  return candidates.find((candidate): candidate is string => Boolean(candidate && isIP(candidate))) ?? null;
 }
 
 function secureCookie(request: NextRequest) {
