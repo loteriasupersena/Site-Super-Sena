@@ -6,7 +6,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
   return {
     id: "line-12345678",
     numberValue: "012349",
-    prizeCents: 3000,
+    prizeCents: 6000,
     prizeCreditedAt: null,
     unitCents: 500, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0,
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
@@ -32,7 +32,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
 function setup(line = makeLine()) {
   const payoutCreate = vi.fn().mockResolvedValue({
     id: "payout-123", participationLineId: "line-12345678",
-    channel: "PLATFORM_PIX", amountCents: 3000,
+    channel: "PLATFORM_PIX", amountCents: 6000,
     paidAt: new Date("2026-11-06T12:30:00.000Z"), reference: null,
   });
   const auditCreate = vi.fn().mockResolvedValue({});
@@ -52,7 +52,7 @@ describe("registerNumericPrizePayout", () => {
     const result = await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
     });
-    expect(result.amountCents).toBe(3000);
+    expect(result.amountCents).toBe(6000);
     expect(payoutCreate).toHaveBeenCalledOnce();
     expect(auditCreate).toHaveBeenCalledOnce();
   });
