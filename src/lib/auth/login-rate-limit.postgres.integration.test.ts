@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client";
 import {
+  LOGIN_IP_MAX_ATTEMPTS,
   LOGIN_MAX_ATTEMPTS,
   clearLoginFailures,
   getLoginBlock,
@@ -27,7 +28,7 @@ suite("PostgreSQL login rate limit", () => {
     `it-login-clear-${suffix}`,
   ];
   const ips = ["198.51.100.11", "198.51.100.12", "198.51.100.13"];
-  const aggregateUsers = Array.from({ length: LOGIN_MAX_ATTEMPTS }, (_, index) => `it-login-ip-${index}-${suffix}`);
+  const aggregateUsers = Array.from({ length: LOGIN_IP_MAX_ATTEMPTS }, (_, index) => `it-login-ip-${index}-${suffix}`);
 
   const accountIpKey = (username: string, ip: string) =>
     createHash("sha256").update(`login-account-ip:v2:${username.trim().toLocaleLowerCase("en-US")}:${ip}`).digest("hex");
