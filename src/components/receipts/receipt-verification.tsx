@@ -202,7 +202,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
           <br /><br />
           Eventuais questionamentos serão tratados nos casos em que houver obrigação legal de análise ou determinação de autoridade competente.
         </div>
-      </details>
+      </details>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
   );
