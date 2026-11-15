@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { PrismaClient } from "../../generated/prisma/client";
 
 export const LOGIN_MAX_ATTEMPTS = 5;
+export const LOGIN_IP_MAX_ATTEMPTS = 30;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const LOGIN_BLOCK_MS = 15 * 60 * 1000;
 
@@ -19,7 +20,7 @@ function ipKey(clientIp: string) {
   return hashKey(`login-ip:v1:${clientIp}`);
 }
 
-async function upsertFailure(prisma: PrismaClient, keyHash: string, now: Date) {
+async function upsertFailure(prisma: PrismaClient, keyHash: string, now: Date, maxAttempts: number) {
   const result = await prisma.$queryRaw<Array<{ attempts: number; blockedUntil: Date | null }>>`
     INSERT INTO "LoginAttemptBucket" ("keyHash", "attempts", "windowStartedAt", "blockedUntil", "updatedAt")
     VALUES (${keyHash}, 1, CAST(${now} AS TIMESTAMP), NULL, CAST(${now} AS TIMESTAMP))
@@ -36,7 +37,7 @@ async function upsertFailure(prisma: PrismaClient, keyHash: string, now: Date) {
         WHEN (CASE
           WHEN "LoginAttemptBucket"."windowStartedAt" <= CAST(${now} AS TIMESTAMP) - INTERVAL '15 minutes' THEN 1
           ELSE "LoginAttemptBucket"."attempts" + 1
-        END) >= ${LOGIN_MAX_ATTEMPTS}
+        END) >= ${maxAttempts}
         THEN CAST(${now} AS TIMESTAMP) + INTERVAL '15 minutes'
         ELSE NULL
       END,
@@ -72,8 +73,8 @@ export async function getLoginBlock(prisma: PrismaClient, username: string, clie
  * Only keyed hashes are persisted; raw IP addresses and usernames are not.
  */
 export async function recordLoginFailure(prisma: PrismaClient, username: string, clientIp: string, now = new Date()) {
-  const accountIp = await upsertFailure(prisma, accountIpKey(username, clientIp), now);
-  const ip = await upsertFailure(prisma, ipKey(clientIp), now);
+  const accountIp = await upsertFailure(prisma, accountIpKey(username, clientIp), now, LOGIN_MAX_ATTEMPTS);
+  const ip = await upsertFailure(prisma, ipKey(clientIp), now, LOGIN_IP_MAX_ATTEMPTS);
   const blocked = blockResult([accountIp, ip], now);
   return {
     attempts: accountIp.attempts,
