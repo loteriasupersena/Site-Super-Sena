@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
+type VerifiedNumber = { numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -99,6 +99,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const physicalReceipt = Boolean(data.manualPayoutEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
   const canRequest = rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid && number.paymentRequest?.status !== "PENDING" && number.paymentRequest?.status !== "PAID"));
+  const hasPaidPrize = rounds.some((round) => round.numbers.some((number) => number.prizePaid));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   async function requestPrizePayment() {
     setRequesting(true); setRequestError(""); setRequestMessage("");
@@ -153,14 +154,14 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                   <strong style={{ display: "block", color: "#111827", marginBottom: 6 }}>Seus números</strong>
                   <div style={{ display: "grid", gap: 6 }}>
                     {round.numbers.map((number, index) => {
-                      const status = number.resultStatus === "PREMIADA" ? (number.prizePaid ? number.payoutChannel === "CASHIER_CASH" ? "PRÊMIO PAGO — dinheiro pelo cambista" : number.payoutChannel === "PLATFORM_PIX" ? "PRÊMIO PAGO — Pix pela plataforma" : "Prêmio creditado na carteira" : "PRÊMIO DISPONÍVEL")
+                      const status = number.resultStatus === "PREMIADA" ? (number.prizePaid ? "PRÊMIO PAGO" : "PRÊMIO DISPONÍVEL")
                         : number.resultStatus === "NAO_PREMIADA" ? "Não premiada"
                           : number.resultStatus === "AGUARDANDO_APURACAO" ? "Aguardando apuração"
                             : round.status === "RODADA_CANCELADA" ? "Rodada cancelada" : round.status === "SORTEIO_AGUARDANDO" ? "Aguardando sorteio" : "Aguardando resultado";
                       const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" ? "#991b1b" : "#1d4ed8";
                       return <div key={round.roundCode + number.numberValue + index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
                         <strong style={{ color: "#111827", fontSize: 18, letterSpacing: "0.1em" }}>{number.numberValue}</strong>
-                        <span style={{ color, fontWeight: 800, fontSize: 14 }}>{status}</span>
+                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
                       </div>;
                     })}
                   </div>
@@ -191,6 +192,17 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
         <input id="receipt-prize-pix-key" value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
         <button type="button" onClick={() => void requestPrizePayment()} disabled={requesting || !canRequest || pixKey.trim().length < 3} style={{ display: "block", width: "100%", marginTop: 10, padding: 13, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>{requesting ? "Enviando solicitação…" : "Solicitar pagamento do prêmio"}</button>
       </div>}
+      {hasPaidPrize && <details style={{ marginTop: 14, textAlign: "center" }}>
+        <summary style={{ display: "inline-block", color: "#1d4ed8", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Saiba mais sobre pagamentos de prêmios</summary>
+        <div style={{ marginTop: 9, padding: 12, border: "1px solid #d1d5db", borderRadius: 7, background: "#f9fafb", color: "#374151", textAlign: "left", fontSize: 13, lineHeight: 1.5 }}>
+          <strong style={{ display: "block", marginBottom: 5, color: "#111827" }}>Sobre pagamentos de prêmios</strong>
+          Quando um prêmio é pago, a plataforma registra a conclusão do pagamento, incluindo a data, o horário e o responsável pela confirmação.
+          <br /><br />
+          Após a conclusão, o resgate daquele prêmio é encerrado e não será aceita uma nova solicitação de pagamento para o mesmo bilhete.
+          <br /><br />
+          Eventuais questionamentos serão tratados nos casos em que houver obrigação legal de análise ou determinação de autoridade competente.
+        </div>
+      </details>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
   );
