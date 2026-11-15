@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const reviewedAt = new Date();
       const changed = await tx.prizePaymentRequest.updateMany({
         where: { id: item.id, status: "PENDING" },
-        data: { status: "REJECTED", reviewedAt, reviewerId: user.id, note: "Solicitação recusada pela administração." },
+        data: { status: "REJECTED", pixKeyEncrypted: null, reviewedAt, reviewerId: user.id, note: "Solicitação recusada pela administração." },
       });
       if (changed.count !== 1) throw new Error("NOT_PENDING");
       const updated = { id: item.id, status: "REJECTED" as const, reviewedAt };
