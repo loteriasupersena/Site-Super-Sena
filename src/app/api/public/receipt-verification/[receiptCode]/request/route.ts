@@ -11,9 +11,12 @@ const schema = zodSchema();
 
 function zodSchema() {
   return { safeParse(value: unknown): { success: true; data: { pixKey: string } } | { success: false } {
-    if (!value || typeof value !== "object" || !("pixKey" in value) || typeof value.pixKey !== "string") return { success: false };
+    if (!value || typeof value !== "object" || !("pixKey" in value) || !("pixKeyConfirmation" in value) ||
+      typeof value.pixKey !== "string" || typeof value.pixKeyConfirmation !== "string") return { success: false };
     const pixKey = value.pixKey.trim();
-    return pixKey.length >= 3 && pixKey.length <= 200 && isPlausiblePixKey(pixKey) ? { success: true, data: { pixKey } } : { success: false };
+    const pixKeyConfirmation = value.pixKeyConfirmation.trim();
+    return pixKey.length >= 3 && pixKey.length <= 200 && pixKey === pixKeyConfirmation && isPlausiblePixKey(pixKey)
+      ? { success: true, data: { pixKey, pixKeyConfirmation } } : { success: false };
   } };
 }
 
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const parsed = schema.safeParse(payload);
-  if (!parsed.success) return NextResponse.json({ error: "Informe uma chave Pix válida." }, { status: 400, headers });
+  if (!parsed.success) return NextResponse.json({ error: "Informe duas vezes a mesma chave Pix válida." }, { status: 400, headers });
   let encrypted: string;
   try { encrypted = encryptPixKey(parsed.data.pixKey); }
   catch { return NextResponse.json({ error: "Não foi possível proteger a chave Pix. A solicitação não foi enviada." }, { status: 503, headers }); }
