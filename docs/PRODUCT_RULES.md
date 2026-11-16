@@ -22,7 +22,7 @@ Este documento é a fonte de referência das regras comerciais e da terminologia
 - Em cada repetição, todos os números do jogo são mantidos. Exemplo: um jogo com seis números e dez repetições gera dez participações em rodadas distintas, cada uma contendo os mesmos seis números.
 - **Rodada** é o evento de sorteio ao qual uma repetição é vinculada. A seleção das rodadas é automática pelo sistema; o jogador e o cambista não escolhem rodadas.
 - O sistema mantém uma fila móvel de **48 rodadas futuras**, com sorteios de 30 em 30 minutos, cobrindo as próximas 24 horas. A cada execução do scheduler, horários ausentes são repostos para preservar essa janela.
-- **Categorias de premiação** são unidade, dezena, centena, quadra, quina e sena. Elas não são números nem jogos.
+- **Categorias de premiação** são unidade, dezena, centena, milhar, quina e sena. Elas não são números nem jogos.
 
 ## 2. Cálculo do valor
 
@@ -30,7 +30,7 @@ O total da compra é:
 
 `valor por número em cada rodada × quantidade de números × quantidade de repetições`
 
-A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre simultaneamente às seis categorias: unidade, dezena, centena, quadra, quina e sena. O valor em centavos é rateado igualmente entre as seis categorias; eventual sobra de centavos é acrescentada à unidade. Exemplo: R$ 1,00 é dividido em seis partes iguais; os centavos restantes são acrescentados à unidade. A alocação é registrada separadamente por categoria para calcular o prêmio correspondente.
+A aposta mínima é de R$ 1,00 por número em cada rodada. Esse valor concorre simultaneamente às seis categorias: unidade, dezena, centena, milhar, quina e sena. O valor em centavos é rateado igualmente entre as seis categorias; eventual sobra de centavos é acrescentada à unidade. Exemplo: R$ 1,00 é dividido em seis partes iguais; os centavos restantes são acrescentados à unidade. A alocação é registrada separadamente por categoria para calcular o prêmio correspondente.
 
 ## 2.1 Seis faixas oficiais de premiação
 
@@ -41,7 +41,7 @@ O número apostado e o número sorteado têm exatamente seis algarismos, de `000
 | Unidade | último algarismo | 3× |
 | Dezena | últimos 2 algarismos | 30× |
 | Centena | últimos 3 algarismos | 300× |
-| Quadra | últimos 4 algarismos | 3.000× |
+| Milhar | últimos 4 algarismos | 3.000× |
 | Quina | últimos 5 algarismos | 30.000× |
 | Sena | os 6 algarismos | 300.000× |
 
