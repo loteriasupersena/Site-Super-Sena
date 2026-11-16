@@ -64,7 +64,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   if (!parsed) return NextResponse.json({ error: "Informe nome completo, CPF válido, tipo e chave Pix, e confirme os dados do titular." }, { status: 400, headers });
 
   let encrypted: string;
-  try { encrypted = encryptPixKey(parsed.pixKey); }
+  let encryptedName: string;
+  let encryptedCpf: string;
+  try { encrypted = encryptPixKey(parsed.pixKey); encryptedName = encryptPixKey(parsed.holderName); encryptedCpf = encryptPixKey(parsed.holderCpf); }
   catch { return NextResponse.json({ error: "Não foi possível proteger a chave Pix. A solicitação não foi enviada." }, { status: 503, headers }); }
 
   try {
