@@ -137,7 +137,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         entityId: line.prizePaymentRequest?.id ?? line.id,
         metadata: {
           receiptCode, participationLineId: line.id,
-          pixKeyMasked: maskPixKey(parsed.pixKey),\n          pixKeyType: parsed.pixKeyType, holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
+          pixKeyMasked: maskPixKey(parsed.pixKey),
+          pixKeyType: parsed.pixKeyType, holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
           grossCents: gross, administrativeFeeCents: administrativeFee,
           transactionFeeCents: transactionFee, netCents: net,
         },
