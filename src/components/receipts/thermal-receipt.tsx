@@ -128,7 +128,7 @@ export function ThermalReceipt({
         unitCents: entry.unitCents ?? 0,
         tensCents: entry.tensCents ?? 0,
         hundredsCents: entry.hundredsCents ?? 0,
-        quadraCents: entry.quadraCents ?? 0,
+        milharCents: entry.milharCents ?? 0,
         quinaCents: entry.quinaCents ?? 0,
         senaCents: entry.senaCents ?? 0,
         drawAtLabel: drawDateTime(entry.resultAt),
