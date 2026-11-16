@@ -51,7 +51,11 @@ type PrizePixRequestFormProps = {
 };
 
 function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, grossCents, paymentRequest, onSubmitted }: PrizePixRequestFormProps) {
-  const [holderName, setHolderName] = useState("");\n  const [holderCpf, setHolderCpf] = useState("");\n  const [pixKeyType, setPixKeyType] = useState("CPF");\n  const [holderConfirmed, setHolderConfirmed] = useState(false);\n  const [pixKey, setPixKey] = useState("");
+  const [holderName, setHolderName] = useState("");
+  const [holderCpf, setHolderCpf] = useState("");
+  const [pixKeyType, setPixKeyType] = useState("CPF");
+  const [holderConfirmed, setHolderConfirmed] = useState(false);
+  const [pixKey, setPixKey] = useState("");
   const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -98,9 +102,11 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
         {pixKeyConfirmation.length > 0 && pixKey.trim() !== pixKeyConfirmation.trim() && <p role="alert" style={{ color: "#991b1b", fontWeight: 700, fontSize: 13 }}>As chaves Pix não coincidem.</p>}
         {!showReview ? <button type="submit" disabled={!canSubmit || requesting} style={{ display: "block", width: "100%", marginTop: 10, padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>Revisar chave Pix deste prêmio</button>
           : <div style={{ marginTop: 12, padding: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb" }}>
-            <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME OS DADOS DO TITULAR E O DESTINO DO PRÊMIO</strong>\n            <p style={{color:"#111827"}}><strong>{holderName}</strong><br/>CPF: {holderCpf}<br/>Tipo de chave: {pixKeyType}</p>
+            <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME OS DADOS DO TITULAR E O DESTINO DO PRÊMIO</strong>
+            <p style={{color:"#111827"}}><strong>{holderName}</strong><br/>CPF: {holderCpf}<br/>Tipo de chave: {pixKeyType}</p>
             <p style={{ margin: "0 0 8px", color: "#111827", fontWeight: 800, overflowWrap: "anywhere" }}>{pixKey.trim()}</p>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={holderConfirmed} onChange={(event) => setHolderConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que o nome está completo e idêntico ao cadastro do CPF e da conta Pix, e que CPF e chave pertencem ao mesmo titular.</label>\n            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber este prêmio.</label>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={holderConfirmed} onChange={(event) => setHolderConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que o nome está completo e idêntico ao cadastro do CPF e da conta Pix, e que CPF e chave pertencem ao mesmo titular.</label>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber este prêmio.</label>
             <button type="button" onClick={() => void submit()} disabled={!confirmed || !holderConfirmed || requesting} style={{ display: "block", width: "100%", padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>{requesting ? "Enviando…" : "CONFIRMAR E ENVIAR ESTA SOLICITAÇÃO"}</button>
             <button type="button" onClick={() => { setShowReview(false); setConfirmed(false); }} disabled={requesting} style={{ display: "block", width: "100%", marginTop: 8, padding: 10, border: "1px solid #6b7280", borderRadius: 8, background: "#fff", color: "#111827", fontWeight: 700 }}>Voltar e corrigir</button>
           </div>}
