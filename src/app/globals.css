@@ -3366,3 +3366,50 @@ body:has(.home-page-compact) {
     padding: 16px 42px 16px 14px !important;
   }
 }
+
+
+/* Acesso discreto no canto superior direito do cabeçalho inicial. */
+.site-header.site-header-scenery .site-header-login {
+  position: absolute;
+  top: 50%;
+  right: clamp(10px, 2vw, 20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 23px;
+  padding: 3px 7px;
+  transform: translateY(-50%);
+  border: 1px solid #25a85a;
+  border-radius: 999px;
+  background: #168b43;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header.site-header-scenery .site-header-login svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 11px;
+  fill: currentColor;
+}
+.site-header.site-header-scenery .site-header-login:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .site-header.site-header-scenery .site-header-login {
+    right: 8px;
+    min-height: 21px;
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+  .site-header.site-header-scenery .site-header-login svg {
+    width: 10px;
+    height: 10px;
+    flex-basis: 10px;
+  }
+}
