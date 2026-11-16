@@ -10,6 +10,12 @@ describe("calculateNumberPrizeCents", () => {
   it("pays only Quadra on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 2_000));
   it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(100 * 200));
   it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(100 * 20));
+  it("allocates R$1.00 as 20 cents to unit and 16 cents to each other category, but pays only R$1.00 for a unit hit", () => {
+    const allocation = allocateNumberStake(100);
+    expect(allocation).toEqual({ unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 });
+    const wager = { numberValue: "123456", ...allocation, ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
+    expect(calculateNumberPrizeCents(wager, "999996")).toBe(100);
+  });
   it.each([100, 101, 105, 600, 999, 1000])("returns exactly the full stake on a unit-only match for %i cents", (stakeCents) => {
     const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
