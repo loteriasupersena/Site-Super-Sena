@@ -45,7 +45,8 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
       return total + amount;
     }, 0);
     if (!Number.isSafeInteger(totalStakeCents)) throw new Error("Stored numeric stake is invalid.");
-    // In v2, Unidade represents exactly one sixth of the full stake.
+    // Unidade pays the full original stake when its multiplier is 6.
+    // Do not multiply the unit allocation: it may contain leftover cents.
     // Use integer arithmetic and round only the final payout to cents.
     const numerator = BigInt(totalStakeCents) * BigInt(multipliers.unit);
     prize = Number((numerator + 3n) / 6n);
