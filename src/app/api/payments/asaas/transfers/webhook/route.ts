@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { registerNumericPrizePayout } from "@/modules/rounds/register-numeric-prize-payout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
@@ -88,9 +89,30 @@ export async function POST(request: NextRequest) {
       });
 
       if (requestRow.status === "PAID") return "ALREADY_PAID";
+      if (event === "TRANSFER_DONE") {
+        if (!requestRow.reviewerId) throw new Error("PAYOUT_REVIEWER_MISSING");
+        await registerNumericPrizePayout(tx, {
+          lineId: requestRow.participationLineId,
+          actorId: requestRow.reviewerId,
+          channel: "PLATFORM_PIX",
+          reference: externalReference,
+          expectedRequestStatus: requestRow.status as "PROCESSING" | "FAILED" | "CANCELLED" | "PENDING",
+        });
+        await tx.prizePaymentRequest.update({
+          where: { id: requestId },
+          data: {
+            asaasTransferId: transferId,
+            asaasTransferStatus: transfer?.status ?? "DONE",
+            asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
+            asaasTransferFailureReason: null,
+            pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+          },
+        });
+        return "PAID";
+      }
+      if (["FAILED", "CANCELLED"].includes(requestRow.status) && !["TRANSFER_DONE"].includes(event)) return "TERMINAL_STATE";
       let status: "PROCESSING" | "PAID" | "FAILED" | "CANCELLED" = "PROCESSING";
-      if (event === "TRANSFER_DONE") status = "PAID";
-      else if (event === "TRANSFER_FAILED") status = "FAILED";
+      if (event === "TRANSFER_FAILED") status = "FAILED";
       else if (event === "TRANSFER_CANCELLED") status = "CANCELLED";
 
       const data = {
