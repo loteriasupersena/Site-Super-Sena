@@ -1,6 +1,6 @@
 export type NumberStakeAllocation = {
   unitCents: number; tensCents: number; hundredsCents: number;
-  quadraCents: number; quinaCents: number; senaCents: number;
+  milharCents: number; quinaCents: number; senaCents: number;
 };
 
 /** Splits the stake equally across six prize categories; remainder goes to unit. */
@@ -10,6 +10,6 @@ export function allocateNumberStake(totalCents: number): NumberStakeAllocation {
   const remainderCents = totalCents % 6;
   return {
     unitCents: baseCents + remainderCents, tensCents: baseCents, hundredsCents: baseCents,
-    quadraCents: baseCents, quinaCents: baseCents, senaCents: baseCents,
+    milharCents: baseCents, quinaCents: baseCents, senaCents: baseCents,
   };
 }
