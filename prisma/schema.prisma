@@ -74,8 +74,11 @@ enum NumericPrizePayoutChannel {
 
 enum PrizePaymentRequestStatus {
   PENDING
+  PROCESSING
   PAID
   REJECTED
+  FAILED
+  CANCELLED
 }
 
 enum WithdrawalStatus {
@@ -508,6 +511,11 @@ model PrizePaymentRequest {
   reviewedAt             DateTime?
   reviewerId             String?
   paymentReference       String?
+  asaasTransferId        String? @unique
+  asaasTransferStatus    String?
+  asaasTransferReceiptUrl String?
+  asaasTransferFailureReason String?
+  transferRequestedAt   DateTime?
   note                   String?
   participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
   purchase               Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
