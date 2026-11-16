@@ -65,7 +65,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   const adminFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
   const bankFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
-  const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
+  const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
 
   async function submit() {
     setRequesting(true); setError(""); setMessage("");
