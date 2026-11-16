@@ -50,7 +50,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           status: "PROCESSING", asaasTransferStatus: "CREATING",
           asaasTransferFailureReason: null, asaasTransferReceiptUrl: null,
           transferRequestedAt: new Date(), reviewedAt: new Date(), reviewerId: user.id,
-          paymentReference: "asaas_prize_request_" + item.id,
+          paymentReference: "prize_request_" + item.id,
         },
       });
       if (changed.count !== 1) throw new Error("ALREADY_PROCESSING");
