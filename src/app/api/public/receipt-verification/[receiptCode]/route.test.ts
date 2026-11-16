@@ -25,8 +25,8 @@ function purchase(overrides: Record<string, unknown> = {}) {
     participations: [{
       round: { code: "SQ-ROUND-01", status: "COMPLETED", resultNumber: "001234", startsAt: past, resultAt: past },
       numericLines: [
-        { numberValue: "001234", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 100, prizeCreditedAt: new Date() },
-        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 0, prizeCreditedAt: null },
+        { numberValue: "001234", unitCents: 0, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 100, prizeCreditedAt: new Date() },
+        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: 0, prizeCreditedAt: null },
       ],
     }],
     ...overrides,
@@ -76,7 +76,7 @@ describe("GET /api/public/receipt-verification/[receiptCode]", () => {
   it("marks rounds before their result time as awaiting the draw", async () => {
     mocks.purchaseFindUnique.mockResolvedValue(purchase({
       participations: [{ round: { code: "SQ-ROUND-02", status: "OPEN", resultNumber: null, startsAt: future, resultAt: future }, numericLines: [
-        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
+        { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
       ] }],
     }));
     const body = await (await GET(request, context())).json();
@@ -89,7 +89,7 @@ describe("GET /api/public/receipt-verification/[receiptCode]", () => {
       participations: [
         { round: { code: "SQ-CANCEL", status: "CANCELLED", resultNumber: null, startsAt: past, resultAt: past }, numericLines: [] },
         { round: { code: "SQ-APUR", status: "COMPLETED", resultNumber: "054321", startsAt: past, resultAt: past }, numericLines: [
-          { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
+          { numberValue: "000007", unitCents: 0, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0, ruleVersion: 1, ruleSnapshot: {}, prizeCents: null, prizeCreditedAt: null },
         ] },
       ],
     }));
