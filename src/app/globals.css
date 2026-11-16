@@ -3413,3 +3413,34 @@ body:has(.home-page-compact) {
     flex-basis: 10px;
   }
 }
+
+
+/* Botão Entrar: menor e fixado no canto superior direito do cabeçalho. */
+.site-header.site-header-scenery .site-header-login {
+  top: 7px;
+  right: 8px;
+  min-height: 18px;
+  padding: 2px 5px;
+  gap: 2px;
+  transform: none;
+  font-size: 8px;
+}
+.site-header.site-header-scenery .site-header-login svg {
+  width: 9px;
+  height: 9px;
+  flex-basis: 9px;
+}
+@media (max-width: 600px) {
+  .site-header.site-header-scenery .site-header-login {
+    top: 6px;
+    right: 7px;
+    min-height: 17px;
+    padding: 2px 4px;
+    font-size: 7.5px;
+  }
+  .site-header.site-header-scenery .site-header-login svg {
+    width: 8px;
+    height: 8px;
+    flex-basis: 8px;
+  }
+}
