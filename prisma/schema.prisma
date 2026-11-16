@@ -494,6 +494,10 @@ model PrizePaymentRequest {
   purchaseId             String
   pixKeyEncrypted        String?
   pixKeyMasked           String
+  pixKeyType             String?
+  holderNameEncrypted    String?
+  holderCpfEncrypted     String?
+  holderCpfMasked        String?
   grossCents             Int
   administrativeFeeCents Int      @default(0)
   transactionFeeCents    Int      @default(0)
