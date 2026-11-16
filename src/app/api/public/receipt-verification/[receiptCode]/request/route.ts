@@ -8,6 +8,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
 
+// Taxas aplicáveis somente a prêmios de vendas físicas: a partir de R$ 1.000,00.
+const PRIZE_FEE_THRESHOLD_CENTS = 100_000;
+const ADMINISTRATIVE_FEE_RATE = 0.05;
+const BANK_TRANSACTION_FEE_RATE = 0.05;
+
 function parsePayload(value: unknown): { participationLineId: string; pixKey: string } | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
@@ -75,9 +80,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (gross <= 0 || line.prizeCreditedAt || line.prizePayout) throw new Error("PRIZE_NOT_AVAILABLE");
       if (line.prizePaymentRequest && line.prizePaymentRequest.status !== "REJECTED") throw new Error("REQUEST_ALREADY_EXISTS");
 
-      const appliesFees = gross >= 100000;
-      const administrativeFee = appliesFees ? Math.round(gross * 0.05) : 0;
-      const transactionFee = appliesFees ? Math.round(gross * 0.05) : 0;
+      const appliesFees = gross >= PRIZE_FEE_THRESHOLD_CENTS;
+      const administrativeFee = appliesFees ? Math.round(gross * ADMINISTRATIVE_FEE_RATE) : 0;
+      const transactionFee = appliesFees ? Math.round(gross * BANK_TRANSACTION_FEE_RATE) : 0;
       const net = gross - administrativeFee - transactionFee;
       const data = {
         purchaseId: purchase.id,
