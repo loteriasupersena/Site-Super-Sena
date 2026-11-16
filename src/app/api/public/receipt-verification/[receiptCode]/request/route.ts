@@ -13,15 +13,33 @@ const PRIZE_FEE_THRESHOLD_CENTS = 100_000;
 const ADMINISTRATIVE_FEE_RATE = 0.05;
 const BANK_TRANSACTION_FEE_RATE = 0.05;
 
-function validCpf(value: string) {\n  const cpf = value.replace(/\\D/g, "");\n  if (!/^\\d{11}$/.test(cpf) || /^(\\d)\\1{10}$/.test(cpf)) return false;\n  const digit = (length: number) => { const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0); const result = (sum * 10) % 11; return result === 10 ? 0 : result; };\n  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);\n}\n\nfunction parsePayload(value: unknown): { participationLineId: string; pixKey: string; pixKeyType: string; holderName: string; holderCpf: string } | null {
+function validCpf(value: string) {
+  const cpf = value.replace(/\D/g, "");
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digit = (length: number) => {
+    const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0);
+    const result = (sum * 10) % 11;
+    return result === 10 ? 0 : result;
+  };
+  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+}
+
+function parsePayload(value: unknown): { participationLineId: string; pixKey: string; pixKeyType: string; holderName: string; holderCpf: string } | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
   if (typeof body.participationLineId !== "string" || body.participationLineId.length < 1 ||
       body.participationLineId.length > 128 || typeof body.pixKey !== "string" ||
-      typeof body.pixKeyConfirmation !== "string" || body.pixKeyConfirmed !== true) return null;
+      typeof body.pixKeyConfirmation !== "string" || typeof body.holderName !== "string" ||
+      typeof body.holderCpf !== "string" || typeof body.pixKeyType !== "string" ||
+      body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
   const pixKey = body.pixKey.trim();
+  const holderName = body.holderName.trim().replace(/\s+/g, " ");
+  const holderCpf = body.holderCpf.replace(/\D/g, "");
+  const types = ["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"];
+  if (!types.includes(body.pixKeyType) || holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf)) return null;
   if (pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() || !isPlausiblePixKey(pixKey)) return null;
-  return { participationLineId: body.participationLineId, pixKey };
+  if (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf) return null;
+  return { participationLineId: body.participationLineId, pixKey, pixKeyType: body.pixKeyType, holderName, holderCpf };
 }
 
 function validOrigin(request: NextRequest) {
@@ -87,7 +105,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const data = {
         purchaseId: purchase.id,
         pixKeyEncrypted: encrypted,
-        pixKeyMasked: maskPixKey(parsed.pixKey),\n        pixKeyType: parsed.pixKeyType,\n        holderNameEncrypted: encryptedName,\n        holderCpfEncrypted: encryptedCpf,\n        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
+        pixKeyMasked: maskPixKey(parsed.pixKey),\n        pixKeyType: parsed.pixKeyType,\n        holderNameEncrypted: encryptedName,\n        holderCpfEncrypted: encryptedCpf,\n        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),\n        pixKeyType: parsed.pixKeyType,\n        holderNameEncrypted: encryptedName,\n        holderCpfEncrypted: encryptedCpf,\n        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
         transactionFeeCents: transactionFee,
