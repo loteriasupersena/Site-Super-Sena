@@ -249,7 +249,7 @@ model NumericParticipationLine {
   unitCents        Int
   tensCents        Int
   hundredsCents    Int
-  quadraCents      Int
+  milharCents      Int
   quinaCents       Int
   senaCents        Int
   ruleVersion      String
