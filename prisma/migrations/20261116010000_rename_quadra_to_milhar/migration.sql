@@ -34,3 +34,20 @@ SET "ruleSnapshot" = jsonb_set(
 ) #- '{multipliers,quadra}'
 WHERE "ruleSnapshot" #> '{multipliers,quadra}' IS NOT NULL
   AND "ruleSnapshot" #> '{multipliers,milhar}' IS NULL;
+
+-- Keep the active multiplier configuration compatible with the new category key.
+UPDATE "Setting"
+SET "value" = replace("value", '"quadra"', '"milhar')
+WHERE "key" = 'numeric_prize_multipliers'
+  AND "value" LIKE '%"quadra"%';
+
+-- Preserve the historical configuration audit trail with the renamed key.
+UPDATE "SettingChange"
+SET "oldValue" = replace("oldValue", '"quadra"', '"milhar"')
+WHERE "settingKey" = 'numeric_prize_multipliers'
+  AND "oldValue" LIKE '%"quadra"%';
+
+UPDATE "SettingChange"
+SET "newValue" = replace("newValue", '"quadra"', '"milhar"')
+WHERE "settingKey" = 'numeric_prize_multipliers'
+  AND "newValue" LIKE '%"quadra"%';
