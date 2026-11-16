@@ -3415,3 +3415,75 @@ body:has(.home-page-compact) {
     padding: 16px 42px 16px 14px !important;
   }
 }
+
+
+/* Cabeçalho: logomarca à esquerda e acesso à direita, ambos centralizados na altura. */
+.site-header.site-header-scenery {
+  justify-content: space-between;
+  padding: 0 clamp(14px, 3vw, 36px);
+}
+
+.site-header.site-header-scenery .site-header-home-link {
+  justify-content: flex-start;
+  max-width: min(58%, 260px);
+}
+
+.site-header.site-header-scenery .site-header-scenery-image {
+  width: auto;
+  max-width: 100%;
+  max-height: 72%;
+  object-position: left center;
+}
+
+.site-header-enter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 104px;
+  min-height: 46px;
+  padding: 10px 22px;
+  border: 1px solid #8be5ff;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #38bdf8 0%, #1676c2 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 3px 0 #075985, 0 5px 12px rgb(0 0 0 / 20%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgb(89 213 242 / 25%);
+}
+
+.site-header-enter:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #075985;
+}
+
+.site-header-enter:focus-visible {
+  outline: 3px solid #8be5ff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .site-header.site-header-scenery {
+    padding: 0 14px;
+  }
+
+  .site-header.site-header-scenery .site-header-home-link {
+    max-width: min(58%, 190px);
+  }
+
+  .site-header.site-header-scenery .site-header-scenery-image {
+    max-height: 54px;
+  }
+
+  .site-header-enter {
+    min-width: 88px;
+    min-height: 38px;
+    padding: 8px 15px;
+    border-radius: 9px;
+    font-size: .9rem;
+  }
+}
