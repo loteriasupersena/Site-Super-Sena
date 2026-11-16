@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), userFindFirst: vi.fn(), userUpdate: vi.fn(), auditCreate: vi.fn(),
-  transaction: vi.fn(), hashPassword: vi.fn(),
+  transaction: vi.fn(), hashPassword: vi.fn(), sessionUpdateMany: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
@@ -31,7 +31,7 @@ describe("PATCH /api/admin/cashiers/[cashierId]", () => {
     mocks.userFindFirst.mockResolvedValue(previous);
     mocks.userUpdate.mockResolvedValue(updated);
     mocks.auditCreate.mockResolvedValue({});
-    mocks.transaction.mockImplementation(async (callback) => callback({ user: { findFirst: mocks.userFindFirst, update: mocks.userUpdate }, auditEvent: { create: mocks.auditCreate } }));
+    mocks.transaction.mockImplementation(async (callback) => callback({ user: { findFirst: mocks.userFindFirst, update: mocks.userUpdate }, session: { updateMany: mocks.sessionUpdateMany }, auditEvent: { create: mocks.auditCreate } }));
   });
 
   it("rejects unauthenticated and non-admin requests", async () => {
@@ -63,5 +63,26 @@ describe("PATCH /api/admin/cashiers/[cashierId]", () => {
     }) }));
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ actorId: "admin-1", action: "CASHIER_UPDATED", entityId: previous.id }) });
     expect(mocks.hashPassword).not.toHaveBeenCalled();
+  });
+
+  it("revokes all existing sessions when an admin resets a cashier password", async () => {
+    const response = await PATCH(request({ ...profile, password: "NewPassword123!" }), context);
+    expect(response.status).toBe(200);
+    expect(mocks.sessionUpdateMany).toHaveBeenCalledWith({
+      where: { userId: previous.id, revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
+    expect(mocks.userUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ passwordHash: "hashed-password", mustChangePassword: true }),
+    }));
+  });
+
+  it("revokes all existing sessions when an admin blocks a cashier", async () => {
+    const response = await PATCH(request({ ...profile, status: "BLOCKED" }), context);
+    expect(response.status).toBe(200);
+    expect(mocks.sessionUpdateMany).toHaveBeenCalledWith({
+      where: { userId: previous.id, revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
   });
 });

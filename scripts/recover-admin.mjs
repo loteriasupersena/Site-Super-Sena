@@ -41,6 +41,10 @@ async function main() {
         where: { id: admin.id },
         data: { passwordHash, mustChangePassword: true },
       });
+      await tx.session.updateMany({
+        where: { userId: admin.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
       return admin.username;
     });
     process.stdout.write(`Administrator password recovered for: ${result}. Sign in and choose a new password.\n`);

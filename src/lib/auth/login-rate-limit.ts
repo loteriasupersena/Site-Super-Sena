@@ -1,33 +1,30 @@
 import "server-only";
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import type { PrismaClient } from "../../generated/prisma/client";
 
 export const LOGIN_MAX_ATTEMPTS = 5;
+export const LOGIN_IP_MAX_ATTEMPTS = 30;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const LOGIN_BLOCK_MS = 15 * 60 * 1000;
 
-function keyFor(username: string) {
+function hashKey(value: string) {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET is required to protect login rate-limit identifiers.");
+  }
+  return createHmac("sha256", secret ?? "development-only-login-rate-limit-key").update(value).digest("hex");
+}
+
+function accountIpKey(username: string, clientIp: string) {
   const normalized = username.trim().toLocaleLowerCase("en-US");
-  return createHash("sha256").update(`login-account:v1:${normalized}`).digest("hex");
+  return hashKey(`login-account-ip:v2:${normalized}:${clientIp}`);
 }
 
-export async function getLoginBlock(prisma: PrismaClient, username: string, now = new Date()) {
-  const keyHash = keyFor(username);
-  const bucket = await prisma.loginAttemptBucket.findUnique({
-    where: { keyHash },
-    select: { attempts: true, blockedUntil: true, windowStartedAt: true },
-  });
-  if (!bucket || !bucket.blockedUntil || bucket.blockedUntil <= now) return null;
-  return { blockedUntil: bucket.blockedUntil, retryAfterSeconds: Math.max(1, Math.ceil((bucket.blockedUntil.getTime() - now.getTime()) / 1000)) };
+function ipKey(clientIp: string) {
+  return hashKey(`login-ip:v1:${clientIp}`);
 }
 
-/**
- * Atomically records a failed login in PostgreSQL. This works across application
- * instances and avoids read-modify-write races. The bucket stores only a hash of
- * the normalized username, never the username or submitted password.
- */
-export async function recordLoginFailure(prisma: PrismaClient, username: string, now = new Date()) {
-  const keyHash = keyFor(username);
+async function upsertFailure(prisma: PrismaClient, keyHash: string, now: Date, maxAttempts: number) {
   const result = await prisma.$queryRaw<Array<{ attempts: number; blockedUntil: Date | null }>>`
     INSERT INTO "LoginAttemptBucket" ("keyHash", "attempts", "windowStartedAt", "blockedUntil", "updatedAt")
     VALUES (${keyHash}, 1, CAST(${now} AS TIMESTAMP), NULL, CAST(${now} AS TIMESTAMP))
@@ -44,24 +41,55 @@ export async function recordLoginFailure(prisma: PrismaClient, username: string,
         WHEN (CASE
           WHEN "LoginAttemptBucket"."windowStartedAt" <= CAST(${now} AS TIMESTAMP) - INTERVAL '15 minutes' THEN 1
           ELSE "LoginAttemptBucket"."attempts" + 1
-        END) >= ${LOGIN_MAX_ATTEMPTS}
+        END) >= ${maxAttempts}
         THEN CAST(${now} AS TIMESTAMP) + INTERVAL '15 minutes'
         ELSE NULL
       END,
       "updatedAt" = CAST(${now} AS TIMESTAMP)
     RETURNING "attempts", "blockedUntil"
   `;
-  const bucket = result[0]!;
+  return result[0]!;
+}
+
+function blockResult(buckets: Array<{ blockedUntil: Date | null }>, now: Date) {
+  const blockedUntil = buckets
+    .map((bucket) => bucket.blockedUntil)
+    .filter((value): value is Date => value !== null && value > now)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  if (!blockedUntil) return null;
   return {
-    attempts: bucket.attempts,
-    blockedUntil: bucket.blockedUntil,
-    blocked: bucket.blockedUntil !== null && bucket.blockedUntil > now,
-    retryAfterSeconds: bucket.blockedUntil && bucket.blockedUntil > now
-      ? Math.max(1, Math.ceil((bucket.blockedUntil.getTime() - now.getTime()) / 1000))
-      : 0,
+    blockedUntil,
+    retryAfterSeconds: Math.max(1, Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000)),
   };
 }
 
-export async function clearLoginFailures(prisma: PrismaClient, username: string) {
-  await prisma.loginAttemptBucket.deleteMany({ where: { keyHash: keyFor(username) } });
+export async function getLoginBlock(prisma: PrismaClient, username: string, clientIp: string, now = new Date()) {
+  const buckets = await prisma.loginAttemptBucket.findMany({
+    where: { keyHash: { in: [accountIpKey(username, clientIp), ipKey(clientIp)] } },
+    select: { blockedUntil: true },
+  });
+  return blockResult(buckets, now);
+}
+
+/**
+ * Atomically records both per-account/per-IP and per-IP failures. A remote
+ * caller can no longer lock a victim's username from a different IP address.
+ * Only HMAC digests keyed with AUTH_SECRET are persisted; raw IP addresses and usernames are not.
+ */
+export async function recordLoginFailure(prisma: PrismaClient, username: string, clientIp: string, now = new Date()) {
+  const accountIp = await upsertFailure(prisma, accountIpKey(username, clientIp), now, LOGIN_MAX_ATTEMPTS);
+  const ip = await upsertFailure(prisma, ipKey(clientIp), now, LOGIN_IP_MAX_ATTEMPTS);
+  const blocked = blockResult([accountIp, ip], now);
+  return {
+    attempts: accountIp.attempts,
+    blocked: blocked !== null,
+    blockedUntil: blocked?.blockedUntil ?? null,
+    retryAfterSeconds: blocked?.retryAfterSeconds ?? 0,
+  };
+}
+
+export async function clearLoginFailures(prisma: PrismaClient, username: string, clientIp: string) {
+  // Keep the IP-wide bucket: a successful login for one account must not erase
+  // failures accumulated against other accounts from the same address.
+  await prisma.loginAttemptBucket.deleteMany({ where: { keyHash: accountIpKey(username, clientIp) } });
 }
