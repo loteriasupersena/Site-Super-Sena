@@ -107,7 +107,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const data = {
         purchaseId: purchase.id,
         pixKeyEncrypted: encrypted,
-        pixKeyMasked: maskPixKey(parsed.pixKey),\n        pixKeyType: parsed.pixKeyType,\n        holderNameEncrypted: encryptedName,\n        holderCpfEncrypted: encryptedCpf,\n        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),\n        pixKeyType: parsed.pixKeyType,\n        holderNameEncrypted: encryptedName,\n        holderCpfEncrypted: encryptedCpf,\n        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
+        pixKeyMasked: maskPixKey(parsed.pixKey),
+        pixKeyType: parsed.pixKeyType,
+        holderNameEncrypted: encryptedName,
+        holderCpfEncrypted: encryptedCpf,
+        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
         transactionFeeCents: transactionFee,
