@@ -2024,14 +2024,14 @@ body {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   box-sizing: border-box;
   width: 100%;
   height: var(--site-header-height);
   min-height: var(--site-header-height);
   max-height: var(--site-header-height);
   margin: 0;
-  padding: 0;
+  padding: 0 clamp(14px, 3vw, 36px);
   overflow: hidden;
   border: 0;
   border-radius: 0;
@@ -2042,12 +2042,12 @@ body {
 .site-header.site-header-scenery .site-header-home-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: auto;
   height: auto;
-  max-width: 80%;
+  max-width: min(58%, 260px);
   min-width: 0;
-  margin: 0;
+  margin: 0 auto 0 0;
   padding: 0;
   overflow: visible;
 }
@@ -2056,11 +2056,39 @@ body {
   display: block;
   width: auto;
   height: auto;
-  max-width: 80%;
+  max-width: 100%;
   max-height: 72%;
   margin: 0;
   object-fit: contain;
-  object-position: center;
+  object-position: left center;
+}
+
+.site-header-enter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 104px;
+  min-height: 44px;
+  padding: 9px 20px;
+  border: 1px solid #8be5ff;
+  border-radius: 10px;
+  background: #168bd1;
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.site-header-enter:focus-visible {
+  outline: 3px solid #8be5ff;
+  outline-offset: 3px;
+}
+
+.site-header-enter:active {
+  background: #075985;
 }
 
 .auth-layout, .site-page-shell, .area-page{
@@ -3002,11 +3030,28 @@ body:has(.home-page-compact) {
     --site-header-height: 70px;
   }
 
+  .site-header.site-header-scenery {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .site-header.site-header-scenery .site-header-home-link {
+    max-width: min(58%, 190px);
+  }
+
   .site-header.site-header-scenery .site-header-scenery-image {
-    width: min(55.8vw, 172px);
+    width: auto;
     height: auto;
-    max-width: 200px;
-    max-height: 64px;
+    max-width: 100%;
+    max-height: 54px;
+  }
+
+  .site-header-enter {
+    min-width: 88px;
+    min-height: 38px;
+    padding: 8px 15px;
+    border-radius: 9px;
+    font-size: .9rem;
   }
 
   html:has(.home-page-compact),
@@ -3413,77 +3458,5 @@ body:has(.home-page-compact) {
   .area-page-compact .player-menu-card > .player-collapsible-section > summary {
     min-height: 76px !important;
     padding: 16px 42px 16px 14px !important;
-  }
-}
-
-
-/* Cabeçalho: logomarca à esquerda e acesso à direita, ambos centralizados na altura. */
-.site-header.site-header-scenery {
-  justify-content: space-between;
-  padding: 0 clamp(14px, 3vw, 36px);
-}
-
-.site-header.site-header-scenery .site-header-home-link {
-  justify-content: flex-start;
-  max-width: min(58%, 260px);
-}
-
-.site-header.site-header-scenery .site-header-scenery-image {
-  width: auto;
-  max-width: 100%;
-  max-height: 72%;
-  object-position: left center;
-}
-
-.site-header-enter {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  min-width: 104px;
-  min-height: 46px;
-  padding: 10px 22px;
-  border: 1px solid #8be5ff;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #38bdf8 0%, #1676c2 100%);
-  color: #fff;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1;
-  box-shadow: 0 3px 0 #075985, 0 5px 12px rgb(0 0 0 / 20%);
-  cursor: pointer;
-  -webkit-tap-highlight-color: rgb(89 213 242 / 25%);
-}
-
-.site-header-enter:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #075985;
-}
-
-.site-header-enter:focus-visible {
-  outline: 3px solid #8be5ff;
-  outline-offset: 3px;
-}
-
-@media (max-width: 600px) {
-  .site-header.site-header-scenery {
-    padding: 0 14px;
-  }
-
-  .site-header.site-header-scenery .site-header-home-link {
-    max-width: min(58%, 190px);
-  }
-
-  .site-header.site-header-scenery .site-header-scenery-image {
-    max-height: 54px;
-  }
-
-  .site-header-enter {
-    min-width: 88px;
-    min-height: 38px;
-    padding: 8px 15px;
-    border-radius: 9px;
-    font-size: .9rem;
   }
 }
