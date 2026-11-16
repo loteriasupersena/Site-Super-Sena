@@ -10,7 +10,7 @@ const schema = z.object({
   unit: z.number().int().min(0).max(1_000_000),
   tens: z.number().int().min(0).max(1_000_000),
   hundreds: z.number().int().min(0).max(1_000_000),
-  quadra: z.number().int().min(0).max(1_000_000),
+  milhar: z.number().int().min(0).max(1_000_000),
   quina: z.number().int().min(0).max(1_000_000),
   sena: z.number().int().min(0).max(1_000_000),
 }).strict().refine((value) => value.unit === 6, { message: "O multiplicador da Unidade deve ser 6." });
