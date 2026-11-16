@@ -7,7 +7,7 @@ function line(numberValue: string) { return { numberValue, ...allocateNumberStak
 describe("calculateNumberPrizeCents", () => {
   it("pays only Sena on an exact six-digit match", () => expect(calculateNumberPrizeCents(line("123456"), "123456")).toBe(100 * 200_000));
   it("pays only Quina on the final five digits", () => expect(calculateNumberPrizeCents(line("123456"), "923456")).toBe(100 * 20_000));
-  it("pays only Quadra on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 2_000));
+  it("pays only Milhar on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 2_000));
   it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(100 * 200));
   it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(100 * 20));
   it.each([100, 101, 105, 600, 999, 1000])("returns exactly the full stake on a unit-only match for %i cents", (stakeCents) => {
