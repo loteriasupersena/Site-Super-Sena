@@ -78,7 +78,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
         unitCents: 20,
         tensCents: 16,
         hundredsCents: 16,
-        quadraCents: 16,
+        milharCents: 16,
         quinaCents: 16, senaCents: 16,
         ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
         ruleSnapshot: snapshot as Prisma.InputJsonValue,
@@ -164,7 +164,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
     const round = await createRound(RoundStatus.COMPLETED, "123456");
     const { line, purchase } = await createLine(round.id, {
       version: "invalid-version",
-      multipliers: { unit: 3, tens: 30, hundreds: 300, quadra: 3000, quina: 30000, sena: 300000 },
+      multipliers: { unit: 3, tens: 30, hundreds: 300, milhar: 3000, quina: 30000, sena: 300000 },
     });
     await expect(settleNumericRoundPrizes(prisma, round.id)).rejects.toMatchObject({
       code: "INVALID_RULE_SNAPSHOT",
