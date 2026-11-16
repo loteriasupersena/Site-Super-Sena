@@ -16,6 +16,8 @@ type TransferWebhook = {
     externalReference?: string;
     transactionReceiptUrl?: string | null;
     failReason?: string | null;
+    value?: number;
+    operationType?: string;
   };
 };
 
@@ -74,10 +76,11 @@ export async function POST(request: NextRequest) {
 
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
+      if (event === "TRANSFER_DONE" && (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents || transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
 
       await tx.webhookEvent.upsert({
         where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
