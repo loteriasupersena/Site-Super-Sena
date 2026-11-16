@@ -37,7 +37,7 @@ WHERE "ruleSnapshot" #> '{multipliers,quadra}' IS NOT NULL
 
 -- Keep the active multiplier configuration compatible with the new category key.
 UPDATE "Setting"
-SET "value" = replace("value", '"quadra"', '"milhar')
+SET "value" = replace("value", '"quadra"', '"milhar"')
 WHERE "key" = 'numeric_prize_multipliers'
   AND "value" LIKE '%"quadra"%';
 
