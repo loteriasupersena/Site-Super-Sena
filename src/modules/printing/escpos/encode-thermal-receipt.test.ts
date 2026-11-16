@@ -15,7 +15,7 @@ const receipt: ThermalReceiptForEncoding = {
     roundCode: "R-01",
     resultAt: "2026-11-05T13:00:00.000Z",
     stakeCents: 1234,
-    unitCents: 209, tensCents: 205, hundredsCents: 205, quadraCents: 205, quinaCents: 205, senaCents: 205,
+    unitCents: 209, tensCents: 205, hundredsCents: 205, milharCents: 205, quinaCents: 205, senaCents: 205,
   }],
 };
 
@@ -31,7 +31,7 @@ describe("encodeThermalReceipt", () => {
     expect(text).not.toContain("Unidade:");
     expect(text).not.toContain("Dezena:");
     expect(text).not.toContain("Centena:");
-    expect(text).not.toContain("Quadra:");
+    expect(text).not.toContain("Milhar:");
     expect(text).not.toContain("Quina:");
     expect(text).not.toContain("Sena:");
     expect(text).toContain("O valor de cada aposta sera");
