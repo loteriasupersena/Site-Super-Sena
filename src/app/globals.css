@@ -2999,7 +2999,7 @@ body:has(.home-page-compact) {
 /* Página inicial mobile: arte em largura total, integrada ao fundo da página. */
 @media (max-width: 600px) {
   :root {
-    --site-header-height: 72px;
+    --site-header-height: 70px;
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
