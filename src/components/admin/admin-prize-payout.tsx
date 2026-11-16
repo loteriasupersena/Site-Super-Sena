@@ -183,14 +183,14 @@ export function AdminPrizePayout() {
           {winner.paid
             ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
             : <>
-              {winner.manualEligible && winner.paymentRequest && ["PENDING", "FAILED", "CANCELLED"].includes(winner.paymentRequest.status) ? <>
+              {winner.manualEligible && winner.paymentRequest?.status === "PENDING" ? <>
                 <div className="admin-prize-confirm-actions">
                   <button className="admin-prize-confirm" type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void sendAsaasPix(winner)}>
                     {busy === winner.id ? "Enviando à Asaas…" : winner.calculationConsistent ? "Autorizar Pix pela Asaas" : "Pagamento bloqueado — conferir cálculo"}
                   </button>
                   <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void rejectRequest(winner)}>Recusar solicitação</button>
                 </div>
-              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Aguarde a confirmação do webhook.</p>: winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
+              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Aguarde a confirmação do webhook.</p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">A transferência não foi concluída. Recuse a solicitação para liberar o ganhador a cadastrar novamente os dados Pix.</p> : winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
       </div>}
