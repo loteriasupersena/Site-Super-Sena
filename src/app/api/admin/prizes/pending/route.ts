@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, pixKeyMasked: true, pixKeyEncrypted: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
+        prizePaymentRequest: { select: { id: true, status: true, pixKeyMasked: true, pixKeyEncrypted: true, pixKeyType: true, holderNameEncrypted: true, holderCpfEncrypted: true, holderCpfMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
         participation: {
           select: {
             totalCents: true,
@@ -91,6 +91,14 @@ export async function GET(request: NextRequest) {
           paymentRequest: line.prizePaymentRequest ? {
             id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
+            pixKeyType: line.prizePaymentRequest.pixKeyType,
+            holderName: line.prizePaymentRequest.status === "PENDING" && line.prizePaymentRequest.holderNameEncrypted
+              ? (() => { try { return decryptPixKey(line.prizePaymentRequest.holderNameEncrypted); } catch { return null; } })()
+              : null,
+            holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
+            holderCpf: line.prizePaymentRequest.status === "PENDING" && line.prizePaymentRequest.holderCpfEncrypted
+              ? (() => { try { return decryptPixKey(line.prizePaymentRequest.holderCpfEncrypted); } catch { return null; } })()
+              : null,
             pixKey: line.prizePaymentRequest.status === "PENDING" && !line.prizePayout && !line.prizeCreditedAt && line.prizePaymentRequest.pixKeyEncrypted
               ? (() => { try { return decryptPixKey(line.prizePaymentRequest.pixKeyEncrypted); } catch { return null; } })()
               : null,
