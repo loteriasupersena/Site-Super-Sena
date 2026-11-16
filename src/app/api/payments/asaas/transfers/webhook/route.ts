@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         return "PAID";
       }
       if (["FAILED", "CANCELLED"].includes(requestRow.status) && !["TRANSFER_DONE"].includes(event)) return "TERMINAL_STATE";
-      let status: "PROCESSING" | "PAID" | "FAILED" | "CANCELLED" = "PROCESSING";
+      let status: "PROCESSING" | "FAILED" | "CANCELLED" = "PROCESSING";
       if (event === "TRANSFER_FAILED") status = "FAILED";
       else if (event === "TRANSFER_CANCELLED") status = "CANCELLED";
 
@@ -122,12 +122,7 @@ export async function POST(request: NextRequest) {
         status,
         asaasTransferId: transferId,
         asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
-        asaasTransferReceiptUrl: status === "PAID" ? transfer?.transactionReceiptUrl ?? null : undefined,
         asaasTransferFailureReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null,
-        ...(status === "PAID" ? {
-          pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
-          reviewedAt: new Date(),
-        } : {}),
       };
       await tx.prizePaymentRequest.update({
         where: { id: requestId },
@@ -135,11 +130,10 @@ export async function POST(request: NextRequest) {
       });
       await tx.auditEvent.create({
         data: {
-          action: status === "PAID" ? "PRIZE_ASAAS_TRANSFER_DONE" : status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED" : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
+          action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED" : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
           entityType: "PrizePaymentRequest", entityId: requestId,
           metadata: {
             event, transferId, transferStatus: transfer?.status ?? null,
-            transactionReceiptUrl: status === "PAID" ? transfer?.transactionReceiptUrl ?? null : null,
             failReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? null : null,
           },
         },
