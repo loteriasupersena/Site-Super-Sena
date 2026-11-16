@@ -11,7 +11,7 @@ describe("getNumericPrizeReview", () => {
   it("identifies all six categories", () => {
     expect(getNumericPrizeReview(line("123456"), "999956")?.category).toBe("tens");
     expect(getNumericPrizeReview(line("123456"), "999456")?.category).toBe("hundreds");
-    expect(getNumericPrizeReview(line("123456"), "993456")?.category).toBe("quadra");
+    expect(getNumericPrizeReview(line("123456"), "993456")?.category).toBe("milhar");
     expect(getNumericPrizeReview(line("123456"), "923456")?.category).toBe("quina");
     expect(getNumericPrizeReview(line("123456"), "123456")?.category).toBe("sena");
   });
