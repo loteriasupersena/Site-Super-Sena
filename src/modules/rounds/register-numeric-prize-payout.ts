@@ -16,7 +16,7 @@ export async function registerNumericPrizePayout(
     actorId: string;
     channel: NumericPrizePayoutChannel;
     reference?: string | null;
-    expectedRequestStatus?: "PENDING" | "PROCESSING";
+    expectedRequestStatus?: "PENDING" | "PROCESSING" | "FAILED" | "CANCELLED";
   },
 ) {
   await tx.$queryRaw`SELECT "id" FROM "NumericParticipationLine" WHERE "id" = ${input.lineId} FOR UPDATE`;
