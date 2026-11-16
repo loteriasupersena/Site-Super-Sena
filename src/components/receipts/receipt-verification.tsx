@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PAID" | "REJECTED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
+type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
