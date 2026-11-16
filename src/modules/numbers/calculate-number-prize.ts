@@ -4,17 +4,17 @@ import { normalizeNumber } from "./normalize-number";
 export type NumericSettlementLine = {
   numberValue: string;
   unitCents: number; tensCents: number; hundredsCents: number;
-  quadraCents: number; quinaCents: number; senaCents: number;
+  milharCents: number; quinaCents: number; senaCents: number;
   ruleVersion: string; ruleSnapshot: unknown;
 };
 
 const ALLOCATION_FIELDS = [
-  "unitCents", "tensCents", "hundredsCents", "quadraCents", "quinaCents", "senaCents",
+  "unitCents", "tensCents", "hundredsCents", "milharCents", "quinaCents", "senaCents",
 ] as const;
 
 const ALLOCATION_FIELD: Record<NumericPrizeCategory, typeof ALLOCATION_FIELDS[number]> = {
   unit: "unitCents", tens: "tensCents", hundreds: "hundredsCents",
-  quadra: "quadraCents", quina: "quinaCents", sena: "senaCents",
+  milhar: "milharCents", quina: "quinaCents", sena: "senaCents",
 };
 
 /** Pays only the highest matching suffix category for each six-digit bet. */
@@ -26,7 +26,7 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
   const matches: Array<{ category: NumericPrizeCategory; matched: boolean }> = [
     { category: "sena", matched: bet === drawn },
     { category: "quina", matched: bet.slice(-5) === drawn.slice(-5) },
-    { category: "quadra", matched: bet.slice(-4) === drawn.slice(-4) },
+    { category: "milhar", matched: bet.slice(-4) === drawn.slice(-4) },
     { category: "hundreds", matched: bet.slice(-3) === drawn.slice(-3) },
     { category: "tens", matched: bet.slice(-2) === drawn.slice(-2) },
     { category: "unit", matched: bet.slice(-1) === drawn.slice(-1) },
