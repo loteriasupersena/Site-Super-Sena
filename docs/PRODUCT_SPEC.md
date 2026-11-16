@@ -32,7 +32,7 @@ O valor de cada número é dividido em seis partes iguais; eventual sobra de cen
 | Unidade | Último algarismo | 3× |
 | Dezena | Últimos 2 algarismos | 30× |
 | Centena | Últimos 3 algarismos | 300× |
-| Quadra | Últimos 4 algarismos | 3.000× |
+| Milhar | Últimos 4 algarismos | 3.000× |
 | Quina | Últimos 5 algarismos | 30.000× |
 | Sena | Número exato, seis algarismos | 300.000× |
 
