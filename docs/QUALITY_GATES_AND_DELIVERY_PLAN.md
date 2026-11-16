@@ -366,7 +366,7 @@ Esta seção registra auditoria estática inicial. Nenhum código ou banco foi a
 
 ### Fluxo confirmado
 
-- O painel ADMIN carrega a configuração com `cache: no-store`, permite editar cinco multiplicadores (unidade, dezena, centena/terno, milhar/quadra e quina) e envia atualização por `PUT`.
+- O painel ADMIN carrega a configuração com `cache: no-store`, permite editar cinco multiplicadores (unidade, dezena, centena/terno, milhar e quina) e envia atualização por `PUT`.
 - A API exige sessão ativa, papel ADMIN e ausência de troca obrigatória de senha. O PUT também exige Origin/Host compatíveis, valida corpo estrito e aceita somente inteiros de 0 a 1.000.000.
 - A configuração é salva na chave `numeric_prize_multipliers`. A mesma transação registra o valor anterior/novo em `SettingChange` e cria `AuditEvent` com ator e ação específica.
 - Se não houver configuração salva, o sistema usa os multiplicadores padrão versionados no domínio.
