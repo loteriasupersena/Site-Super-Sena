@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { HomeAccess, HomeAccessFooter } from "@/components/home-access";
+import { HomeAccess } from "@/components/home-access";
 
 export const metadata: Metadata = {
   title: "Super Sena | Página Inicial Oficial",
@@ -32,8 +32,6 @@ export default function HomePage() {
             aria-label="Solicitar o kit gratuito da Super Sena pelo WhatsApp"
           />
         </figure>
-
-        <HomeAccessFooter />
       </main>
     </div>
   );

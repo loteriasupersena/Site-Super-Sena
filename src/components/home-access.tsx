@@ -7,7 +7,3 @@ export function HomeAccess() {
     </div>
   );
 }
-
-export function HomeAccessFooter() {
-  return null;
-}
