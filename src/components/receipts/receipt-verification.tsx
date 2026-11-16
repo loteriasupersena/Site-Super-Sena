@@ -51,7 +51,7 @@ type PrizePixRequestFormProps = {
 };
 
 function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, grossCents, paymentRequest, onSubmitted }: PrizePixRequestFormProps) {
-  const [pixKey, setPixKey] = useState("");
+  const [holderName, setHolderName] = useState("");\n  const [holderCpf, setHolderCpf] = useState("");\n  const [pixKeyType, setPixKeyType] = useState("CPF");\n  const [holderConfirmed, setHolderConfirmed] = useState(false);\n  const [pixKey, setPixKey] = useState("");
   const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -61,7 +61,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   const adminFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
   const bankFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
-  const canSubmit = pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
+  const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
 
   async function submit() {
     setRequesting(true); setError(""); setMessage("");
@@ -69,11 +69,11 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
       const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participationLineId, pixKey, pixKeyConfirmation, pixKeyConfirmed: confirmed }),
+        body: JSON.stringify({ participationLineId, holderName, holderCpf, pixKeyType, holderConfirmed, pixKey, pixKeyConfirmation, pixKeyConfirmed: confirmed }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
-      setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false);
+      setHolderName(""); setHolderCpf(""); setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false); setHolderConfirmed(false);
       setMessage("Solicitação deste prêmio enviada. Aguarde a análise do administrador.");
       await onSubmitted();
     } catch (reason) {
@@ -87,17 +87,17 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
     {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise</p>
       : paymentRequest?.status === "REJECTED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Preencha novamente para solicitar este prêmio</p>
       : <form onSubmit={(event) => { event.preventDefault(); setShowReview(true); setConfirmed(false); }}>
-        <label htmlFor={`pix-key-${participationLineId}`} style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Digite sua chave Pix para este prêmio</label>
+        <label htmlFor={`pix-key-${participationLineId}`} style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Chave Pix do mesmo titular informado acima</label>
         <input id={`pix-key-${participationLineId}`} value={pixKey} onChange={(event) => { setPixKey(event.target.value); setShowReview(false); setConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
         <label htmlFor={`pix-key-confirm-${participationLineId}`} style={{ display: "block", margin: "12px 0 5px", color: "#111827", fontWeight: 700 }}>Confirme a chave Pix</label>
         <input id={`pix-key-confirm-${participationLineId}`} value={pixKeyConfirmation} onChange={(event) => { setPixKeyConfirmation(event.target.value); setShowReview(false); setConfirmed(false); }} maxLength={200} autoComplete="off" placeholder="Digite novamente a mesma chave" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
         {pixKeyConfirmation.length > 0 && pixKey.trim() !== pixKeyConfirmation.trim() && <p role="alert" style={{ color: "#991b1b", fontWeight: 700, fontSize: 13 }}>As chaves Pix não coincidem.</p>}
         {!showReview ? <button type="submit" disabled={!canSubmit || requesting} style={{ display: "block", width: "100%", marginTop: 10, padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>Revisar chave Pix deste prêmio</button>
           : <div style={{ marginTop: 12, padding: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb" }}>
-            <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME O DESTINO DESTE PRÊMIO</strong>
+            <strong style={{ display: "block", color: "#92400e", marginBottom: 8 }}>CONFIRME OS DADOS DO TITULAR E O DESTINO DO PRÊMIO</strong>\n            <p style={{color:"#111827"}}><strong>{holderName}</strong><br/>CPF: {holderCpf}<br/>Tipo de chave: {pixKeyType}</p>
             <p style={{ margin: "0 0 8px", color: "#111827", fontWeight: 800, overflowWrap: "anywhere" }}>{pixKey.trim()}</p>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber este prêmio.</label>
-            <button type="button" onClick={() => void submit()} disabled={!confirmed || requesting} style={{ display: "block", width: "100%", padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>{requesting ? "Enviando…" : "CONFIRMAR E ENVIAR ESTA SOLICITAÇÃO"}</button>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={holderConfirmed} onChange={(event) => setHolderConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que o nome está completo e idêntico ao cadastro do CPF e da conta Pix, e que CPF e chave pertencem ao mesmo titular.</label>\n            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#111827", fontSize: 13, marginBottom: 12 }}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} style={{ marginTop: 2 }} /> Confirmo que esta é a chave Pix correta para receber este prêmio.</label>
+            <button type="button" onClick={() => void submit()} disabled={!confirmed || !holderConfirmed || requesting} style={{ display: "block", width: "100%", padding: 12, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>{requesting ? "Enviando…" : "CONFIRMAR E ENVIAR ESTA SOLICITAÇÃO"}</button>
             <button type="button" onClick={() => { setShowReview(false); setConfirmed(false); }} disabled={requesting} style={{ display: "block", width: "100%", marginTop: 8, padding: 10, border: "1px solid #6b7280", borderRadius: 8, background: "#fff", color: "#111827", fontWeight: 700 }}>Voltar e corrigir</button>
           </div>}
       </form>}
