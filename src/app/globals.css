@@ -1574,67 +1574,6 @@ p, .intro, .auth-description, .area-description, .feature-card p,
     padding: 16px;
   }
 }
-.home-header-access{
-  position:absolute;z-index:5;top:50%;right:clamp(12px,3vw,36px);transform:translateY(-50%);
-  min-width:104px;min-height:42px;padding:9px 20px;border:2px solid #fff;border-radius:999px;
-  background:linear-gradient(135deg,#ffe34a,#ffbd16);color:#082c75;font:inherit;font-weight:900;
-  box-shadow:0 4px 16px rgb(0 0 0 / 28%);cursor:pointer
-}
-.home-header-access:focus-visible,.home-access-close:focus-visible,.home-access-options a:focus-visible{
-  outline:3px solid #55d4ef;outline-offset:3px
-}
-.home-access-backdrop{
-  position:fixed;z-index:2000;inset:0;display:grid;place-items:center;padding:18px;
-  background:rgb(3 13 38 / 76%);backdrop-filter:blur(5px)
-}
-.home-access-dialog{
-  position:relative;width:min(100%,420px);padding:34px 24px 26px;border:2px solid #f4cc35;
-  border-radius:20px;background:linear-gradient(155deg,#073b9b,#071b50);color:#fff;
-  text-align:center;box-shadow:0 24px 80px rgb(0 0 0 / 42%)
-}
-.home-access-dialog h2{margin:0;font-size:clamp(1.5rem,5vw,2rem);line-height:1.15}
-.home-access-dialog p{margin:10px 0 24px;color:#dceaff}
-.home-access-close{
-  position:absolute;top:8px;right:12px;width:36px;height:36px;border:0;border-radius:50%;
-  background:rgb(255 255 255 / 12%);color:#fff;font-size:1.7rem;line-height:1;cursor:pointer
-}
-.home-access-options{display:grid;gap:12px}
-.home-access-options a{
-  display:flex;align-items:center;justify-content:center;min-height:54px;padding:12px 18px;
-  border-radius:12px;text-decoration:none;font-weight:900
-}
-.home-access-login{background:#ffcf25;color:#082c75}
-.home-access-register{border:2px solid #fff;background:#fff;color:#073b9b}
-@media(max-width:600px){
-  .home-header-access{right:10px;min-width:88px;min-height:36px;padding:7px 14px;font-size:.9rem}
-  .home-access-dialog{padding:32px 20px 22px}
-}
-
-/* Botão Entrar mais discreto no cabeçalho, com texto legível. */
-.home-header-access{
-  min-width:88px;
-  min-height:36px;
-  padding:6px 15px;
-  font-family:Arial,Helvetica,sans-serif;
-  font-size:1rem;
-  line-height:1.1;
-  font-weight:900;
-  letter-spacing:.015em;
-  white-space:nowrap;
-  text-shadow:0 1px 0 rgb(255 255 255 / 35%);
-  box-shadow:0 3px 10px rgb(0 0 0 / 25%);
-}
-@media(max-width:600px){
-  .home-header-access{
-    min-width:82px;
-    min-height:34px;
-    padding:6px 12px;
-    font-size:.95rem;
-  }
-}
-@media(max-width:600px){
-}
-
 /* Valor da aposta e total em uma única faixa compacta. */
 /* Valor da aposta e total com larguras proporcionais e caixas alinhadas. */
 .numeric-stake-summary-row{
@@ -2024,7 +1963,7 @@ body {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   box-sizing: border-box;
   width: 100%;
   height: var(--site-header-height);
@@ -2043,12 +1982,12 @@ body {
 .site-header.site-header-scenery .site-header-home-link {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: auto;
   height: auto;
-  max-width: min(58%, 260px);
+  max-width: 80%;
   min-width: 0;
-  margin: 0 auto 0 0;
+  margin: 0 auto;
   padding: 0;
   overflow: visible;
 }
@@ -2061,44 +2000,8 @@ body {
   max-height: 72%;
   margin: 0;
   object-fit: contain;
-  object-position: left center;
+  object-position: center;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 28%));
-}
-
-.site-header-enter {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  min-width: 112px;
-  min-height: 44px;
-  padding: 9px 22px;
-  border: 1px solid #9af0bd;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #35d477 0%, #12a653 100%);
-  color: #fff;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1;
-  text-shadow: 0 1px 1px rgb(0 0 0 / 20%);
-  box-shadow: 0 3px 0 #08753a, 0 5px 12px rgb(0 0 0 / 22%);
-  cursor: pointer;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
-}
-
-.site-header-enter:focus-visible {
-  outline: 3px solid #8be5ff;
-  outline-offset: 3px;
-}
-
-.site-header-enter:hover {
-  filter: brightness(1.07);
-}
-
-.site-header-enter:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #08753a, 0 2px 6px rgb(0 0 0 / 18%);
 }
 
 .auth-layout, .site-page-shell, .area-page{
@@ -3046,7 +2949,8 @@ body:has(.home-page-compact) {
   }
 
   .site-header.site-header-scenery .site-header-home-link {
-    max-width: min(58%, 190px);
+    max-width: 80%;
+    margin: 0 auto;
   }
 
   .site-header.site-header-scenery .site-header-scenery-image {
@@ -3054,14 +2958,6 @@ body:has(.home-page-compact) {
     height: auto;
     max-width: 100%;
     max-height: 54px;
-  }
-
-  .site-header-enter {
-    min-width: 92px;
-    min-height: 38px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: .9rem;
   }
 
   html:has(.home-page-compact),
