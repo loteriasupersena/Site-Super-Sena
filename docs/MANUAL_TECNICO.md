@@ -307,7 +307,7 @@ A migração `20261111010000_six_digit_six_prizes` atualiza constraints de forma
 | Unidade | Último algarismo | 3× |
 | Dezena | Últimos 2 | 30× |
 | Centena | Últimos 3 | 300× |
-| Quadra | Últimos 4 | 3.000× |
+| Milhar | Últimos 4 | 3.000× |
 | Quina | Últimos 5 | 30.000× |
 | Sena | Todos os 6 | 300.000× |
 
@@ -319,7 +319,7 @@ A implementação está em `src/domain/numeric-prize-rules.ts`. A versão da reg
 
 ### 8.4 Categoria vencedora
 
-`src/modules/numbers/calculate-number-prize.ts` testa da maior precisão para a menor: Sena, Quina, Quadra, Centena, Dezena e Unidade. Só a primeira categoria correspondente paga. Não somar prêmios das categorias inferiores.
+`src/modules/numbers/calculate-number-prize.ts` testa da maior precisão para a menor: Sena, Quina, Milhar, Centena, Dezena e Unidade. Só a primeira categoria correspondente paga. Não somar prêmios das categorias inferiores.
 
 O cálculo usa os valores rateados e o snapshot gravado na compra. Se o snapshot estiver inválido, a apuração falha de forma fechada; não usa silenciosamente os multiplicadores atuais.
 

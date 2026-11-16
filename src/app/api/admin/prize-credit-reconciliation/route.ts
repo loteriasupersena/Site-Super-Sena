@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       try {
         recalculated = calculateNumberPrizeCents({
           numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
-          hundredsCents: line.hundredsCents, quadraCents: line.quadraCents,
+          hundredsCents: line.hundredsCents, milharCents: line.milharCents,
           quinaCents: line.quinaCents, senaCents: line.senaCents, ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
         }, round.resultNumber);
       } catch { throw new Error("PRIZE_MISMATCH"); }

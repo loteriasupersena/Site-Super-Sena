@@ -45,7 +45,7 @@ const purchase = () => ({
   id: "purchase-1", receiptCode: null, status: "PENDING_PAYMENT",
   payment: { status: "PENDING", idempotencyKey: "payment-key", providerPaymentId: null },
   totalCents: 100, currency: "BRL",
-  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 } },
+  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 } },
   participations: [],
 });
 

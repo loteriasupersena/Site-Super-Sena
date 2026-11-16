@@ -1,4 +1,4 @@
-export const NUMERIC_PRIZE_CATEGORIES = ["unit", "tens", "hundreds", "quadra", "quina", "sena"] as const;
+export const NUMERIC_PRIZE_CATEGORIES = ["unit", "tens", "hundreds", "milhar", "quina", "sena"] as const;
 
 export type NumericPrizeCategory = (typeof NUMERIC_PRIZE_CATEGORIES)[number];
 export type NumericPrizeMultipliers = Record<NumericPrizeCategory, number>;
@@ -7,7 +7,7 @@ export const LEGACY_NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v1";
 export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v2";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
-  unit: 6, tens: 20, hundreds: 200, quadra: 2_000, quina: 20_000, sena: 200_000,
+  unit: 6, tens: 20, hundreds: 200, milhar: 2_000, quina: 20_000, sena: 200_000,
 };
 
 export const APPROVED_NUMERIC_PRIZE_MULTIPLIERS = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;

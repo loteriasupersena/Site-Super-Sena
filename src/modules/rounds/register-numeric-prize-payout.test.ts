@@ -8,7 +8,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
     numberValue: "012349",
     prizeCents: 3000,
     prizeCreditedAt: null,
-    unitCents: 500, tensCents: 0, hundredsCents: 0, quadraCents: 0, quinaCents: 0, senaCents: 0,
+    unitCents: 500, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0,
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,

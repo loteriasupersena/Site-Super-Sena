@@ -127,7 +127,7 @@ describe("confirmPixPayment next-valid-round allocation", () => {
           status: "PENDING_PAYMENT", totalCents: 100, receiptCode: null, cashierId: null,
           numericIntent: {
             roundCount: 1, numbers: ["000007"],
-            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
+            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 },
             ruleVersion: "numeric-v1", ruleSnapshot: { version: "numeric-v1" },
           },
         },

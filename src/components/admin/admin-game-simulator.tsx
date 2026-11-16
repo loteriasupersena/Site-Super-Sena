@@ -5,7 +5,7 @@ import { useState, type CSSProperties } from "react";
 const categories = [
   { key: "sena", label: "Sena", digits: 6, initial: "300000" },
   { key: "quina", label: "Quina", digits: 5, initial: "30000" },
-  { key: "quadra", label: "Quadra", digits: 4, initial: "3000" },
+  { key: "milhar", label: "Milhar", digits: 4, initial: "3000" },
   { key: "centena", label: "Centena", digits: 3, initial: "300" },
   { key: "dezena", label: "Dezena", digits: 2, initial: "30" },
   { key: "unidade", label: "Unidade", digits: 1, initial: "3" },
@@ -54,7 +54,7 @@ function emptyCategoryResults(): Record<CategoryKey, CategoryResult> {
   return {
     sena: { hits: 0, prizes: 0 },
     quina: { hits: 0, prizes: 0 },
-    quadra: { hits: 0, prizes: 0 },
+    milhar: { hits: 0, prizes: 0 },
     centena: { hits: 0, prizes: 0 },
     dezena: { hits: 0, prizes: 0 },
     unidade: { hits: 0, prizes: 0 },
@@ -67,7 +67,7 @@ export function AdminGameSimulator() {
   const [multipliers, setMultipliers] = useState<Record<CategoryKey, string>>({
     sena: "300000",
     quina: "30000",
-    quadra: "3000",
+    milhar: "3000",
     centena: "300",
     dezena: "30",
     unidade: "3",
@@ -119,7 +119,7 @@ export function AdminGameSimulator() {
       unidade: baseShare + (stakeCents - baseShare * 6),
       dezena: baseShare,
       centena: baseShare,
-      quadra: baseShare,
+      milhar: baseShare,
       quina: baseShare,
       sena: baseShare,
     };
@@ -299,7 +299,7 @@ export function AdminGameSimulator() {
               </table>
             </div>
             <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginBottom: 0 }}>
-              Referência teórica para faixas exclusivas, com números uniformes e independentes: Unidade 9%; Dezena 0,9%; Centena 0,09%; Quadra 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
+              Referência teórica para faixas exclusivas, com números uniformes e independentes: Unidade 9%; Dezena 0,9%; Centena 0,09%; Milhar 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
             </p>
           </>
         )}

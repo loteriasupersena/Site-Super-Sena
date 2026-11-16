@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-type Multipliers = { unit: number; tens: number; hundreds: number; quadra: number; quina: number; sena: number };
-const defaults: Multipliers = { unit: 6, tens: 20, hundreds: 200, quadra: 2000, quina: 20000, sena: 200000 };
+type Multipliers = { unit: number; tens: number; hundreds: number; milhar: number; quina: number; sena: number };
+const defaults: Multipliers = { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 };
 const fields: Array<{ key: keyof Multipliers; label: string }> = [
   { key: "unit", label: "Unidade" },
   { key: "tens", label: "Dezena" },
   { key: "hundreds", label: "Centena" },
-  { key: "quadra", label: "Quadra (quatro números)" },
+  { key: "milhar", label: "Milhar (quatro números)" },
   { key: "quina", label: "Quina (cinco números)" },
   { key: "sena", label: "Sena (seis números)" },
 ];

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             round: { select: { code: true, resultAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-              select: { numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, quadraCents: true, quinaCents: true, senaCents: true },
+              select: { numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true },
             },
           },
         },
@@ -48,9 +48,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
     const entries = purchase.participations.flatMap((part) => part.numericLines.map((line) => ({
       numberValue: line.numberValue, roundCode: part.round.code, resultAt: part.round.resultAt.toISOString(),
-      stakeCents: line.unitCents + line.tensCents + line.hundredsCents + line.quadraCents + line.quinaCents + line.senaCents,
+      stakeCents: line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
       unitCents: line.unitCents, tensCents: line.tensCents,
-      hundredsCents: line.hundredsCents, quadraCents: line.quadraCents,
+      hundredsCents: line.hundredsCents, milharCents: line.milharCents,
       quinaCents: line.quinaCents, senaCents: line.senaCents,
     })));
     return NextResponse.json({ receipt: {

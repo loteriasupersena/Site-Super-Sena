@@ -13,8 +13,8 @@ const confirmedPurchase = () => ({
   participations: [{
     round: { code: "JN-20261101-1230", resultAt: new Date("2026-11-01T12:30:00.000Z") },
     numericLines: [
-      { numberValue: "000007", unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
-      { numberValue: "012345", unitCents: 20, tensCents: 16, hundredsCents: 16, quadraCents: 16, quinaCents: 16, senaCents: 16 },
+      { numberValue: "000007", unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 },
+      { numberValue: "012345", unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 },
     ],
   }],
 });
