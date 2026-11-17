@@ -201,8 +201,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         }, { status: 202, headers });
       }
     }
+    const { pixKey: _pixKey, reviewerId: _reviewerId, automatic: _automatic, ...publicResult } = result;
     return NextResponse.json({
-      success: true, request: result,
+      success: true, request: publicResult,
       message: "Solicitação recebida. Prêmios de R$ 1.000,00 ou mais aguardam análise da administração.",
     }, { status: 201, headers });
   } catch (error) {
