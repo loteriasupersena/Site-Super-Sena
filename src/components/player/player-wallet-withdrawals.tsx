@@ -73,7 +73,7 @@ export function PlayerWalletWithdrawals() {
         <div><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         {item.status === "PAID" && <p>Pagamento confirmado em {dateTime(item.updatedAt)}</p>}
-        
+
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy} onClick={() => void load()}>Atualizar carteira</button>
