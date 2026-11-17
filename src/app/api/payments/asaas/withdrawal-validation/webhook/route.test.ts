@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
   batchUpdateMany: vi.fn(),
   requestFindUnique: vi.fn(),
   requestUpdateMany: vi.fn(),
-  batchRequestsUpdateMany: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
