@@ -18,12 +18,42 @@ export async function POST(request: NextRequest) {
   const token = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
   if (!token || token.length < 32) return response({ error: "Webhook não configurado." }, 503);
   if (!tokenMatches(request.headers.get("asaas-access-token"), token)) return response({ error: "Autenticação inválida." }, 401);
-  let raw: string, body: AsaasWebhook;
-  try { raw = await request.text(); body = JSON.parse(raw) as AsaasWebhook; }
-  catch { return response({ error: "Payload inválido." }, 400); }
-  const eventId = body.id?.trim(), event = body.event?.trim().toUpperCase(), paymentId = body.payment?.id?.trim();
-  if (!eventId || !event || !paymentId) return response({ error: "Evento de pagamento incompleto." }, 400);
-  if (!["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED"].includes(event)) return response({ received: true, ignored: true }, 200);
+  let raw = "";
+  let body: AsaasWebhook;
+  try {
+    raw = await request.text();
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("INVALID_WEBHOOK_OBJECT");
+    body = parsed as AsaasWebhook;
+  } catch {
+    const digest = createHash("sha256").update(raw).digest("hex");
+    const eventId = "invalid_payload_" + digest;
+    await authPrisma.webhookEvent.upsert({
+      where: { provider_providerEventId: { provider: "ASAAS_PAYMENT", providerEventId: eventId } },
+      create: { provider: "ASAAS_PAYMENT", providerEventId: eventId, eventType: "INVALID_PAYLOAD", payloadDigest: digest, processedAt: new Date(), processingError: "invalid_json" },
+      update: { eventType: "INVALID_PAYLOAD", payloadDigest: digest, processedAt: new Date(), processingError: "invalid_json" },
+    });
+    return response({ received: true, quarantined: true }, 200);
+  }
+
+  const digest = createHash("sha256").update(raw).digest("hex");
+  const event = typeof body.event === "string" ? body.event.trim().toUpperCase() : "";
+  if (!["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED"].includes(event)) {
+    return response({ received: true, ignored: true }, 200);
+  }
+
+  const eventId = typeof body.id === "string" && body.id.trim()
+    ? body.id.trim()
+    : "payload_" + digest;
+  const paymentId = typeof body.payment?.id === "string" ? body.payment.id.trim() : "";
+  if (!paymentId) {
+    await authPrisma.webhookEvent.upsert({
+      where: { provider_providerEventId: { provider: "ASAAS_PAYMENT", providerEventId: eventId } },
+      create: { provider: "ASAAS_PAYMENT", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: "missing_payment_id" },
+      update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: "missing_payment_id" },
+    });
+    return response({ received: true, quarantined: true }, 200);
+  }
   try {
     const canonical = await getAsaasPayment(paymentId);
     if (canonical.id !== paymentId || canonical.billingType !== "PIX") return response({ error: "Pagamento não corresponde a uma cobrança Pix." }, 422);
@@ -36,7 +66,6 @@ export async function POST(request: NextRequest) {
     if (canonical.pixQrCodeId !== payment.providerQrCodeId || canonical.externalReference !== "superquina_purchase_" + payment.purchaseId
       || !Number.isFinite(canonical.value) || Math.round((canonical.value ?? 0) * 100) !== payment.amountCents
       || payment.amountCents !== payment.purchase.totalCents) return response({ error: "Pagamento não corresponde à compra registrada." }, 422);
-    const digest = createHash("sha256").update(raw).digest("hex");
     const prior = await authPrisma.webhookEvent.findUnique({ where: { provider_providerEventId: { provider: "ASAAS_PAYMENT", providerEventId: eventId } }, select: { processedAt: true } });
     if (prior?.processedAt) return response({ received: true, duplicate: true }, 200);
     await authPrisma.webhookEvent.upsert({
