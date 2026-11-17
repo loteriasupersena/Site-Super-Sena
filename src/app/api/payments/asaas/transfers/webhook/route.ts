@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
             throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
           }
           const normalizePix = (value: string, type: string) =>
-            ["CPF", "CNPJ", "PHONE"].includes(type) ? value.replace(/\\D/g, "") : value.trim().toLowerCase();
+            ["CPF", "CNPJ", "PHONE"].includes(type) ? value.replace(/\D/g, "") : value.trim().toLowerCase();
           const expectedPix = normalizePix(decryptPixKey(withdrawal.pixKeyEncrypted), withdrawal.pixKeyType);
           const actualPix = normalizePix(transfer.bankAccount.pixAddressKey, withdrawal.pixKeyType);
           if (expectedPix !== actualPix) throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
