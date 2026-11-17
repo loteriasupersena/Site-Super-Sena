@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         const batch = await tx.prizePaymentBatch.findUnique({
           where: { id: item.batchId },
           select: {
-            id: true, status: true, pixKeyEncrypted: true, pixKeyType: true, netCents: true,
+            id: true, status: true, pixKey: true, pixKeyType: true, netCents: true,
             asaasTransferId: true, paymentReference: true,
             requests: { select: { id: true, status: true, participationLine: { select: { prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { id: true } } } } } },
           },
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         if (!batch) throw new Error("BATCH_NOT_FOUND");
         if (batch.status === "PROCESSING" || batch.asaasTransferId) throw new Error("ALREADY_PROCESSING");
         if (![ "PENDING", "FAILED", "CANCELLED" ].includes(batch.status)) throw new Error("NOT_PAYABLE");
-        if (!batch.pixKeyEncrypted || batch.requests.length === 0) throw new Error("BENEFICIARY_DATA_MISSING");
+        if (!batch.pixKey || batch.requests.length === 0) throw new Error("BENEFICIARY_DATA_MISSING");
         if (batch.requests.some(row => !["PENDING", "FAILED", "CANCELLED"].includes(row.status) ||
           row.participationLine.prizeCreditedAt || row.participationLine.prizePayout ||
           (row.participationLine.prizeCents ?? 0) <= 0)) throw new Error("PRIZE_ALREADY_PAID");
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         });
         return {
           kind: "BATCH" as const, id: batch.id, netCents: batch.netCents,
-          pixKey: decryptPixKey(batch.pixKeyEncrypted), pixKeyType: batch.pixKeyType,
+          pixKey: batch.pixKey, pixKeyType: batch.pixKeyType,
           externalReference,
         };
       }
