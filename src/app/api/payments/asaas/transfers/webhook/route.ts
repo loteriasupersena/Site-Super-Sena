@@ -97,11 +97,16 @@ export async function POST(request: NextRequest) {
     return response({ error: "Não foi possível confirmar o estado atual da transferência no Asaas." }, 503);
   }
 
+  // Internal reconciliation polls are deduplicated by transfer and canonical
+  // provider status. A new row is created only when that status actually changes.
+  const persistedEventId = eventId.startsWith("platform_poll_")
+    ? "platform_poll_" + transferId + "_" + (transfer?.status ?? event).trim().toUpperCase()
+    : eventId;
   const digest = createHash("sha256").update(raw).digest("hex");
   try {
     const outcome = await authPrisma.$transaction(async (tx) => {
       const prior = await tx.webhookEvent.findUnique({
-        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
+        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
         select: { processedAt: true },
       });
       if (prior?.processedAt) return "DUPLICATE";
@@ -128,8 +133,8 @@ export async function POST(request: NextRequest) {
         }
 
         await tx.webhookEvent.upsert({
-          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
           update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
         });
 
@@ -213,8 +218,8 @@ export async function POST(request: NextRequest) {
           verifyPixBeneficiary(withdrawal.pixKey, withdrawal.pixKeyType, transfer?.bankAccount?.pixAddressKey);
         }
         await tx.webhookEvent.upsert({
-          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
           update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
         });
         if (withdrawal.status === "PAID") return "WITHDRAWAL_ALREADY_PAID";
@@ -270,8 +275,8 @@ export async function POST(request: NextRequest) {
       }
 
       await tx.webhookEvent.upsert({
-        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-        create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+        create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
         update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
       });
 
