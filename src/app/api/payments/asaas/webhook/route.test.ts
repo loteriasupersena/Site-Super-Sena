@@ -3,14 +3,18 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   paymentFindFirst: vi.fn(),
+  paymentUpdate: vi.fn(),
+  confirmPixPayment: mocks.confirmPixPayment,
+  webhookEventFindUnique: vi.fn(),
+  webhookEventUpdateMany: vi.fn(),
   getAsaasPayment: vi.fn(),
   recordUnexpectedExternalRefund: vi.fn(),
   webhookEventUpsert: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: {
-    payment: { findFirst: mocks.paymentFindFirst },
-    webhookEvent: { upsert: mocks.webhookEventUpsert },
+    payment: { findFirst: mocks.paymentFindFirst, update: mocks.paymentUpdate },
+    webhookEvent: { upsert: mocks.webhookEventUpsert, findUnique: mocks.webhookEventFindUnique, updateMany: mocks.webhookEventUpdateMany },
   },
 }));
 vi.mock("@/modules/payments/asaas", () => ({
@@ -51,6 +55,10 @@ describe("Asaas payment webhook refund validation", () => {
       pixQrCodeId: "qr-1",
     });
     mocks.paymentFindFirst.mockResolvedValue(null);
+    mocks.paymentUpdate.mockResolvedValue({});
+    mocks.confirmPixPayment.mockResolvedValue({ outcome: "confirmed" });
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.webhookEventUpdateMany.mockResolvedValue({ count: 1 });
     mocks.webhookEventUpsert.mockResolvedValue({});
   });
 
@@ -87,6 +95,37 @@ describe("Asaas payment webhook refund validation", () => {
     expect(mocks.webhookEventUpsert).toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ eventType: "INVALID_PAYLOAD", processingError: "invalid_json" }),
     }));
+  });
+
+  it("acknowledges PAYMENT_CONFIRMED without crediting the player before funds are received", async () => {
+    mocks.getAsaasPayment.mockResolvedValue({
+      id: "pay-1",
+      billingType: "PIX",
+      status: "CONFIRMED",
+      value: 1,
+      pixQrCodeId: "qr-1",
+      externalReference: "superquina_purchase_purchase-1",
+    });
+    mocks.paymentFindFirst.mockResolvedValue({
+      id: "internal-payment-1",
+      purchaseId: "purchase-1",
+      amountCents: 100,
+      providerQrCodeId: "qr-1",
+      purchase: { totalCents: 100 },
+    });
+
+    const response = await POST(request({
+      id: "evt-confirmed-1",
+      event: "PAYMENT_CONFIRMED",
+      payment: { id: "pay-1" },
+    }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, awaitingReceipt: true });
+    expect(mocks.paymentUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: { providerPaymentId: "pay-1", providerStatus: "CONFIRMED", providerStatusDetail: "PAYMENT_CONFIRMED" },
+    }));
+    expect(mocks.confirmPixPayment).not.toHaveBeenCalled();
   });
 
   it("does not process a refund notification until Asaas confirms REFUNDED", async () => {
