@@ -10,8 +10,8 @@ vi.mock("@/lib/auth/session", () => ({
   authPrisma: { withdrawal: { findMany: mocks.findMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
-vi.mock("@/lib/wallet/pix-key-crypto", () => ({
-  decryptPixKey: vi.fn(() => "pix@example.com"), maskPixKey: vi.fn(() => "pi***@example.com"),
+vi.mock("@/lib/wallet/pix-key", () => ({
+  maskPixKey: vi.fn(() => "pi***@example.com"),
 }));
 import { GET, POST } from "./route";
 
