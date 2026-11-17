@@ -3444,3 +3444,15 @@ body:has(.home-page-compact) {
     flex-basis: 8px;
   }
 }
+
+
+/* Recibo oficial no iPhone/Safari: força tinta preta e remove opacidade herdada.
+   A regra também cobre o texto explicativo da divisão dos prêmios. */
+.receipt-modal .thermal-receipt,
+.receipt-modal .thermal-receipt * {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
