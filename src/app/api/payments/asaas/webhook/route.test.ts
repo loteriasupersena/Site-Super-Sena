@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   paymentFindFirst: vi.fn(),
   paymentUpdate: vi.fn(),
-  confirmPixPayment: mocks.confirmPixPayment,
+  confirmPixPayment: vi.fn(),
   webhookEventFindUnique: vi.fn(),
   webhookEventUpdateMany: vi.fn(),
   getAsaasPayment: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("@/modules/payments/asaas", () => ({
   getAsaasPayment: mocks.getAsaasPayment,
 }));
 vi.mock("@/modules/payments/confirm-payment", () => ({
-  confirmPixPayment: vi.fn(),
+  confirmPixPayment: mocks.confirmPixPayment,
 }));
 vi.mock("@/modules/payments/record-unexpected-refund", () => ({
   recordUnexpectedExternalRefund: mocks.recordUnexpectedExternalRefund,
