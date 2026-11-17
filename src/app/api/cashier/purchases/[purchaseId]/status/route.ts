@@ -34,9 +34,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // The browser polls every few seconds. Throttle direct provider reconciliation
   // to one lookup per payment per 10 seconds. Webhook and fallback converge on
   // the same idempotent confirmation transaction.
-  const hasProviderReference = purchase.payment?.provider === "ASAAS"
-    ? Boolean(purchase.payment.providerQrCodeId)
-    : purchase.payment?.provider === "MERCADO_PAGO" && Boolean(purchase.payment.providerPaymentId);
+  const hasProviderReference = purchase.payment?.provider === "ASAAS" && Boolean(purchase.payment.providerQrCodeId);
   if (purchase.status === "PENDING_PAYMENT"
     && purchase.payment?.status === "PENDING"
     && hasProviderReference
@@ -78,12 +76,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const reconciliationRequired = purchase.status === "PENDING_PAYMENT"
     && purchase.payment?.status === "PENDING"
-    && ((purchase.payment.provider === "MERCADO_PAGO"
-      && purchase.payment.providerStatus === "processed"
-      && purchase.payment.providerStatusDetail === "accredited")
-      || (purchase.payment.provider === "ASAAS"
-        && purchase.payment.providerStatus === "RECEIVED"
-        && purchase.payment.providerStatusDetail === "received"));
+    && purchase.payment.provider === "ASAAS"
+    && purchase.payment.providerStatus === "RECEIVED"
+    && purchase.payment.providerStatusDetail === "received";
 
   return NextResponse.json({
     purchaseStatus: purchase.status,
