@@ -121,6 +121,10 @@ describe("Asaas wallet transfer webhook", () => {
   });
 
   it("rejects a transfer sent to a different Pix beneficiary", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678",
+      value: 50, operationType: "PIX", bankAccount: { pixAddressKey: "11111111111" },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
     const mismatched = request();
     const body = await mismatched.text();
     const changed = new NextRequest("https://example.test/api/payments/asaas/transfers/webhook", {
@@ -135,6 +139,10 @@ describe("Asaas wallet transfer webhook", () => {
   });
 
   it("rejects a transfer with a mismatched amount", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678",
+      value: 49.99, operationType: "PIX", bankAccount: { pixAddressKey: "52998224725" },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
     const response = await POST(request("TRANSFER_DONE", 49.99));
     expect(response.status).toBe(409);
     expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
@@ -142,6 +150,10 @@ describe("Asaas wallet transfer webhook", () => {
   });
 
   it("keeps the reserved balance and records a failed transfer", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-1", status: "FAILED", externalReference: "wallet_withdrawal_wdr_12345678",
+      value: 50, operationType: "PIX", failReason: "bank rejected transfer",
+    }), { status: 200, headers: { "content-type": "application/json" } }));
     const response = await POST(request("TRANSFER_FAILED"));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ received: true, outcome: "WITHDRAWAL_FAILED" });
