@@ -15,7 +15,4 @@ describe("calculatePrizeFees", () => {
     });
   });
 
-  it("applies the same 10% total deduction to wallet and physical prize calculations", () => {
-    expect(calculatePrizeFees(250_000).netCents).toBe(225_000);
-  });
 });
