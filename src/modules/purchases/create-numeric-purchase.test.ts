@@ -26,6 +26,7 @@ describe("createNumericPurchase pending Pix intent", () => {
       numbers: ["000007"], stakeCents: 100,
     });
 
+    expect(purchaseCreate.mock.calls[0]![0].data.payment.create.provider).toBe("ASAAS");
     expect(purchaseCreate.mock.calls[0]![0].data.numericIntent.create.ruleSnapshot).toEqual({
       version: "numeric-six-digit-v2", multipliers: configured,
     });
@@ -65,6 +66,7 @@ describe("createNumericPurchase pending Pix intent", () => {
       ruleSnapshot: { version: "numeric-six-digit-v2", multipliers: { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 } },
     });
     expect(data.payment.create.amountCents).toBe(200);
+    expect(data.payment.create.provider).toBe("ASAAS");
     expect(result).toMatchObject({ status: "PENDING_PAYMENT", receiptCode: null, participations: [] });
   });
 });
