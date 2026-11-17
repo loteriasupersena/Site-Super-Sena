@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { decryptPixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { z } from "zod";
+import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,22 @@ export async function GET(request: NextRequest) {
       reviewedBy: { select: { username: true } },
       statusHistory: { select: { fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { username: true } } }, orderBy: { createdAt: "asc" as const } },
     };
+    const staleTransfers = await authPrisma.withdrawal.findMany({
+      where: { status: "PROCESSING", asaasTransferId: { not: null }, updatedAt: { lt: new Date(Date.now() - 10_000) } },
+      select: { id: true, asaasTransferId: true, paymentReference: true },
+      take: 50, orderBy: { updatedAt: "asc" },
+    });
+    await Promise.all(staleTransfers.map(async (item) => {
+      if (!item.asaasTransferId || !item.paymentReference) return;
+      const claim = await authPrisma.withdrawal.updateMany({
+        where: { id: item.id, status: "PROCESSING", updatedAt: { lt: new Date(Date.now() - 10_000) } },
+        data: { updatedAt: new Date() },
+      });
+      if (claim.count !== 1) return;
+      try { await reconcileAsaasTransferFromPlatform({ transferId: item.asaasTransferId, externalReference: item.paymentReference }); }
+      catch { /* preserve pending state; the next poll or webhook retries */ }
+    }));
+
     const [pendingWithdrawals, historicalWithdrawals] = await Promise.all([
       authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include, orderBy: { createdAt: "asc" } }),
       authPrisma.withdrawal.findMany({ where: { status: { in: ["APPROVED", "PROCESSING", "PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
