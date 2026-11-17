@@ -2,7 +2,7 @@
 
 Aplicação web de apostas numéricas com sorteios de seis algarismos, de `000000` a `999999`, preservando zeros à esquerda.
 
-Inclui áreas pública, jogador, cambista e administrador; apostas numéricas; Pix via Mercado Pago; carteira; vendas em dinheiro; comissões; recibos digitais e térmicos; consulta pública por QR Code; agendador de rodadas e apuração idempotente.
+Inclui áreas pública, jogador, cambista e administrador; apostas numéricas; Pix via Asaas; carteira; vendas em dinheiro; comissões; recibos digitais e térmicos; consulta pública por QR Code; agendador de rodadas e apuração idempotente.
 
 O produto utiliza banco de dados próprio. Não importar nem manter histórico, cadastros, apostas, vendas, sorteios, resultados, prêmios, saldos ou comissões do sistema de placas.
 
