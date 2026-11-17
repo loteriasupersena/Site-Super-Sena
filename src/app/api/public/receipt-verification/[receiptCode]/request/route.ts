@@ -174,7 +174,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
             data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
           await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
-            data: { asaasTransferStatus: transfer.status ?? "PENDING" } });
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
         });
         return NextResponse.json({ success: true, batch: {
           id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
