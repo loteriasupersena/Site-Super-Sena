@@ -1,6 +1,7 @@
 import { Prisma, RoundStatus, type PrismaClient } from "../../generated/prisma/client";
 import { calculateNumberPrizeCents } from "../numbers/calculate-number-prize";
 import { RoundSettlementError } from "./round-settlement-error";
+import { calculatePrizeFees } from "@/domain/prize-fees";
 
 function isSerializationConflict(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
@@ -75,10 +76,12 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
             continue;
           }
 
+          const fees = calculatePrizeFees(prize);
+          const walletCreditCents = fees.netCents;
           const idempotencyKey = "numeric-prize-credit:" + line.id;
           const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey } });
           if (existing) {
-            if (existing.userId !== playerId || existing.amountCents !== prize ||
+            if (existing.userId !== playerId || existing.amountCents !== walletCreditCents ||
                 existing.type !== "PRIZE_CREDIT" || existing.participationId !== line.participationId) {
               throw new RoundSettlementError("Existing numeric prize ledger entry conflicts with calculated award", "INCONSISTENT_SETTLEMENT");
             }
@@ -89,10 +92,12 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
                 purchaseId: line.participation.purchaseId,
                 participationId: line.participationId,
                 type: "PRIZE_CREDIT",
-                amountCents: prize,
+                amountCents: walletCreditCents,
                 currency: purchase.currency,
                 idempotencyKey,
-                description: "Prêmio numérico da rodada " + round.code + " — linha " + line.id,
+                description: fees.totalFeeCents > 0
+                  ? "Prêmio numérico da rodada " + round.code + " — linha " + line.id + " (bruto " + prize + "; taxas " + fees.totalFeeCents + ")"
+                  : "Prêmio numérico da rodada " + round.code + " — linha " + line.id,
               },
             });
           }
@@ -116,7 +121,10 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
               action: settlementAction,
               entityType: "Round",
               entityId: roundId,
-              metadata: { eligibleLines: lines.length, creditedLines, pendingManualPayouts, totalPrizeCents },
+              metadata: {
+                eligibleLines: lines.length, creditedLines, pendingManualPayouts, totalPrizeCents,
+                walletPrizeFees: "5% administrative + 5% bank transaction for gross prizes >= R$ 1,000.00",
+              },
             },
           });
         }
