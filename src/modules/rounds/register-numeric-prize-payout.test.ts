@@ -12,7 +12,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
-    prizePaymentRequest: { id: "request-123", status: "PROCESSING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
+    prizePaymentRequest: { id: "request-123", status: "PROCESSING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: "prize_request_request-12345678" },
     participation: {
       status: "CONFIRMED",
       purchase: {
@@ -66,6 +66,31 @@ describe("registerNumericPrizePayout", () => {
     })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
     expect(payoutCreate).not.toHaveBeenCalled();
     expect(auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("allows a final Asaas confirmation to settle a previously failed transfer", async () => {
+    const { tx, payoutCreate } = setup(makeLine({
+      prizePaymentRequest: {
+        id: "request-123", status: "FAILED", netCents: 500, grossCents: 500,
+        administrativeFeeCents: 0, transactionFeeCents: 0,
+        paymentReference: "prize_request_request-12345678",
+      },
+    }));
+    const result = await registerNumericPrizePayout(tx as never, {
+      lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
+      expectedRequestStatus: "FAILED", reference: "prize_request_request-12345678",
+    });
+    expect(result.amountCents).toBe(500);
+    expect(payoutCreate).toHaveBeenCalledOnce();
+  });
+
+  it("rejects a transfer reference that differs from the stored request", async () => {
+    const { tx, payoutCreate } = setup();
+    await expect(registerNumericPrizePayout(tx as never, {
+      lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
+      expectedRequestStatus: "PROCESSING", reference: "prize_request_another-request",
+    })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
+    expect(payoutCreate).not.toHaveBeenCalled();
   });
 
   it("blocks payout when the stored prize differs from the deterministic result", async () => {
