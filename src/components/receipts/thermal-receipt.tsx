@@ -195,7 +195,7 @@ export function ThermalReceipt({
             const index = entries.findIndex((candidate) => candidate.roundCode === entry.roundCode);
             return (
               <div className="thermal-receipt-item" key={"round-" + entry.roundCode}>
-                <span>Repetição {repetitionNumbers[index]}</span>
+                <span>Repetição {repetitionNumbers[index]} · Jogo Super Sena</span>
                 <strong className="thermal-receipt-draw-time">Sorteio: {drawDateTime(entry.resultAt)}</strong>
                 <span>Rodada {entry.roundCode}</span>
               </div>
