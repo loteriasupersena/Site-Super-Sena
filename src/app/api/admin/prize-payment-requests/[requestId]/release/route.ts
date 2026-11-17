@@ -33,11 +33,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           id: true, purchaseId: true, participationLineId: true, status: true,
           grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true,
           pixKeyMasked: true, pixKeyType: true, holderCpfMasked: true, requestedAt: true,
-          asaasTransferId: true,
+          asaasTransferId: true, asaasTransferStatus: true,
         },
       });
       if (!item) throw new Error("NOT_FOUND");
-      if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status) || item.asaasTransferId) throw new Error("NOT_PENDING");
+      const terminalTransfer = ["FAILED", "CANCELLED", "REJECTED"].includes(item.asaasTransferStatus ?? "");
+      if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status) || (item.asaasTransferId && !terminalTransfer)) throw new Error("NOT_PENDING");
 
       const reviewedAt = new Date();
       const changed = await tx.prizePaymentRequest.updateMany({
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         data: {
           status: "REJECTED",
           pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+          asaasTransferId: null, asaasTransferStatus: null, asaasTransferReceiptUrl: null,
+          asaasTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
           reviewedAt, reviewerId: user.id,
           note: "Valor liberado pela administração. O ganhador poderá solicitar novamente quando desejar.",
         },
@@ -61,6 +64,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           transactionFeeCents: item.transactionFeeCents, netCents: item.netCents,
           pixKeyMasked: item.pixKeyMasked, pixKeyType: item.pixKeyType,
           holderCpfMasked: item.holderCpfMasked, requestedAt: item.requestedAt.toISOString(),
+          asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus,
           reviewedAt: reviewedAt.toISOString(),
         },
       } });
