@@ -53,8 +53,15 @@ export function PlayerWalletWithdrawals() {
     finally { setBusy(false); }
   }
 
+  const reservedCents = withdrawals
+    .filter((item) => ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status))
+    .reduce((total, item) => total + item.amountCents, 0);
+
   return <section className="player-wallet-withdrawals-content">
-    <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
+    <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>saldo disponível</small></p>
+    {reservedCents > 0 && <p className="wallet-balance">
+      {money(reservedCents)} <small>reservado em solicitações de saque. O valor não foi marcado como pago.</small>
+    </p>}
     <form className="admin-round-create" onSubmit={requestWithdrawal}>
       <label>Nome completo do titular<input value={holderName} onChange={(event) => setHolderName(event.target.value)} maxLength={160} autoComplete="name" required /></label>
       <label>CPF do titular<input value={holderCpf} onChange={(event) => setHolderCpf(event.target.value)} maxLength={14} inputMode="numeric" placeholder="000.000.000-00" required /></label>
