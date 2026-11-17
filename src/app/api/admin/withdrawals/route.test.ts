@@ -60,7 +60,7 @@ describe("admin withdrawals API", () => {
     await GET(request());
     expect(mocks.findMany).toHaveBeenCalledTimes(2);
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: "PENDING" },
+      where: { status: { in: ["PENDING", "FAILED"] } },
       orderBy: { createdAt: "asc" },
     }));
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
@@ -70,19 +70,13 @@ describe("admin withdrawals API", () => {
     }));
   });
 
-  it("pays a pending withdrawal directly and records an idempotent audit trail", async () => {
+  it("rejects manual paid overrides; transfers must use Asaas", async () => {
     const response = await POST(request({
       withdrawalId: "withdrawal-1", action: "mark-paid", note: "Pagamento Pix confirmado manualmente",
     }));
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", status: "PAID", amountCents: 2500 } });
-    expect(mocks.withdrawalUpdate).toHaveBeenCalledWith({ where: { id: "withdrawal-1" }, data: { status: "PAID", reviewedById: "admin-1" } });
-    expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
-      userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_PAID",
-      amountCents: 0, idempotencyKey: "withdrawal-paid:withdrawal-1",
-    }) });
-    expect(mocks.historyCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ fromStatus: "PENDING", toStatus: "PAID", actorId: "admin-1" }) });
-    expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ actorId: "admin-1", action: "WITHDRAWAL_MARKED_PAID" }) });
+    expect(response.status).toBe(400);
+    expect(mocks.withdrawalUpdate).not.toHaveBeenCalled();
+    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
   it("releases reserved balance when a pending withdrawal is rejected", async () => {
@@ -106,12 +100,10 @@ describe("admin withdrawals API", () => {
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
-  it("does not allow a second action after the withdrawal is closed", async () => {
+  it("rejects manual paid overrides even for closed withdrawals", async () => {
     mocks.withdrawalFindUnique.mockResolvedValue({ ...withdrawal, status: "PAID" });
-    const response = await POST(request({
-      withdrawalId: "withdrawal-1", action: "mark-paid", note: "Pagamento Pix confirmado manualmente",
-    }));
-    expect(response.status).toBe(409);
+    const response = await POST(request({ withdrawalId: "withdrawal-1", action: "mark-paid", note: "Pagamento Pix confirmado manualmente" }));
+    expect(response.status).toBe(400);
     expect(mocks.withdrawalUpdate).not.toHaveBeenCalled();
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.auditCreate).not.toHaveBeenCalled();
