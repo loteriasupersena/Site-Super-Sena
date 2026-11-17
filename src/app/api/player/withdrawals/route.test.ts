@@ -3,13 +3,14 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
-  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(),
+  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
-  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany }, $transaction: mocks.transaction },
+  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
 vi.mock("@/lib/wallet/pix-key-crypto", () => ({ encryptPixKey: vi.fn(() => "encrypted-key"), isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
+vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: vi.fn(async () => ({ id: "transfer-1", status: "PENDING" })) }));
 import { GET, POST } from "./route";
 
 function request(path = "/api/player/withdrawals", body?: unknown, origin = "https://example.test") {
@@ -37,6 +38,7 @@ describe("player withdrawals API", () => {
     mocks.queryRaw.mockResolvedValue([]);
     mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
     mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
+    mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
     mocks.ledgerCreate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
