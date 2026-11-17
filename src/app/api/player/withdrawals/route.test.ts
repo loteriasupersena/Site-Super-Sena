@@ -86,7 +86,7 @@ describe("player withdrawals API", () => {
         cookie: "superquina_session=session-token",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ pixKey: "pix@example.com" }),
+      body: JSON.stringify({ pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }),
     });
     expect((await POST(proxyRequest)).status).toBe(202);
   });
