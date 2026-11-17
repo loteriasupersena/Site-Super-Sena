@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       select: { id: true, purchaseId: true, amountCents: true, providerQrCodeId: true, purchase: { select: { totalCents: true } } },
     });
     if (!payment) return response({ error: "Vínculo do QR Code ainda não localizado." }, 503);
-    if (canonical.pixQrCodeId !== payment.providerQrCodeId || (canonical.externalReference && canonical.externalReference !== "superquina_purchase_" + payment.purchaseId)
+    if (canonical.pixQrCodeId !== payment.providerQrCodeId || canonical.externalReference !== "superquina_purchase_" + payment.purchaseId
       || !Number.isFinite(canonical.value) || Math.round((canonical.value ?? 0) * 100) !== payment.amountCents
       || payment.amountCents !== payment.purchase.totalCents) return response({ error: "Pagamento não corresponde à compra registrada." }, 422);
     const digest = createHash("sha256").update(raw).digest("hex");
