@@ -80,7 +80,7 @@ export function AdminWithdrawalManager() {
         <p>Titular: <strong>{item.holderName ?? "Nome não disponível"}</strong></p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
         {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}
-        
+
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null || item.amountCents < 100000 || Boolean(item.asaasTransferId)} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
@@ -92,9 +92,9 @@ export function AdminWithdrawalManager() {
     {loading ? <p>Carregando histórico…</p> : history.length === 0 ? <p>Nenhum saque encerrado.</p> : <div className="admin-round-list">
       {history.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
-        <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
+        <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Revisado por: {item.reviewedBy ?? "—"}</p>
-        
+
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar saques</button>
