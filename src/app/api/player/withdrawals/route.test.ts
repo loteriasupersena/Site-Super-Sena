@@ -59,6 +59,8 @@ describe("player withdrawals API", () => {
     expect(mocks.transaction).toHaveBeenCalledOnce();
     expect(mocks.queryRaw).toHaveBeenCalledOnce();
     expect(mocks.userFindFirst).toHaveBeenCalledOnce();
+    expect(mocks.withdrawalCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ pixKey: "52998224725", holderName: "Joao da Silva", pixKeyType: "CPF" }) });
+    expect(mocks.withdrawalCreate.mock.calls[0][0].data).not.toHaveProperty("pixKeyEncrypted");
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_RESERVE",
       amountCents: -5000, idempotencyKey: "withdrawal-reserve:withdrawal-1",
