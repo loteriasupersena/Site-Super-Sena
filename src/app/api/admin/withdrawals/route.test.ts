@@ -58,7 +58,11 @@ describe("admin withdrawals API", () => {
 
   it("loads every pending withdrawal separately from the capped historical list", async () => {
     await GET(request());
-    expect(mocks.findMany).toHaveBeenCalledTimes(2);
+    expect(mocks.findMany).toHaveBeenCalledTimes(3);
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { status: "PROCESSING", asaasTransferId: { not: null }, updatedAt: { lt: expect.any(Date) } },
+      take: 50,
+    }));
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { status: { in: ["PENDING", "FAILED"] } },
       orderBy: { createdAt: "asc" },
