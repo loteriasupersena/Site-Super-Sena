@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Never let old/closed records consume the limit and hide an actionable pending withdrawal.
     const [pendingWithdrawals, historicalWithdrawals] = await Promise.all([
       authPrisma.withdrawal.findMany({
-        where: { status: "PENDING" },
+        where: { status: { in: ["PENDING", "FAILED"] } },
         include,
         orderBy: { createdAt: "asc" },
       }),
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         try { pixKey = decryptPixKey(item.pixKeyEncrypted); } catch { keyConfigError = true; }
       }
       return {
-        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
+        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status, asaasTransferStatus: item.asaasTransferStatus, asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked, pixKeyMasked: item.pixKeyMasked,
         pixKey, pixKeyMasked: (() => { try { return maskPixKey(decryptPixKey(item.pixKeyEncrypted)); } catch { return "Chave indisponível"; } })(),
         providerRef: item.providerRef, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(),
         reviewedBy: item.reviewedBy?.username ?? null,
