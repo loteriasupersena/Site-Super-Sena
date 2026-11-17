@@ -11,7 +11,7 @@ type Item = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Pix em processamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Transferência recusada — pode ser reavaliada" };
+const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Transferência em análise", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Transferência recusada — pode ser reavaliada" };
 
 export function AdminWithdrawalManager() {
   const [items, setItems] = useState<Item[]>([]);
@@ -80,7 +80,7 @@ export function AdminWithdrawalManager() {
         <p>Titular: <strong>{item.holderName ?? "Nome não disponível"}</strong></p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
         {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}
-        {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
+
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null || item.amountCents < 100000 || Boolean(item.asaasTransferId)} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
@@ -92,9 +92,9 @@ export function AdminWithdrawalManager() {
     {loading ? <p>Carregando histórico…</p> : history.length === 0 ? <p>Nenhum saque encerrado.</p> : <div className="admin-round-list">
       {history.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
-        <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
+        <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Revisado por: {item.reviewedBy ?? "—"}</p>
-        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.actor} · {event.note ?? labels[event.toStatus as Item["status"]]}</small></p>)}
+
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar saques</button>

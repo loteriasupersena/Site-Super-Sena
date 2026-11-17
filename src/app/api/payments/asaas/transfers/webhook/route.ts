@@ -97,11 +97,16 @@ export async function POST(request: NextRequest) {
     return response({ error: "Não foi possível confirmar o estado atual da transferência no Asaas." }, 503);
   }
 
+  // Internal reconciliation polls are deduplicated by transfer and canonical
+  // provider status. A new row is created only when that status actually changes.
+  const persistedEventId = eventId.startsWith("platform_poll_")
+    ? "platform_poll_" + transferId + "_" + (transfer?.status ?? event).trim().toUpperCase()
+    : eventId;
   const digest = createHash("sha256").update(raw).digest("hex");
   try {
     const outcome = await authPrisma.$transaction(async (tx) => {
       const prior = await tx.webhookEvent.findUnique({
-        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
+        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
         select: { processedAt: true },
       });
       if (prior?.processedAt) return "DUPLICATE";
@@ -128,8 +133,8 @@ export async function POST(request: NextRequest) {
         }
 
         await tx.webhookEvent.upsert({
-          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
           update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
         });
 
@@ -176,6 +181,7 @@ export async function POST(request: NextRequest) {
           : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
         const transferStatus = transfer?.status ?? event.replace("TRANSFER_", "");
         const failure = status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null;
+        const statusChanged = batch.status !== status;
         await tx.prizePaymentBatch.update({
           where: { id: batch.id },
           data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
@@ -184,14 +190,16 @@ export async function POST(request: NextRequest) {
           where: { batchId: batch.id },
           data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
         });
-        await tx.auditEvent.create({
-          data: {
-            action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
-              : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
-            entityType: "PrizePaymentBatch", entityId: batch.id,
-            metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
-          },
-        });
+        if (statusChanged) {
+          await tx.auditEvent.create({
+            data: {
+              action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
+                : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
+              entityType: "PrizePaymentBatch", entityId: batch.id,
+              metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
+            },
+          });
+        }
         return status;
       }
 
@@ -210,8 +218,8 @@ export async function POST(request: NextRequest) {
           verifyPixBeneficiary(withdrawal.pixKey, withdrawal.pixKeyType, transfer?.bankAccount?.pixAddressKey);
         }
         await tx.webhookEvent.upsert({
-          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
           update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
         });
         if (withdrawal.status === "PAID") return "WITHDRAWAL_ALREADY_PAID";
@@ -235,14 +243,17 @@ export async function POST(request: NextRequest) {
           return "WITHDRAWAL_PAID";
         }
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
+        const statusChanged = withdrawal.status !== status;
         await tx.withdrawal.update({ where: { id: withdrawal.id }, data: {
           status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
           asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
         } });
-        await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
-          toStatus: status, note: status === "FAILED" ? "Transferência Asaas não concluída: " + (transfer?.failReason ?? event) : "Atualização da transferência Asaas: " + event } });
-        await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
-          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
+        if (statusChanged) {
+          await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
+            toStatus: status, note: status === "FAILED" ? "Transferência não concluída. A solicitação precisa ser revisada." : "Transferência em análise." } });
+          await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
+            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent } } });
+        }
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
       }
 
@@ -264,8 +275,8 @@ export async function POST(request: NextRequest) {
       }
 
       await tx.webhookEvent.upsert({
-        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-        create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+        where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId } },
+        create: { provider: "ASAAS_TRANSFER", providerEventId: persistedEventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
         update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
       });
 
@@ -292,6 +303,7 @@ export async function POST(request: NextRequest) {
       }
       const status = event === "TRANSFER_FAILED" ? "FAILED"
         : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
+      const statusChanged = requestRow.status !== status;
       await tx.prizePaymentRequest.update({
         where: { id: requestId },
         data: {
@@ -300,14 +312,16 @@ export async function POST(request: NextRequest) {
           asaasTransferFailureReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null,
         },
       });
-      await tx.auditEvent.create({
-        data: {
-          action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED"
-            : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
-          entityType: "PrizePaymentRequest", entityId: requestId,
-          metadata: { event, notificationEvent, transferId, transferStatus: transfer?.status ?? null, failReason: transfer?.failReason ?? null },
-        },
-      });
+      if (statusChanged) {
+        await tx.auditEvent.create({
+          data: {
+            action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED"
+              : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
+            entityType: "PrizePaymentRequest", entityId: requestId,
+            metadata: { event, notificationEvent, transferId, transferStatus: transfer?.status ?? null },
+          },
+        });
+      }
       return status;
     }, { isolationLevel: "Serializable" });
 

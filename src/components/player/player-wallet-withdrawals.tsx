@@ -9,10 +9,11 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Transferência Pix em processamento", PAID: "Pix confirmado e pago", REJECTED: "Valor devolvido à carteira", FAILED: "Transferência não concluída — em análise" };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — em análise", APPROVED: "Solicitação em análise", PROCESSING: "Transferência em análise", PAID: "Pagamento confirmado", REJECTED: "Valor devolvido à carteira", FAILED: "Solicitação precisa de nova análise" };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
+  const [reservedCents, setReservedCents] = useState(0);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [pixKey, setPixKey] = useState("");
   const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
@@ -54,7 +55,10 @@ export function PlayerWalletWithdrawals() {
   }
 
   return <section className="player-wallet-withdrawals-content">
-    <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
+    <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>saldo disponível</small></p>
+    {reservedCents > 0 && <p className="wallet-balance">
+      {money(reservedCents)} <small>reservado em solicitações de saque. O valor não foi marcado como pago.</small>
+    </p>}
     <form className="admin-round-create" onSubmit={requestWithdrawal}>
       <label>Nome completo do titular<input value={holderName} onChange={(event) => setHolderName(event.target.value)} maxLength={160} autoComplete="name" required /></label>
       <label>CPF do titular<input value={holderCpf} onChange={(event) => setHolderCpf(event.target.value)} maxLength={14} inputMode="numeric" placeholder="000.000.000-00" required /></label>
@@ -72,8 +76,8 @@ export function PlayerWalletWithdrawals() {
       {withdrawals.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
-        {item.status === "PAID" && <p>Pago e baixado em {dateTime(item.updatedAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>}
-        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.toStatus === "REJECTED" ? "Motivo da liberação: " : ""}{event.note ?? labels[event.toStatus as Withdrawal["status"]]}</small></p>)}
+        {item.status === "PAID" && <p>Pagamento confirmado em {dateTime(item.updatedAt)}</p>}
+
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy} onClick={() => void load()}>Atualizar carteira</button>

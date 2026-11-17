@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
-  getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
+  getSessionUser: vi.fn(), aggregate: vi.fn(), withdrawalAggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
   queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
-  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
+  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, aggregate: mocks.withdrawalAggregate, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
 vi.mock("@/lib/wallet/pix-key", () => ({ isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
@@ -35,6 +35,7 @@ describe("player withdrawals API", () => {
     mocks.getSessionUser.mockResolvedValue({ id: "player-1", username: "player", role: "PLAYER", status: "ACTIVE", mustChangePassword: false });
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 5000 } });
     mocks.findMany.mockResolvedValue([]);
+    mocks.withdrawalAggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
     mocks.queryRaw.mockResolvedValue([]);
     mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
     mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
