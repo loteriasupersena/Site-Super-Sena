@@ -40,26 +40,6 @@ export function AdminWithdrawalManager() {
   }, []);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => { window.clearTimeout(timer); loadController.current?.abort(); }; }, [load]);
 
-  async function checkTransfer(item: Item) {
-    if (!item.asaasTransferId) return;
-    setBusy(item.id); setError(""); setNotice("");
-    try {
-      const response = await fetch("/api/admin/asaas/transfers/" + encodeURIComponent(item.asaasTransferId) + "/check", {
-        method: "POST", headers: { "content-type": "application/json" }, body: "{}",
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Não foi possível consultar a transferência no Asaas.");
-      setNotice(body.outcome === "WITHDRAWAL_PAID"
-        ? "Asaas confirmou o pagamento. A carteira foi baixada."
-        : body.outcome === "FAILED" || body.outcome === "WITHDRAWAL_FAILED"
-          ? "Asaas confirmou que a transferência não foi concluída. O saque permanece sem baixa."
-          : "Consulta concluída. Situação atual: " + (body.providerStatus ?? body.outcome ?? "em processamento") + ".");
-      await load();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao consultar o Asaas.");
-    } finally { setBusy(null); }
-  }
-
   async function act(item: Item, action: "send-asaas" | "reject") {
     const note = action === "send-asaas"
       ? "Administrador autorizou o envio Pix pela Asaas."
@@ -90,7 +70,7 @@ export function AdminWithdrawalManager() {
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
     <h2 id="admin-withdrawals-heading">Saques das carteiras digitais</h2>
-    <p>Confira os dados do titular. Saques de R$ 1.000,00 ou mais aguardam sua autorização; ao autorizar, a Asaas envia o Pix. O site também pode consultar o Asaas diretamente. Consulta manual e webhook usam a mesma confirmação e a mesma baixa da carteira.</p>
+    <p>Confira os dados do titular. Saques de R$ 1.000,00 ou mais aguardam sua autorização; ao autorizar, a Asaas envia o Pix. O saque só é concluído após a confirmação bancária.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
@@ -113,7 +93,7 @@ export function AdminWithdrawalManager() {
       {history.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
-        <p>Revisado por: {item.reviewedBy ?? "—"}</p>{item.asaasTransferId && item.status !== "PAID" && <button type="button" disabled={busy !== null} onClick={() => void checkTransfer(item)}>{busy === item.id ? "Consultando Asaas…" : "Consultar pagamento no Asaas"}</button>}
+        <p>Revisado por: {item.reviewedBy ?? "—"}</p>
         {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.actor} · {event.note ?? labels[event.toStatus as Item["status"]]}</small></p>)}
       </article>)}
     </div>}
