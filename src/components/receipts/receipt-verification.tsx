@@ -82,7 +82,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
       setHolderName(""); setHolderCpf(""); setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false); setHolderConfirmed(false);
       setMessage(body.status === "PROCESSING"
-        ? "Solicitação enviada à Asaas. Aguarde a confirmação do Pix."
+        ? "Solicitação recebida. A transferência está em análise. Aguarde a confirmação."
         : "Solicitação recebida. Aguarde a análise do administrador.");
       await onSubmitted();
     } catch (reason) {
@@ -96,7 +96,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
     {grossCents >= 100000 && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Prêmios de R$ 1.000,00 ou mais são pagos exclusivamente por Pix da plataforma e permanecem em análise até autorização do administrador.</p>}
     {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Valor liberado pela administração. Você pode solicitar novamente este prêmio.</p>}
     {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise pela administração</p>
-      : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
+      : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Sua solicitação foi recebida. A transferência está em análise. Aguarde a confirmação.</p>
       : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
 
       : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>A transferência não foi concluída. Envie uma nova solicitação com os dados Pix conferidos.</p>
