@@ -36,7 +36,7 @@ function request(payload: unknown = {
       "asaas-access-token": "a".repeat(40),
       "content-type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload) ?? "{}",
   });
 }
 
