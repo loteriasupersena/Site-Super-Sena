@@ -44,7 +44,7 @@ export function calculatePrizeFeeBatch<T extends PrizeFeeBatchLine>(lines: reado
       const exact = (totalFeeCents * line.grossCents) / grossCents;
       return { index, cents: Math.floor(exact), remainder: exact - Math.floor(exact) };
     });
-    let remaining = totalFeeCents - shares.reduce((sum, share) => sum + share.cents, 0);
+    const remaining = totalFeeCents - shares.reduce((sum, share) => sum + share.cents, 0);
     const priority = [...shares].sort((a, b) => b.remainder - a.remainder || a.index - b.index);
     for (let i = 0; i < remaining; i += 1) priority[i].cents += 1;
     return shares.sort((a, b) => a.index - b.index).map(share => share.cents);
