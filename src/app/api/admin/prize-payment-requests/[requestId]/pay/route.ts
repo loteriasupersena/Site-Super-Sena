@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const item = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
         select: {
-          id: true, status: true, pixKeyEncrypted: true, pixKeyType: true,
+          id: true, status: true, pixKey: true, pixKeyEncrypted: true, pixKeyType: true,
           netCents: true, asaasTransferId: true, paymentReference: true,
           participationLine: { select: { prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { id: true } } } },
         },
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (!item) throw new Error("NOT_FOUND");
       if (item.status === "PROCESSING" || item.asaasTransferId) throw new Error("ALREADY_PROCESSING");
       if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status)) throw new Error("NOT_PAYABLE");
-      if (!item.pixKeyEncrypted || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
+      if ((!item.pixKey && !item.pixKeyEncrypted) || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
       if (item.participationLine.prizeCreditedAt || item.participationLine.prizePayout || (item.participationLine.prizeCents ?? 0) <= 0) throw new Error("PRIZE_ALREADY_PAID");
       const changed = await tx.prizePaymentRequest.updateMany({
         where: { id: item.id, status: item.status, asaasTransferId: null },
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         entityType: "PrizePaymentRequest", entityId: item.id,
         metadata: { netCents: item.netCents, pixKeyType: item.pixKeyType, externalReference: "prize_request_" + item.id },
       } });
-      return { id: item.id, netCents: item.netCents, pixKeyEncrypted: item.pixKeyEncrypted, pixKeyType: item.pixKeyType };
+      return { id: item.id, netCents: item.netCents, pixKey: item.pixKey, pixKeyEncrypted: item.pixKeyEncrypted, pixKeyType: item.pixKeyType };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
@@ -71,7 +71,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   try {
-    const pixKey = decryptPixKey(requestRow.pixKeyEncrypted);
+    const pixKey = requestRow.pixKey ?? (requestRow.pixKeyEncrypted ? decryptPixKey(requestRow.pixKeyEncrypted) : "");
+    if (!pixKey) throw new Error("BENEFICIARY_DATA_MISSING");
     const transfer = await createAsaasPixTransfer({
       amountCents: requestRow.netCents,
       pixKey,
