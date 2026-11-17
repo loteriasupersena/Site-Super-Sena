@@ -78,9 +78,12 @@ export async function findAsaasTransfersByExternalReference(input: {
   }
   const { apiKey, baseUrl } = config();
   const url = new URL(baseUrl + "/transfers");
-  const day = input.requestedAt.toISOString().slice(0, 10);
-  url.searchParams.set("dateCreated[ge]", day);
-  url.searchParams.set("dateCreated[le]", day);
+  const start = new Date(input.requestedAt);
+  start.setUTCDate(start.getUTCDate() - 1);
+  const end = new Date(input.requestedAt);
+  end.setUTCDate(end.getUTCDate() + 1);
+  url.searchParams.set("dateCreated[ge]", start.toISOString().slice(0, 10));
+  url.searchParams.set("dateCreated[le]", end.toISOString().slice(0, 10));
   url.searchParams.set("limit", "100");
   const matches: AsaasTransferListItem[] = [];
   let offset = 0;
