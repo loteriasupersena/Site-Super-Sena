@@ -526,6 +526,7 @@ model PrizePaymentRequest {
   feeRuleVersion         String
   status                 PrizePaymentRequestStatus @default(PENDING)
   requestedAt            DateTime @default(now())
+  updatedAt              DateTime @updatedAt
   reviewedAt             DateTime?
   reviewerId             String?
   paymentReference       String?
