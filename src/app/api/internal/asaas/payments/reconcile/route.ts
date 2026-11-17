@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       status: "PENDING",
       providerQrCodeId: { not: null },
       updatedAt: { lt: staleBefore },
-      purchase: { status: "PENDING_PAYMENT" },
+      purchase: { is: { status: "PENDING_PAYMENT" } },
     },
     select: { id: true },
     orderBy: { updatedAt: "asc" },
