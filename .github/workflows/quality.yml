@@ -1,4 +1,5 @@
 name: Super Sena quality checks
+# Runs full validation for every PR update before integration.
 
 on:
   workflow_dispatch:
