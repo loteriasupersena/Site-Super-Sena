@@ -34,6 +34,20 @@ function response(body: unknown, status: number) {
   return NextResponse.json(body, { status, headers });
 }
 
+function normalizePix(value: string, type: string) {
+  return ["CPF", "CNPJ", "PHONE"].includes(type)
+    ? value.replace(/\D/g, "")
+    : value.trim().toLowerCase();
+}
+
+function verifyPixBeneficiary(expectedEncrypted: string | null, expectedPlain: string | null, type: string | null, actual: string | null | undefined) {
+  if ((!expectedEncrypted && !expectedPlain) || !type || !actual) throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
+  const expected = expectedEncrypted ? decryptPixKey(expectedEncrypted) : expectedPlain!;
+  if (normalizePix(expected, type) !== normalizePix(actual, type)) {
+    throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
+  }
+}
+
 export async function POST(request: NextRequest) {
   const token = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
   if (!token || token.length < 32) return response({ error: "Webhook não configurado." }, 503);
@@ -81,7 +95,7 @@ export async function POST(request: NextRequest) {
           where: { id: batchId },
           select: {
             id: true, status: true, paymentReference: true, asaasTransferId: true,
-            netCents: true, reviewerId: true,
+            netCents: true, reviewerId: true, pixKeyEncrypted: true, pixKeyType: true,
             requests: { select: { id: true, participationLineId: true, status: true } },
           },
         });
@@ -91,6 +105,9 @@ export async function POST(request: NextRequest) {
           (!Number.isFinite(transfer?.value) ||
            Math.round((transfer?.value ?? 0) * 100) !== batch.netCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+        if (event === "TRANSFER_DONE") {
+          verifyPixBeneficiary(batch.pixKeyEncrypted, null, batch.pixKeyType, transfer?.bankAccount?.pixAddressKey);
+        }
 
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -101,7 +118,8 @@ export async function POST(request: NextRequest) {
         if (batch.status === "PAID") return "ALREADY_PAID";
         if (event === "TRANSFER_DONE") {
           if (!batch.reviewerId || batch.requests.length === 0 ||
-              batch.requests.some(item => item.status !== "PROCESSING")) {
+              !["PROCESSING", "FAILED", "CANCELLED"].includes(batch.status) ||
+              batch.requests.some(item => !["PROCESSING", "FAILED", "CANCELLED"].includes(item.status))) {
             throw new Error("BATCH_NOT_READY");
           }
           // Each line is settled separately, but only after the single aggregate Pix is confirmed.
@@ -232,6 +250,9 @@ export async function POST(request: NextRequest) {
         (!Number.isFinite(transfer?.value) ||
          Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents ||
          transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+      if (event === "TRANSFER_DONE") {
+        verifyPixBeneficiary(requestRow.pixKeyEncrypted, requestRow.pixKey, requestRow.pixKeyType, transfer?.bankAccount?.pixAddressKey);
+      }
 
       await tx.webhookEvent.upsert({
         where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -247,7 +268,7 @@ export async function POST(request: NextRequest) {
           actorId: requestRow.reviewerId,
           channel: "PLATFORM_PIX",
           reference: externalReference,
-          expectedRequestStatus: requestRow.status as "PROCESSING" | "FAILED" | "CANCELLED" | "PENDING",
+          expectedRequestStatus: requestRow.status as "PROCESSING" | "FAILED" | "CANCELLED",
         });
         await tx.prizePaymentRequest.update({
           where: { id: requestId },
