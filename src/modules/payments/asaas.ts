@@ -101,3 +101,30 @@ export async function listAsaasPaymentsByQrCode(qrCodeId: string) {
   if (!response.ok) throw new Error("ASAAS_PAYMENT_LIST_HTTP_" + response.status);
   return body.data ?? [];
 }
+
+
+export type AsaasTransferDetails = {
+  id: string;
+  status: string;
+  externalReference?: string | null;
+  value?: number;
+  operationType?: string;
+  bankAccount?: { pixAddressKey?: string | null } | null;
+  transactionReceiptUrl?: string | null;
+  failReason?: string | null;
+};
+
+/** Fetches the provider's current transfer state; webhook payloads are only triggers. */
+export async function getAsaasTransfer(transferId: string): Promise<AsaasTransferDetails> {
+  if (!transferId.trim()) throw new Error("ASAAS_TRANSFER_ID_INVALID");
+  const { apiKey, baseUrl } = config();
+  const response = await fetch(baseUrl + "/transfers/" + encodeURIComponent(transferId), {
+    method: "GET",
+    headers: { access_token: apiKey, Accept: "application/json" },
+    cache: "no-store",
+  });
+  const body = await response.json().catch(() => ({})) as AsaasTransferDetails & { errors?: Array<{ description?: string }> };
+  if (!response.ok) throw new Error("ASAAS_TRANSFER_LOOKUP_HTTP_" + response.status);
+  if (!body.id) throw new Error("ASAAS_TRANSFER_LOOKUP_WITHOUT_ID");
+  return body;
+}
