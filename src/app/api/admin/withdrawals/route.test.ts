@@ -22,7 +22,7 @@ function request(body?: unknown, origin = "https://example.test") {
   });
 }
 const withdrawal = {
-  id: "withdrawal-1", userId: "player-1", amountCents: 2500, pixKeyEncrypted: "encrypted-key",
+  id: "withdrawal-1", userId: "player-1", amountCents: 2500, pixKey: "pix@example.com", pixKeyMasked: "pi***@example.com", holderName: "Joao da Silva",
   status: "PENDING", providerRef: null, reviewedById: null, createdAt: new Date("2026-01-01T00:00:00Z"),
   updatedAt: new Date("2026-01-01T00:00:00Z"), user: { username: "player" },
 };
