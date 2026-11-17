@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction },
 }));
+vi.mock("@/lib/wallet/pix-key-crypto", () => ({ decryptPixKey: vi.fn(() => "52998224725") }));
 vi.mock("@/modules/rounds/register-numeric-prize-payout", () => ({
   registerNumericPrizePayout: vi.fn(),
 }));
@@ -30,7 +31,7 @@ function request(event = "TRANSFER_DONE", value = 50) {
     headers: { "asaas-access-token": "a".repeat(40), "content-type": "application/json" },
     body: JSON.stringify({
       id: "evt-1", event,
-      transfer: { id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678", value, operationType: "PIX" },
+      transfer: { id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678", value, operationType: "PIX", bankAccount: { pixAddressKey: "52998224725" } },
     }),
   });
 }
@@ -44,7 +45,7 @@ describe("Asaas wallet transfer webhook", () => {
     mocks.withdrawalFindUnique.mockResolvedValue({
       id: "wdr_12345678", status: "PROCESSING", amountCents: 5000,
       paymentReference: "wallet_withdrawal_wdr_12345678", asaasTransferId: null,
-      reviewedById: "admin-1", userId: "player-1",
+      reviewedById: "admin-1", userId: "player-1", pixKeyEncrypted: "encrypted", pixKeyType: "CPF",
     });
     mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
     mocks.ledgerCreate.mockResolvedValue({});
@@ -77,6 +78,20 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       action: "WITHDRAWAL_ASAAS_TRANSFER_CONFIRMED", entityId: "wdr_12345678",
     }) });
+  });
+
+  it("rejects a transfer sent to a different Pix beneficiary", async () => {
+    const mismatched = request();
+    const body = await mismatched.text();
+    const changed = new NextRequest("https://example.test/api/payments/asaas/transfers/webhook", {
+      method: "POST",
+      headers: { "asaas-access-token": "a".repeat(40), "content-type": "application/json" },
+      body: body.replace('"pixAddressKey":"52998224725"', '"pixAddressKey":"11111111111"'),
+    });
+    const response = await POST(changed);
+    expect(response.status).toBe(409);
+    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
   it("rejects a transfer with a mismatched amount", async () => {
