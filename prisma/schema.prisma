@@ -87,6 +87,7 @@ enum WithdrawalStatus {
   PROCESSING
   PAID
   REJECTED
+  FAILED
 }
 
 enum PrintJobPurpose {
@@ -135,6 +136,7 @@ model User {
   numericPrizePayoutsAsCashier NumericPrizePayout[] @relation("NumericPrizePayoutCashier")
   printJobsRequested PrintJob[] @relation("PrintJobRequester")
   prizePaymentRequestsReviewed PrizePaymentRequest[] @relation("PrizePaymentRequestReviewer")
+  prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
 
   @@index([role, status])
 }
@@ -207,6 +209,7 @@ model Purchase {
   commission        CashierCommission?
   printJobs         PrintJob[]
   prizePaymentRequests PrizePaymentRequest[]
+  prizePaymentBatches PrizePaymentBatch[]
 
   @@index([playerId, createdAt])
   @@index([cashierId, createdAt])
@@ -263,6 +266,7 @@ model NumericParticipationLine {
   participation    PurchaseParticipation @relation(fields: [participationId], references: [id], onDelete: Restrict)
   prizePayout      NumericPrizePayout?
   prizePaymentRequest PrizePaymentRequest?
+  prizePaymentBatchItems PrizePaymentBatchItem[]
 
   @@index([numberValue])
   @@index([participationId])
@@ -393,6 +397,16 @@ model Withdrawal {
   userId              String
   amountCents         Int
   pixKeyEncrypted     String
+  pixKeyType          String?
+  holderNameEncrypted String?
+  holderCpfEncrypted  String?
+  holderCpfMasked     String?
+  pixKeyMasked        String?
+  paymentReference    String?                @unique
+  asaasTransferId     String?                @unique
+  asaasTransferStatus String?
+  asaasTransferFailureReason String?
+  transferRequestedAt DateTime?
   status              WithdrawalStatus       @default(PENDING)
   idempotencyKey      String                 @unique
   reviewedById        String?
@@ -496,6 +510,7 @@ model PrizePaymentRequest {
   id                     String   @id @default(cuid())
   participationLineId    String   @unique
   purchaseId             String
+  batchId                String?
   pixKey                 String?
   pixKeyEncrypted        String? // legado: solicitações criadas antes da remoção da criptografia
   pixKeyMasked           String
@@ -511,6 +526,7 @@ model PrizePaymentRequest {
   feeRuleVersion         String
   status                 PrizePaymentRequestStatus @default(PENDING)
   requestedAt            DateTime @default(now())
+  updatedAt              DateTime @updatedAt
   reviewedAt             DateTime?
   reviewerId             String?
   paymentReference       String?
@@ -522,9 +538,57 @@ model PrizePaymentRequest {
   note                   String?
   participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
   purchase               Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  batch                  PrizePaymentBatch? @relation(fields: [batchId], references: [id], onDelete: Restrict)
   reviewer               User? @relation("PrizePaymentRequestReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
 
   @@index([status, requestedAt])
   @@index([purchaseId, requestedAt])
   @@index([reviewerId, reviewedAt])
+  @@index([batchId, status])
+}
+
+model PrizePaymentBatch {
+  id                       String   @id @default(cuid())
+  purchaseId               String
+  pixKeyEncrypted          String
+  pixKeyMasked             String
+  pixKeyType               String
+  holderNameEncrypted      String
+  holderCpfEncrypted       String
+  holderCpfMasked          String
+  grossCents               Int
+  administrativeFeeCents   Int      @default(0)
+  transactionFeeCents      Int      @default(0)
+  netCents                 Int
+  feeRuleVersion           String
+  status                   PrizePaymentRequestStatus @default(PENDING)
+  requestedAt              DateTime @default(now())
+  reviewedAt               DateTime?
+  reviewerId               String?
+  paymentReference         String?  @unique
+  asaasTransferId          String?  @unique
+  asaasTransferStatus      String?
+  asaasTransferReceiptUrl  String?
+  asaasTransferFailureReason String?
+  transferRequestedAt      DateTime?
+  purchase                 Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  reviewer                 User? @relation("PrizePaymentBatchReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  requests                 PrizePaymentRequest[]
+  items                    PrizePaymentBatchItem[]
+
+  @@index([purchaseId, requestedAt])
+  @@index([status, requestedAt])
+}
+
+model PrizePaymentBatchItem {
+  id               String   @id @default(cuid())
+  batchId          String
+  participationLineId String
+  amountCents      Int
+  batch            PrizePaymentBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  participationLine NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
+
+  @@unique([batchId, participationLineId])
+  @@unique([participationLineId])
+  @@index([batchId])
 }

@@ -8,6 +8,23 @@ describe("getNumericPrizeReview", () => {
   it("identifies the highest matching category", () => {
     expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 6, calculatedPrizeCents: 600, calculationConsistent: true });
   });
+  it("returns the full wager for v2 unit prizes, not six times the unit allocation", () => {
+    const oneReal = { numberValue: "506414", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
+    expect(oneReal.unitCents).toBe(20);
+    expect(getNumericPrizeReview(oneReal, "096034")).toMatchObject({
+      category: "unit", stakeCents: 20, multiplier: 6, calculatedPrizeCents: 100, calculationConsistent: true,
+    });
+  });
+  it("reviews a unit hit per six-digit game, not against the receipt total", () => {
+    const receiptGames = [
+      { numberValue: "123451", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+      { numberValue: "654322", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+      { numberValue: "987653", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+    ];
+    const reviews = receiptGames.map((game) => getNumericPrizeReview(game, "000001"));
+    expect(reviews.map((review) => review?.calculatedPrizeCents ?? 0)).toEqual([100, 0, 0]);
+    expect(reviews.reduce((total, review) => total + (review?.calculatedPrizeCents ?? 0), 0)).toBe(100);
+  });
   it("identifies all six categories", () => {
     expect(getNumericPrizeReview(line("123456"), "999956")?.category).toBe("tens");
     expect(getNumericPrizeReview(line("123456"), "999456")?.category).toBe("hundreds");

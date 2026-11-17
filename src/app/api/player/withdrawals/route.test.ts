@@ -3,13 +3,14 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
-  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(),
+  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
-  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany }, $transaction: mocks.transaction },
+  authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
 vi.mock("@/lib/wallet/pix-key-crypto", () => ({ encryptPixKey: vi.fn(() => "encrypted-key"), isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
+vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: vi.fn(async () => ({ id: "transfer-1", status: "PENDING" })) }));
 import { GET, POST } from "./route";
 
 function request(path = "/api/player/withdrawals", body?: unknown, origin = "https://example.test") {
@@ -23,6 +24,7 @@ function tx() {
     $queryRawUnsafe: mocks.queryRaw,
     ledgerEntry: { aggregate: mocks.aggregate, create: mocks.ledgerCreate },
     withdrawal: { create: mocks.withdrawalCreate },
+    user: { findFirst: mocks.userFindFirst },
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
   };
@@ -34,7 +36,9 @@ describe("player withdrawals API", () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 5000 } });
     mocks.findMany.mockResolvedValue([]);
     mocks.queryRaw.mockResolvedValue([]);
-    mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PENDING", createdAt: new Date("2026-01-01T00:00:00Z") });
+    mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
+    mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
+    mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
     mocks.ledgerCreate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
@@ -49,11 +53,12 @@ describe("player withdrawals API", () => {
   });
 
   it("reserves the full available balance atomically and records an audit event", async () => {
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "pix@example.com" }));
-    expect(response.status).toBe(201);
-    expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PENDING" } });
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PROCESSING" } });
     expect(mocks.transaction).toHaveBeenCalledOnce();
     expect(mocks.queryRaw).toHaveBeenCalledOnce();
+    expect(mocks.userFindFirst).toHaveBeenCalledOnce();
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_RESERVE",
       amountCents: -5000, idempotencyKey: "withdrawal-reserve:withdrawal-1",
@@ -64,9 +69,19 @@ describe("player withdrawals API", () => {
     }) });
   });
 
+  it("rejects an invalid beneficiary CPF before reserving the wallet balance", async () => {
+    const response = await POST(request("/api/player/withdrawals", {
+      pixKey: "12345678900", pixKeyConfirmation: "12345678900", pixKeyType: "CPF",
+      holderName: "Joao da Silva", holderCpf: "12345678900", pixKeyConfirmed: true, holderConfirmed: true,
+    }));
+    expect(response.status).toBe(400);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
+  });
+
   it("rejects a withdrawal when no balance is available", async () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "pix@example.com" }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
     expect(response.status).toBe(409);
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
@@ -81,9 +96,9 @@ describe("player withdrawals API", () => {
         cookie: "superquina_session=session-token",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ pixKey: "pix@example.com" }),
+      body: JSON.stringify({ pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }),
     });
-    expect((await POST(proxyRequest)).status).toBe(201);
+    expect((await POST(proxyRequest)).status).toBe(202);
   });
 
   it("rejects cross-origin requests", async () => {
