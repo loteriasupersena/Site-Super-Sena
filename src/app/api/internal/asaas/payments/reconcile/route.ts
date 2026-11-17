@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 function authorized(request: NextRequest) {
   const expected = process.env.ASAAS_RECONCILIATION_TOKEN?.trim();
-  const received = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!expected || expected.length < 32 || !received) return false;
   const a = Buffer.from(received);
   const b = Buffer.from(expected);
