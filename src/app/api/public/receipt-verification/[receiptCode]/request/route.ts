@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { encryptPixKey, isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 import { calculatePrizeFees, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
@@ -121,19 +121,19 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const net = fees.netCents;
       const data = {
         purchaseId: purchase.id,
-        pixKey: parsed.pixKey,
-        pixKeyEncrypted: null,
+        pixKey: null,
+        pixKeyEncrypted: encryptPixKey(parsed.pixKey),
         pixKeyMasked: maskPixKey(parsed.pixKey),
         pixKeyType: parsed.pixKeyType,
-        holderName: parsed.holderName,
-        holderNameEncrypted: null,
-        holderCpfEncrypted: null,
+        holderName: null,
+        holderNameEncrypted: encryptPixKey(parsed.holderName),
+        holderCpfEncrypted: encryptPixKey(parsed.holderCpf),
         holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
         transactionFeeCents: transactionFee,
         netCents: net,
-        feeRuleVersion: "prize-fees-v2-physical-and-wallet",
+        feeRuleVersion: "physical-prize-fees-v2",
         status: automatic ? "PROCESSING" as const : "PENDING" as const,
         requestedAt: new Date(),
         reviewedAt: automatic ? new Date() : null,
