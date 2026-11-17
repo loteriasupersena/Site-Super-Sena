@@ -131,13 +131,13 @@ export function AdminPrizePayout() {
       boxShadow: "0 8px 24px rgba(0, 0, 0, .18)",
     }}>
       <span style={{ display: "block", fontSize: ".8rem", fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#62d8f4" }}>
-        Total de Pix a pagar
+        Pix físicos aguardando autorização
       </span>
       <strong style={{ display: "block", marginTop: ".2rem", fontSize: "clamp(1.7rem, 6vw, 2.2rem)", lineHeight: 1.1, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
         {money(totalToPayCents)}
       </strong>
       <span style={{ display: "block", marginTop: ".35rem", color: "#c5d2e4", fontSize: ".85rem" }}>
-        {manualPending.length} {manualPending.length === 1 ? "solicitação aguardando pagamento" : "solicitações aguardando pagamento"}
+        {manualPending.length} {manualPending.length === 1 ? "solicitação aguardando autorização" : "solicitações aguardando autorização"}
       </span>
       <div style={{ marginTop: ".8rem", paddingTop: ".8rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
         <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Total bruto de prêmios físicos ainda não pagos</span>
@@ -147,7 +147,7 @@ export function AdminPrizePayout() {
       {reviewPending.length > 0 && <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
         <strong style={{ color: "#ffd27a" }}>Em conferência: {money(reviewTotalCents)}</strong>
         <span style={{ display: "block", marginTop: ".25rem", color: "#c5d2e4" }}>
-          {reviewPending.length} {reviewPending.length === 1 ? "prêmio" : "prêmios"} com crédito automático ainda não confirmado. Não estão incluídos no total de Pix manual.
+          {reviewPending.length} {reviewPending.length === 1 ? "prêmio" : "prêmios"} com crédito automático ainda não confirmado. Esses prêmios não exigem autorização de Pix físico.
         </span>
       </div>}
     </div>}
@@ -190,7 +190,7 @@ export function AdminPrizePayout() {
                   </button>
                   <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor</button>
                 </div>
-              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Aguarde a confirmação do webhook.</p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <div><p role="alert">A transferência não foi concluída. Libere o valor para permitir que o ganhador cadastre novamente os dados Pix.</p><button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor e permitir nova solicitação</button></div> : winner.manualEligible ? <p>O pagamento somente poderá ser registrado após o ganhador enviar a solicitação Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
+              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Aguarde a confirmação do webhook.</p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <div><p role="alert">A transferência não foi concluída. Libere o valor para permitir que o ganhador cadastre novamente os dados Pix.</p><button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor e permitir nova solicitação</button></div> : winner.manualEligible ? <p>A autorização para envio à Asaas ficará disponível após o ganhador solicitar o Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
       </div>}
