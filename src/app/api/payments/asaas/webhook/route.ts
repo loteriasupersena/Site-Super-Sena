@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     const canonical = await getAsaasPayment(paymentId);
     if (canonical.id !== paymentId || canonical.billingType !== "PIX") return response({ error: "Pagamento não corresponde a uma cobrança Pix." }, 422);
+    if (event === "PAYMENT_REFUNDED" && canonical.status !== "REFUNDED") return response({ error: "Estorno ainda não está confirmado no Asaas." }, 503);
     const payment = await authPrisma.payment.findFirst({
       where: { provider: "ASAAS", providerQrCodeId: canonical.pixQrCodeId ?? undefined },
       select: { id: true, purchaseId: true, amountCents: true, providerQrCodeId: true, purchase: { select: { totalCents: true } } },
