@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { encryptPixKey, isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
@@ -118,8 +118,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const allocations = new Map(fees.allocations.map(item => [item.id, item]));
       await tx.prizePaymentBatch.create({ data: {
         id: batchId, purchaseId: purchase.id,
-        pixKeyEncrypted: encryptPixKey(input.pixKey), pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-        holderNameEncrypted: encryptPixKey(input.holderName), holderCpfEncrypted: encryptPixKey(input.holderCpf),
+        pixKey: input.pixKey, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
+        holderName: input.holderName,
         holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
