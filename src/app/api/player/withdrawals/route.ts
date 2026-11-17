@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
