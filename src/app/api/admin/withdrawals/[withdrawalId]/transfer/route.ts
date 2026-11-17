@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
@@ -25,12 +24,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ wi
     transferData = await authPrisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT "id" FROM "Withdrawal" WHERE "id" = ${withdrawalId} FOR UPDATE`;
       const item = await tx.withdrawal.findUnique({ where: { id: withdrawalId }, select: {
-        id: true, status: true, amountCents: true, pixKeyEncrypted: true, pixKeyType: true,
+        id: true, status: true, amountCents: true, pixKey: true, pixKeyType: true,
         asaasTransferId: true, paymentReference: true, userId: true,
       } });
       if (!item) throw new Error("NOT_FOUND");
       if (item.amountCents < 100000 || !["PENDING", "FAILED"].includes(item.status) || item.asaasTransferId) throw new Error("INVALID_STATE");
-      if (!item.pixKeyEncrypted || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
+      if (!item.pixKey || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
       const externalReference = "wallet_withdrawal_" + item.id;
       const changed = await tx.withdrawal.updateMany({ where: { id: item.id, status: item.status, asaasTransferId: null }, data: {
         status: "PROCESSING", reviewedById: admin.id, paymentReference: externalReference,
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ wi
       if (changed.count !== 1) throw new Error("INVALID_STATE");
       await tx.withdrawalStatusHistory.create({ data: { withdrawalId: item.id, fromStatus: item.status, toStatus: "PROCESSING", actorId: admin.id, note: "Administrador autorizou a transferência Pix pela Asaas." } });
       await tx.auditEvent.create({ data: { actorId: admin.id, action: "WITHDRAWAL_ASAAS_TRANSFER_REQUESTED", entityType: "Withdrawal", entityId: item.id, metadata: { amountCents: item.amountCents, externalReference } } });
-      return { id: item.id, amountCents: item.amountCents, pixKey: decryptPixKey(item.pixKeyEncrypted), pixKeyType: item.pixKeyType, externalReference };
+      return { id: item.id, amountCents: item.amountCents, pixKey: item.pixKey, pixKeyType: item.pixKeyType, externalReference };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
