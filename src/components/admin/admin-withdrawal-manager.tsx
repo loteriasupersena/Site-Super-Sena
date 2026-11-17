@@ -57,7 +57,7 @@ export function AdminWithdrawalManager() {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível atualizar o saque.");
       setRejectionReasons((current) => { const next = { ...current }; delete next[item.id]; return next; });
       setNotice(action === "send-asaas"
-        ? `Saque de ${money(body.withdrawal.amountCents)} de ${body.withdrawal.username} marcado como pago após confirmação do Pix.`
+        ? `Transferência de ${money(item.amountCents)} enviada à Asaas. O saque aguarda confirmação bancária.`
         : `Valor liberado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
       await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao atualizar o saque."); }
