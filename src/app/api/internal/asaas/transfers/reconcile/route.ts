@@ -23,12 +23,12 @@ export async function POST(request: NextRequest) {
 
   const [withdrawals, prizeRequests] = await Promise.all([
     authPrisma.withdrawal.findMany({
-      where: { status: "PROCESSING", asaasTransferId: { not: null }, paymentReference: { not: null }, updatedAt: { lt: staleBefore } },
+      where: { status: { in: ["PROCESSING", "FAILED"] }, asaasTransferId: { not: null }, paymentReference: { not: null }, updatedAt: { lt: staleBefore } },
       select: { id: true, asaasTransferId: true, paymentReference: true },
       orderBy: { updatedAt: "asc" }, take: 100,
     }),
     authPrisma.prizePaymentRequest.findMany({
-      where: { status: "PROCESSING", asaasTransferId: { not: null }, paymentReference: { not: null }, updatedAt: { lt: staleBefore } },
+      where: { status: { in: ["PROCESSING", "FAILED", "CANCELLED"] }, asaasTransferId: { not: null }, paymentReference: { not: null }, updatedAt: { lt: staleBefore } },
       select: { id: true, asaasTransferId: true, paymentReference: true },
       orderBy: { updatedAt: "asc" }, take: 200,
     }),
@@ -49,11 +49,11 @@ export async function POST(request: NextRequest) {
   for (const item of unique.values()) {
     const claim = item.kind === "withdrawal"
       ? await authPrisma.withdrawal.updateMany({
-          where: { id: item.id, status: "PROCESSING", asaasTransferId: item.transferId, updatedAt: { lt: staleBefore } },
+          where: { id: item.id, status: { in: ["PROCESSING", "FAILED"] }, asaasTransferId: item.transferId, updatedAt: { lt: staleBefore } },
           data: { updatedAt: claimedAt },
         })
       : await authPrisma.prizePaymentRequest.updateMany({
-          where: { id: item.id, status: "PROCESSING", asaasTransferId: item.transferId, updatedAt: { lt: staleBefore } },
+          where: { id: item.id, status: { in: ["PROCESSING", "FAILED", "CANCELLED"] }, asaasTransferId: item.transferId, updatedAt: { lt: staleBefore } },
           data: { updatedAt: claimedAt },
         });
     if (claim.count !== 1) continue;
