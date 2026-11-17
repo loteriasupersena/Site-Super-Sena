@@ -11,7 +11,7 @@ type Item = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Pix em processamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Transferência recusada — pode ser reavaliada" };
+const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Transferência em análise", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Transferência recusada — pode ser reavaliada" };
 
 export function AdminWithdrawalManager() {
   const [items, setItems] = useState<Item[]>([]);
