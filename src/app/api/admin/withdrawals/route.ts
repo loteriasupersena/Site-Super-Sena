@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
     let keyConfigError = false;
     const items = withdrawals.map((item) => {
       let pixKey: string | null = null;
-      if (["PENDING", "APPROVED", "PROCESSING"].includes(item.status)) {
+      if (["PENDING", "APPROVED", "PROCESSING"].includes(item.status) || (item.status === "FAILED" && !item.asaasTransferId)) {
         try { pixKey = decryptPixKey(item.pixKeyEncrypted); } catch { keyConfigError = true; }
       }
       return {
-        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status, asaasTransferStatus: item.asaasTransferStatus, asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked, pixKeyMasked: item.pixKeyMasked,
+        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status, asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus, asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked, pixKeyMasked: item.pixKeyMasked,
         pixKey, pixKeyMasked: (() => { try { return maskPixKey(decryptPixKey(item.pixKeyEncrypted)); } catch { return "Chave indisponível"; } })(),
         providerRef: item.providerRef, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(),
         reviewedBy: item.reviewedBy?.username ?? null,
