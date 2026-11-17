@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
+type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; prizePaymentMethod?: "WALLET" | "PIX" | "CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -218,7 +218,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                       const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" ? "#991b1b" : "#1d4ed8";
                       return <div key={round.roundCode + number.numberValue + index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
                         <strong style={{ color: "#111827", fontSize: 18, letterSpacing: "0.1em" }}>{number.numberValue}</strong>
-                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
+                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.prizePaid && <span style={{ display: "block", marginTop: 2, color: "#1e3a8a", fontSize: 12, fontWeight: 700 }}>{number.prizePaymentMethod === "WALLET" ? "Creditado na carteira digital" : number.prizePaymentMethod === "PIX" ? "Pago via Pix" : number.prizePaymentMethod === "CASH" ? "Pago em dinheiro" : "Pagamento registrado"}</span>}{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Data: {formatDate(number.paidAt)}</span>}</div>
                       </div>;
                     })}
                   </div>

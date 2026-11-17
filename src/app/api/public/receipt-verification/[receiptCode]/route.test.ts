@@ -70,6 +70,7 @@ describe("GET /api/public/receipt-verification/[receiptCode]", () => {
     expect(body.valid).toBe(true);
     expect(body.rounds[0].resultNumber).toBe("001234");
     expect(body.rounds[0].numbers[0]).toMatchObject({ numberValue: "001234", resultStatus: "PREMIADA", prizePaid: true });
+    expect(body.rounds[0].numbers[0].prizePaymentMethod).toBe("WALLET");
     expect(body.rounds[0].numbers[1]).toMatchObject({ numberValue: "000007", resultStatus: "NAO_PREMIADA" });
   });
 
