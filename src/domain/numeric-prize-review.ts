@@ -27,7 +27,8 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
   if (category === "unit" && line.ruleVersion !== "numeric-six-digit-v1") {
     const totalStakeCents = (["unitCents", "tensCents", "hundredsCents", "milharCents", "quinaCents", "senaCents"] as const)
       .reduce((total, field) => total + line[field], 0);
-    calculatedPrizeCents = Number((BigInt(totalStakeCents) * BigInt(multiplier) + 3n) / 6n);
+    // Unidade returns 100% of the full wager; allocation is only for round accounting.
+    calculatedPrizeCents = totalStakeCents;
   } else {
     calculatedPrizeCents = stakeCents * multiplier;
   }
