@@ -11,7 +11,7 @@ const headers = { "Cache-Control": "no-store, private" };
 const LIMIT_CENTS = 100000;
 
 function validCpf(value: string) {
-  const cpf = value.replace(/\\D/g, "");
+  const cpf = value.replace(/\D/g, "");
   if (!/^\\d{11}$/.test(cpf) || /^(\\d)\\1{10}$/.test(cpf)) return false;
   const digit = (length: number) => {
     const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0);
@@ -34,12 +34,12 @@ function parseInput(value: unknown) {
       typeof body.holderName !== "string" || typeof body.holderCpf !== "string" ||
       typeof body.pixKeyType !== "string" || body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
   const pixKey = body.pixKey.trim();
-  const holderName = body.holderName.trim().replace(/\\s+/g, " ");
-  const holderCpf = body.holderCpf.replace(/\\D/g, "");
+  const holderName = body.holderName.trim().replace(/\s+/g, " ");
+  const holderCpf = body.holderCpf.replace(/\D/g, "");
   if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
       holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf) ||
       pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() ||
-      !isPlausiblePixKey(pixKey) || (body.pixKeyType === "CPF" && pixKey.replace(/\\D/g, "") !== holderCpf)) return null;
+      !isPlausiblePixKey(pixKey) || (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf)) return null;
   return { pixKey, pixKeyType: body.pixKeyType, holderName, holderCpf };
 }
 
