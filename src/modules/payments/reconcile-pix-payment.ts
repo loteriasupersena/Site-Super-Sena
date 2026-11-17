@@ -1,8 +1,6 @@
 import { type PrismaClient } from "@/generated/prisma/client";
 import { getAsaasPayment, listAsaasPaymentsByQrCode } from "@/modules/payments/asaas";
 import { confirmPixPayment } from "@/modules/payments/confirm-payment";
-import { recordUnexpectedExternalRefund } from "@/modules/payments/record-unexpected-refund";
-import { cancelPendingPixPurchase } from "@/modules/payments/cancel-pending-pix-purchase";
 
 export type PixReconciliationOutcome =
   | "confirmed"
@@ -10,7 +8,7 @@ export type PixReconciliationOutcome =
   | "late_or_unavailable"
   | "not_pending"
   | "still_pending"
-  | "terminal";
+;
 
 /**
  * Rechecks the canonical Asaas Pix payment when a webhook is delayed or missed.
