@@ -11,7 +11,7 @@ type Item = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Item["status"], string> = { PENDING: "Pendente — conferir e pagar Pix", APPROVED: "Estado antigo — requer conferência", PROCESSING: "Estado antigo — requer conferência", PAID: "Pago", REJECTED: "Recusado / reserva liberada" };
+const labels: Record<Item["status"], string> = { PENDING: "Pagamento em análise — saldo reservado", APPROVED: "Estado antigo — requer conferência", PROCESSING: "Estado antigo — requer conferência", PAID: "Pago", REJECTED: "Valor liberado / saldo devolvido" };
 
 export function AdminWithdrawalManager() {
   const [items, setItems] = useState<Item[]>([]);
@@ -45,7 +45,7 @@ export function AdminWithdrawalManager() {
       ? "Administrador confirmou a transferência Pix manual. Saque aprovado, pago e encerrado."
       : rejectionReasons[item.id]?.trim() ?? "";
     if (action === "reject" && note.length < 4) {
-      setError("Informe o motivo da recusa para registrar na auditoria e mostrar ao jogador.");
+      setError("Informe o motivo da liberação para registrar na auditoria e mostrar ao jogador.");
       return;
     }
     setBusy(item.id); setError(""); setNotice("");
@@ -56,7 +56,7 @@ export function AdminWithdrawalManager() {
       setRejectionReasons((current) => { const next = { ...current }; delete next[item.id]; return next; });
       setNotice(action === "mark-paid"
         ? `Saque de ${money(body.withdrawal.amountCents)} de ${body.withdrawal.username} marcado como pago após confirmação do Pix.`
-        : `Saque recusado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
+        : `Valor liberado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
       await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao atualizar o saque."); }
     finally { setBusy(null); }
@@ -68,7 +68,7 @@ export function AdminWithdrawalManager() {
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
     <h2 id="admin-withdrawals-heading">Saques das carteiras digitais</h2>
-    <p>Confira os dados e realize o Pix manualmente. Depois da transferência, clique em “Aprovar e concluir” para encerrar o saque em uma única operação. Se a chave estiver inválida, informe o motivo e clique em “Recusar e devolver saldo”. O sistema não envia Pix automaticamente.</p>
+    <p>Confira os dados e realize o Pix manualmente. Depois da transferência, clique em “Aprovar e concluir” para encerrar o saque em uma única operação. Se a chave estiver inválida, informe o motivo e clique em “Liberar valor e devolver saldo”. O sistema não envia Pix automaticamente.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
@@ -76,10 +76,10 @@ export function AdminWithdrawalManager() {
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Chave Pix para pagamento: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
-        <label>Motivo da recusa (obrigatório se recusar)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
+        <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null} onClick={() => void act(item, "mark-paid")}>{busy === item.id ? "Concluindo…" : "Aprovar e concluir"}</button>
-          <button type="button" className="secondary-button" disabled={busy !== null || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Recusar e devolver saldo</button>
+          <button type="button" className="secondary-button" disabled={busy !== null || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
         </div>
       </article>)}
     </div>}

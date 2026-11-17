@@ -125,11 +125,11 @@ export async function POST(request: NextRequest) {
       await tx.ledgerEntry.create({ data: {
         userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
         amountCents: withdrawal.amountCents, currency: "BRL", idempotencyKey: "withdrawal-release:" + withdrawal.id,
-        description: "Liberação de reserva após rejeição do saque " + withdrawal.id,
+        description: "Liberação de valor reservado após decisão administrativa do saque " + withdrawal.id,
       } });
       await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: "PENDING", toStatus: "REJECTED", actorId: auth.user.id, note: parsed.data.note.trim() } });
       await tx.auditEvent.create({ data: {
-        actorId: auth.user.id, action: "WITHDRAWAL_REJECTED", entityType: "Withdrawal", entityId: withdrawal.id,
+        actorId: auth.user.id, action: "WITHDRAWAL_VALUE_RELEASED", entityType: "Withdrawal", entityId: withdrawal.id,
         metadata: { userId: withdrawal.userId, username: withdrawal.user.username, amountCents: withdrawal.amountCents, note: parsed.data.note.trim(), releasedCents: withdrawal.amountCents },
       } });
       return { id: withdrawal.id, status: "REJECTED", username: withdrawal.user.username, amountCents: withdrawal.amountCents };

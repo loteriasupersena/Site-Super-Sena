@@ -88,10 +88,12 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
     <strong style={{ color: "#111827" }}>{numberValue} · Prêmio bruto: {money(grossCents)}</strong>
     <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(grossCents - adminFee - bankFee)}</strong></p>
+    {grossCents >= 100000 && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Prêmios de R$ 1.000,00 ou mais são pagos exclusivamente por Pix da plataforma e permanecem em análise até autorização do administrador.</p>}
+    {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Valor liberado pela administração. Você pode solicitar novamente este prêmio.</p>}
     {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise pela administração</p>
       : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
       : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
-      : paymentRequest?.status === "REJECTED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Preencha novamente para solicitar este prêmio</p>
+
       : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>A transferência não foi concluída. Envie uma nova solicitação com os dados Pix conferidos.</p>
       : <form onSubmit={(event) => { event.preventDefault(); setShowReview(true); setConfirmed(false); }}>
         <div style={{ padding: 12, marginBottom: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb", color: "#78350f" }}><strong>ATENÇÃO: DADOS DO TITULAR DO PIX</strong><p style={{ margin: "6px 0 0", fontWeight: 700 }}>Informe o nome COMPLETO exatamente como aparece no cadastro do CPF e na conta Pix. Não abrevie, não omita sobrenomes e não use dados de outra pessoa. O CPF e a chave Pix devem pertencer ao mesmo titular.</p></div>
