@@ -3,18 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 
 type Withdrawal = {
-  id: string; amountCents: number; status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED";
+  id: string; amountCents: number; status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
   providerRef: string | null; createdAt: string; updatedAt: string;
   statusHistory: Array<{ toStatus: string; note: string | null; createdAt: string }>;
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Pagamento em análise — saldo reservado", APPROVED: "Estado antigo — contate o administrador", PROCESSING: "Estado antigo — contate o administrador", PAID: "Aprovado e concluído", REJECTED: "Valor liberado — saldo devolvido à carteira" };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Transferência Pix em processamento", PAID: "Pix confirmado e pago", REJECTED: "Valor devolvido à carteira", FAILED: "Transferência não concluída — em análise" };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [pixKey, setPixKey] = useState("");
+  const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
+  const [pixKeyType, setPixKeyType] = useState("CPF");
+  const [holderName, setHolderName] = useState("");
+  const [holderCpf, setHolderCpf] = useState("");
+  const [pixKeyConfirmed, setPixKeyConfirmed] = useState(false);
+  const [holderConfirmed, setHolderConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,10 +45,10 @@ export function PlayerWalletWithdrawals() {
     if (availableCents <= 0) { setError("Não há saldo disponível para sacar."); return; }
     setBusy(true);
     try {
-      const response = await fetch("/api/player/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pixKey: pixKey.trim() }) });
+      const response = await fetch("/api/player/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pixKey: pixKey.trim(), pixKeyConfirmation: pixKeyConfirmation.trim(), pixKeyType, holderName, holderCpf, pixKeyConfirmed, holderConfirmed }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o saque.");
-      setPixKey(""); await load();
+      setPixKey(""); setPixKeyConfirmation(""); setHolderName(""); setHolderCpf(""); setPixKeyConfirmed(false); setHolderConfirmed(false); await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao solicitar o saque."); }
     finally { setBusy(false); }
   }
@@ -50,8 +56,15 @@ export function PlayerWalletWithdrawals() {
   return <section className="player-wallet-withdrawals-content">
     <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
     <form className="admin-round-create" onSubmit={requestWithdrawal}>
+      <label>Nome completo do titular<input value={holderName} onChange={(event) => setHolderName(event.target.value)} maxLength={160} autoComplete="name" required /></label>
+      <label>CPF do titular<input value={holderCpf} onChange={(event) => setHolderCpf(event.target.value)} maxLength={14} inputMode="numeric" placeholder="000.000.000-00" required /></label>
+      <label>Tipo da chave Pix<select value={pixKeyType} onChange={(event) => setPixKeyType(event.target.value)}><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="EMAIL">E-mail</option><option value="PHONE">Telefone</option><option value="EVP">Chave aleatória</option></select></label>
       <label>Chave Pix<input value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required /></label>
-      <button type="submit" disabled={loading || busy || availableCents <= 0}>{busy ? "Solicitando…" : "Solicitar saque"}</button>
+      <label>Confirme a chave Pix<input value={pixKeyConfirmation} onChange={(event) => setPixKeyConfirmation(event.target.value)} maxLength={200} autoComplete="off" required /></label>
+      <label><input type="checkbox" checked={pixKeyConfirmed} onChange={(event) => setPixKeyConfirmed(event.target.checked)} required /> Confirmo que a chave Pix pertence ao titular informado.</label>
+      <label><input type="checkbox" checked={holderConfirmed} onChange={(event) => setHolderConfirmed(event.target.checked)} required /> Confirmo que os dados do titular são verdadeiros.</label>
+      <p><small>Saques abaixo de R$ 1.000,00 são enviados automaticamente à Asaas. A partir de R$ 1.000,00, dependem de aprovação administrativa. O pagamento só é confirmado após o retorno bancário.</small></p>
+      <button type="submit" disabled={loading || busy || availableCents <= 0 || !pixKeyConfirmed || !holderConfirmed}>{busy ? "Solicitando…" : "Solicitar saque"}</button>
     </form>
     {error && <p role="alert" className="note-inline">{error}</p>}
     <h3>Histórico de saques</h3>
