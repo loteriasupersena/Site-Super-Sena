@@ -58,7 +58,6 @@ describe("Asaas withdrawal validation webhook", () => {
       reviewerId: "admin_12345678",
     });
     mocks.batchUpdateMany.mockResolvedValue({ count: 1 });
-    mocks.batchRequestsUpdateMany.mockResolvedValue({ count: 1 });
   });
 
   it("approves only a recorded Pix transfer with matching amount and beneficiary", async () => {
