@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
 import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 import { registerNumericPrizePayout } from "@/modules/rounds/register-numeric-prize-payout";
+import { getAsaasTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,8 +66,9 @@ export async function POST(request: NextRequest) {
   }
 
   const eventId = body.id?.trim();
-  const event = body.event?.trim().toUpperCase();
-  const transfer = body.transfer;
+  const notificationEvent = body.event?.trim().toUpperCase();
+  let event = notificationEvent;
+  let transfer = body.transfer;
   const transferId = transfer?.id?.trim();
   const externalReference = transfer?.externalReference?.trim();
   if (!eventId || !event || !transferId || !externalReference) {
@@ -77,7 +79,25 @@ export async function POST(request: NextRequest) {
     "TRANSFER_CREATED", "TRANSFER_PENDING", "TRANSFER_IN_BANK_PROCESSING",
     "TRANSFER_BLOCKED", "TRANSFER_DONE", "TRANSFER_FAILED", "TRANSFER_CANCELLED",
   ]);
-  if (!allowed.has(event)) return response({ received: true, ignored: true }, 200);
+  if (!event || !allowed.has(event)) return response({ received: true, ignored: true }, 200);
+
+  // A webhook is only a wake-up signal. Approval is based on a fresh GET of the
+  // transfer, so an out-of-order/intermediate notification cannot decide the result.
+  try {
+    const current = await getAsaasTransfer(transferId);
+    if (current.id !== transferId || current.externalReference !== externalReference) {
+      return response({ error: "A consulta atual do Asaas não corresponde à transferência recebida." }, 409);
+    }
+    const currentStatus = current.status?.trim().toUpperCase();
+    event = currentStatus === "DONE" ? "TRANSFER_DONE"
+      : currentStatus === "FAILED" ? "TRANSFER_FAILED"
+      : currentStatus === "CANCELLED" ? "TRANSFER_CANCELLED"
+      : "TRANSFER_PENDING";
+    transfer = { ...transfer, ...current };
+  } catch {
+    // Do not process the webhook snapshot when the authoritative lookup fails.
+    return response({ error: "Não foi possível confirmar o estado atual da transferência no Asaas." }, 503);
+  }
 
   const digest = createHash("sha256").update(raw).digest("hex");
   try {
@@ -172,7 +192,7 @@ export async function POST(request: NextRequest) {
             action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
               : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
             entityType: "PrizePaymentBatch", entityId: batch.id,
-            metadata: { event, transferId, transferStatus, failReason: failure },
+            metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
           },
         });
         return status;
@@ -221,7 +241,7 @@ export async function POST(request: NextRequest) {
           await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
             toStatus: "PAID", note: "Transferência Pix confirmada pela Asaas (TRANSFER_DONE). Referência: " + transferId } });
           await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: "WITHDRAWAL_ASAAS_TRANSFER_CONFIRMED",
-            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, amountCents: withdrawal.amountCents, event } } });
+            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, amountCents: withdrawal.amountCents, event, notificationEvent } } });
           return "WITHDRAWAL_PAID";
         }
         if (["FAILED", "CANCELLED"].includes(withdrawal.status)) return "WITHDRAWAL_TERMINAL";
@@ -233,7 +253,7 @@ export async function POST(request: NextRequest) {
         await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
           toStatus: status, note: status === "FAILED" ? "Transferência Asaas não concluída: " + (transfer?.failReason ?? event) : "Atualização da transferência Asaas: " + event } });
         await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
-          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, failReason: transfer?.failReason ?? null } } });
+          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
       }
 
@@ -297,7 +317,7 @@ export async function POST(request: NextRequest) {
           action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED"
             : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
           entityType: "PrizePaymentRequest", entityId: requestId,
-          metadata: { event, transferId, transferStatus: transfer?.status ?? null, failReason: transfer?.failReason ?? null },
+          metadata: { event, notificationEvent, transferId, transferStatus: transfer?.status ?? null, failReason: transfer?.failReason ?? null },
         },
       });
       return status;
@@ -309,7 +329,7 @@ export async function POST(request: NextRequest) {
     if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
-    if (code === "TRANSFER_BENEFICIARY_MISMATCH" || code === "TRANSFER_BENEFICIARY_UNVERIFIABLE") return response({ error: "A chave Pix de destino não pôde ser confirmada contra o cadastro do saque." }, 409);
+    if (code === "TRANSFER_BENEFICIARY_MISMATCH" || code === "TRANSFER_BENEFICIARY_UNVERIFIABLE") return response({ error: "A chave Pix de destino não pôde ser confirmada contra o cadastro do beneficiário." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
   }
 }
