@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { getNumericPrizeReview, NUMERIC_PRIZE_CATEGORY_LABELS } from "@/domain/numeric-prize-review";
-import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,22 +47,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
-
-    const seenTransfers = new Set<string>();
-    await Promise.all(lines.map(async (line) => {
-      const request = line.prizePaymentRequest;
-      if (!request || request.status !== "PROCESSING" || !request.asaasTransferId || !request.paymentReference) return;
-      if (seenTransfers.has(request.asaasTransferId)) return;
-      seenTransfers.add(request.asaasTransferId);
-      if (Date.now() - request.updatedAt.getTime() < 10_000) return;
-      const claim = await authPrisma.prizePaymentRequest.updateMany({
-        where: { id: request.id, status: "PROCESSING", updatedAt: { lt: new Date(Date.now() - 10_000) } },
-        data: { updatedAt: new Date() },
-      });
-      if (claim.count !== 1) return;
-      try { await reconcileAsaasTransferFromPlatform({ transferId: request.asaasTransferId, externalReference: request.paymentReference }); }
-      catch { /* preserve pending state; the next poll or webhook retries */ }
-    }));
 
     return NextResponse.json({
       winners: lines.map((line) => {
