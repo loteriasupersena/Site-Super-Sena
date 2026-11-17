@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
       const reviewedAt = new Date();
       const changed = await tx.prizePaymentRequest.updateMany({
-        where: { id: item.id, status: item.status, asaasTransferId: null },
+        where: { id: item.id, status: item.status, asaasTransferId: item.asaasTransferId },
         data: {
           status: "REJECTED",
           pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
