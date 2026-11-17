@@ -25,7 +25,7 @@ function tokenMatches(received: string | null, expected: string) {
 
 function normalizePix(value: string, type: string) {
   return ["CPF", "CNPJ", "PHONE"].includes(type)
-    ? value.replace(/\\D/g, "")
+    ? value.replace(/\D/g, "")
     : value.trim().toLowerCase();
 }
 
@@ -37,7 +37,7 @@ function refuse(reason: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
+  const token = process.env.ASAAS_TRANSFER_VALIDATION_TOKEN?.trim();
   if (!token || token.length < 32) {
     return NextResponse.json({ status: "REFUSED", refuseReason: "Validação não configurada." }, { status: 503 });
   }
