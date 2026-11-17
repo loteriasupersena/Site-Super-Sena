@@ -8,6 +8,13 @@ describe("getNumericPrizeReview", () => {
   it("identifies the highest matching category", () => {
     expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 6, calculatedPrizeCents: 600, calculationConsistent: true });
   });
+  it("uses the full stake divided across six categories for v2 unit prizes", () => {
+    const oneReal = { numberValue: "506414", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
+    expect(oneReal.unitCents).toBe(20);
+    expect(getNumericPrizeReview(oneReal, "096034")).toMatchObject({
+      category: "unit", stakeCents: 20, multiplier: 6, calculatedPrizeCents: 100, calculationConsistent: true,
+    });
+  });
   it("identifies all six categories", () => {
     expect(getNumericPrizeReview(line("123456"), "999956")?.category).toBe("tens");
     expect(getNumericPrizeReview(line("123456"), "999456")?.category).toBe("hundreds");
