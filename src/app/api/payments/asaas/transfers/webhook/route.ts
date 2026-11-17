@@ -158,6 +158,55 @@ export async function POST(request: NextRequest) {
         return status;
       }
 
+      if (externalReference.startsWith("wallet_withdrawal_")) {
+        const withdrawalId = externalReference.slice("wallet_withdrawal_".length);
+        if (!/^[A-Za-z0-9_-]{8,100}$/.test(withdrawalId)) throw new Error("WITHDRAWAL_REFERENCE_INVALID");
+        await tx.$queryRaw`SELECT "id" FROM "Withdrawal" WHERE "id" = ${withdrawalId} FOR UPDATE`;
+        const withdrawal = await tx.withdrawal.findUnique({ where: { id: withdrawalId },
+          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true } });
+        if (!withdrawal || withdrawal.paymentReference !== externalReference) throw new Error("WITHDRAWAL_NOT_FOUND");
+        if (withdrawal.asaasTransferId && withdrawal.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
+        if (event === "TRANSFER_DONE" &&
+          (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== withdrawal.amountCents ||
+           transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+        await tx.webhookEvent.upsert({
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
+        });
+        if (withdrawal.status === "PAID") return "WITHDRAWAL_ALREADY_PAID";
+        if (event === "TRANSFER_DONE") {
+          if (!withdrawal.reviewedById || !["PROCESSING", "FAILED"].includes(withdrawal.status)) throw new Error("WITHDRAWAL_NOT_READY");
+          const changed = await tx.withdrawal.updateMany({
+            where: { id: withdrawal.id, status: { in: ["PROCESSING", "FAILED"] }, paymentReference: externalReference },
+            data: { status: "PAID", asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? "DONE",
+              providerRef: transferId, asaasTransferFailureReason: null, pixKeyEncrypted: "", holderNameEncrypted: null, holderCpfEncrypted: null },
+          });
+          if (changed.count !== 1) throw new Error("WITHDRAWAL_STATE_CHANGED");
+          await tx.ledgerEntry.create({ data: {
+            userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_PAID",
+            amountCents: 0, currency: "BRL", idempotencyKey: "withdrawal-paid:" + withdrawal.id,
+            description: "Confirmação da transferência Pix Asaas " + transferId,
+          } });
+          await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
+            toStatus: "PAID", note: "Transferência Pix confirmada pela Asaas (TRANSFER_DONE). Referência: " + transferId } });
+          await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: "WITHDRAWAL_ASAAS_TRANSFER_CONFIRMED",
+            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, amountCents: withdrawal.amountCents, event } } });
+          return "WITHDRAWAL_PAID";
+        }
+        if (["FAILED", "CANCELLED"].includes(withdrawal.status)) return "WITHDRAWAL_TERMINAL";
+        const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
+        await tx.withdrawal.update({ where: { id: withdrawal.id }, data: {
+          status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
+          asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
+        } });
+        await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
+          toStatus: status, note: status === "FAILED" ? "Transferência Asaas não concluída: " + (transfer?.failReason ?? event) : "Atualização da transferência Asaas: " + event } });
+        await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
+          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, failReason: transfer?.failReason ?? null } } });
+        return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
+      }
+
       if (!externalReference.startsWith("prize_request_")) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestId = externalReference.slice("prize_request_".length);
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
@@ -224,7 +273,7 @@ export async function POST(request: NextRequest) {
     return response({ received: true, outcome }, 200);
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
-    if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
+    if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
