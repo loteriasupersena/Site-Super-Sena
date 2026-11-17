@@ -6,7 +6,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 const enabled = process.env.RUN_POSTGRES_INTEGRATION === "1";
 const suite = enabled ? describe : describe.skip;
 
-suite("PostgreSQL Mercado Pago webhook event claims", () => {
+suite("PostgreSQL Asaas webhook event claims", () => {
   const databaseUrl = process.env.DATABASE_URL ?? "";
   if (enabled) {
     if (!databaseUrl) throw new Error("DATABASE_URL is required for PostgreSQL integration tests");
@@ -25,7 +25,7 @@ suite("PostgreSQL Mercado Pago webhook event claims", () => {
     await prisma.$connect();
     const event = await prisma.webhookEvent.create({
       data: {
-        provider: "MERCADO_PAGO",
+        provider: "ASAAS_PAYMENT",
         providerEventId,
         eventType: "order",
         payloadDigest: "integration-test",
