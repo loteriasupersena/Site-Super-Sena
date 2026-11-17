@@ -126,6 +126,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
         requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
         paymentReference: automatic ? externalReference : null,
+        transferRequestedAt: automatic ? now : null,
         items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
       } });
       for (const line of feeLines) {
@@ -140,6 +141,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" as const : "PENDING" as const,
           requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
           paymentReference: automatic ? externalReference : null,
+          transferRequestedAt: automatic ? now : null,
         };
         if (line.oldRequestId) {
           await tx.prizePaymentRequest.update({ where: { id: line.oldRequestId }, data: requestData });
