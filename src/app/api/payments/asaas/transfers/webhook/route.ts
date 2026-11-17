@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       : currentStatus === "FAILED" ? "TRANSFER_FAILED"
       : currentStatus === "CANCELLED" ? "TRANSFER_CANCELLED"
       : "TRANSFER_PENDING";
-    transfer = { ...transfer, ...current };
+    transfer = { ...transfer, ...current, externalReference: current.externalReference ?? undefined };
   } catch {
     // Do not process the webhook snapshot when the authoritative lookup fails.
     return response({ error: "Não foi possível confirmar o estado atual da transferência no Asaas." }, 503);
