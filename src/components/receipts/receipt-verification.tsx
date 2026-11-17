@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string } | null };
+type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string; batch?: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number } | null } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -63,8 +63,11 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-  const adminFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
-  const bankFee = grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0;
+  const batch = paymentRequest?.batch ?? null;
+  const displayedGross = batch?.grossCents ?? grossCents;
+  const adminFee = batch?.administrativeFeeCents ?? (grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0);
+  const bankFee = batch?.transactionFeeCents ?? (grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0);
+  const displayedNet = batch?.netCents ?? (grossCents - adminFee - bankFee);
   const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
 
   async function submit() {
@@ -88,8 +91,8 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   }
 
   return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
-    <strong style={{ color: "#111827" }}>{numberValue} · Prêmio bruto: {money(grossCents)}</strong>
-    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(grossCents - adminFee - bankFee)}</strong></p>
+    <strong style={{ color: "#111827" }}>{batch ? "Todos os prêmios deste recibo" : numberValue} · Prêmio bruto: {money(displayedGross)}</strong>
+    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
     {grossCents >= 100000 && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Prêmios de R$ 1.000,00 ou mais são pagos exclusivamente por Pix da plataforma e permanecem em análise até autorização do administrador.</p>}
     {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Valor liberado pela administração. Você pode solicitar novamente este prêmio.</p>}
     {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise pela administração</p>
@@ -234,21 +237,25 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
       )}
       {hasAvailablePrize && <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #d1d5db" }}>
         <h3 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18 }}>Solicitar recebimento do prêmio</h3>
-        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>Cada prêmio possui uma solicitação independente. Informe e confirme novamente a chave Pix em cada pedido.</p>
-        {rounds.flatMap((round) => round.numbers.filter((number) => number.resultStatus === "PREMIADA" && !number.prizePaid).map((number) => (
-          <PrizePixRequestForm
-            key={number.participationLineId}
+        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>O recibo gera uma única solicitação Pix com todos os prêmios elegíveis somados. As taxas são calculadas sobre o total do recibo.</p>
+        {(() => {
+          const eligible = rounds.flatMap(round => round.numbers.filter(number => number.resultStatus === "PREMIADA" && !number.prizePaid));
+          const first = eligible[0];
+          const batchRequest = eligible.map(number => number.paymentRequest).find(item => item?.batch)?.batch ?? null;
+          if (!first) return null;
+          return <PrizePixRequestForm
+            key={first.participationLineId}
             receiptCode={receiptCode}
-            participationLineId={number.participationLineId}
-            numberValue={number.numberValue}
-            grossCents={number.prizeCents ?? 0}
-            paymentRequest={number.paymentRequest}
+            participationLineId={first.participationLineId}
+            numberValue={eligible.length + " prêmio(s) agrupado(s)"}
+            grossCents={batchRequest?.grossCents ?? eligible.reduce((sum, number) => sum + (number.prizeCents ?? 0), 0)}
+            paymentRequest={first.paymentRequest}
             onSubmitted={async () => {
               const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
               if (refresh.ok) setData(await refresh.json() as VerifiedReceipt);
             }}
-          />
-        )))}
+          />;
+        })()}
       </div>}
       {hasPaidPrize && <details style={{ marginTop: 14, textAlign: "center" }}>
         <summary style={{ display: "inline-block", color: "#1d4ed8", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Saiba mais sobre pagamentos de prêmios</summary>
