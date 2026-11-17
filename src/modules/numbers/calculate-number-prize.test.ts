@@ -14,6 +14,16 @@ describe("calculateNumberPrizeCents", () => {
     const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
   });
+  it("calculates a unit prize independently for each six-digit game in the same receipt", () => {
+    const receiptGames = [
+      { numberValue: "123451", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+      { numberValue: "654322", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+      { numberValue: "987653", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
+    ];
+    const prizes = receiptGames.map((game) => calculateNumberPrizeCents(game, "000001"));
+    expect(prizes).toEqual([100, 0, 0]);
+    expect(prizes.reduce((total, prize) => total + prize, 0)).toBe(100);
+  });
   it("keeps the unit prize at 100% of the wager even if the saved unit multiplier changes", () => {
     const wager = { ...line("123456"), ruleSnapshot: createNumericPrizeRuleSnapshot({ ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 9 }) };
     expect(calculateNumberPrizeCents(wager, "999996")).toBe(600);
