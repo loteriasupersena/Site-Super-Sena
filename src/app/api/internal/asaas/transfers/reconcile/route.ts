@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
     }),
     authPrisma.prizePaymentBatch.findMany({
       where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { lt: staleBefore } },
-      select: { id: true, asaasTransferId: true, paymentReference: true, transferRequestedAt: true },
+      // requestedAt is immutable and is used for provider lookup. transferRequestedAt
+      // is the retry/claim clock and must not move the recovery search window.
+      select: { id: true, asaasTransferId: true, paymentReference: true, requestedAt: true, transferRequestedAt: true },
       orderBy: { transferRequestedAt: "asc" }, take: 100,
     }),
   ]);
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
     })),
     ...batches.filter(x => x.paymentReference && x.transferRequestedAt).map(x => ({
       kind: "batch" as const, id: x.id, transferId: x.asaasTransferId,
-      externalReference: x.paymentReference!, requestedAt: x.transferRequestedAt!,
+      externalReference: x.paymentReference!, requestedAt: x.requestedAt,
     })),
   ];
 
