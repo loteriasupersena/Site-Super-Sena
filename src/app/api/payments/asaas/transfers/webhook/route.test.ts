@@ -101,6 +101,20 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
+  it("keeps the reserved balance and records a failed transfer", async () => {
+    const response = await POST(request("TRANSFER_FAILED"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, outcome: "WITHDRAWAL_FAILED" });
+    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
+    expect(mocks.historyCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      fromStatus: "PROCESSING", toStatus: "FAILED",
+    }) });
+    expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      action: "WITHDRAWAL_ASAAS_TRANSFER_FAILED", entityId: "wdr_12345678",
+    }) });
+  });
+
   it("does not process a duplicate webhook event twice", async () => {
     mocks.webhookFindUnique.mockResolvedValue({ processedAt: new Date() });
     const response = await POST(request());
