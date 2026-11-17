@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { maskPixKey } from "@/lib/wallet/pix-key";
 import { z } from "zod";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
