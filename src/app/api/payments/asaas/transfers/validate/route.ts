@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    const matches = [withdrawal, prizeRequest, batch].filter(\n      (item): item is NonNullable<typeof item> => item !== null,\n    );
+    const matches = [withdrawal, prizeRequest, batch].filter(
+      (item): item is NonNullable<typeof item> => item !== null,
+    );
     if (matches.length !== 1) return refuse("Transferência não localizada ou referência ambígua.");
 
     const item = matches[0]!;
