@@ -81,7 +81,7 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
           const idempotencyKey = "numeric-prize-credit:" + line.id;
           const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey } });
           if (existing) {
-            if (existing.userId !== playerId || existing.amountCents !== walletCreditCents ||
+            if (existing.userId !== playerId || (existing.amountCents !== walletCreditCents && existing.amountCents !== prize) ||
                 existing.type !== "PRIZE_CREDIT" || existing.participationId !== line.participationId) {
               throw new RoundSettlementError("Existing numeric prize ledger entry conflicts with calculated award", "INCONSISTENT_SETTLEMENT");
             }
