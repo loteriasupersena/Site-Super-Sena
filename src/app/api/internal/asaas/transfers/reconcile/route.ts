@@ -59,9 +59,9 @@ export async function POST(request: NextRequest) {
 
   const [withdrawals, prizeRequests, batches] = await Promise.all([
     authPrisma.withdrawal.findMany({
-      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { not: null }, updatedAt: { lt: staleBefore } },
+      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { lt: staleBefore } },
       select: { id: true, asaasTransferId: true, paymentReference: true, transferRequestedAt: true },
-      orderBy: { updatedAt: "asc" }, take: 100,
+      orderBy: { transferRequestedAt: "asc" }, take: 100,
     }),
     authPrisma.prizePaymentRequest.findMany({
       where: { batchId: null, status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { not: null }, updatedAt: { lt: staleBefore } },
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     const claim = item.kind === "withdrawal"
       ? await authPrisma.withdrawal.updateMany({ where: { ...where, asaasTransferId: item.transferId }, data: { updatedAt: claimedAt } })
       : item.kind === "batch"
-        ? await authPrisma.prizePaymentBatch.updateMany({ where: { ...where, asaasTransferId: item.transferId }, data: { updatedAt: claimedAt } })
+        ? await authPrisma.prizePaymentBatch.updateMany({ where: { id: item.id, status: "PROCESSING", asaasTransferId: item.transferId, transferRequestedAt: { lt: staleBefore } }, data: { transferRequestedAt: claimedAt } })
         : await authPrisma.prizePaymentRequest.updateMany({ where: { ...where, asaasTransferId: item.transferId }, data: { updatedAt: claimedAt } });
     if (claim.count !== 1) continue;
     results.checked++;
