@@ -95,7 +95,7 @@ describe("admin withdrawals API", () => {
       amountCents: 2500, idempotencyKey: "withdrawal-release:withdrawal-1",
     }) });
     expect(mocks.historyCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ fromStatus: "PENDING", toStatus: "REJECTED", actorId: "admin-1" }) });
-    expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ action: "WITHDRAWAL_REJECTED" }) });
+    expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ action: "WITHDRAWAL_VALUE_RELEASED" }) });
   });
 
   it("does not allow rejection after a withdrawal has been paid", async () => {
