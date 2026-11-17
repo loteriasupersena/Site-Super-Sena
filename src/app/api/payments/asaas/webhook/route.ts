@@ -74,6 +74,16 @@ export async function POST(request: NextRequest) {
       update: { eventType: event, payloadDigest: digest, paymentId: payment.id, processingError: null },
     });
     await authPrisma.payment.update({ where: { id: payment.id }, data: { providerPaymentId: canonical.id, providerStatus: canonical.status ?? event, providerStatusDetail: event } });
+    if (event === "PAYMENT_CONFIRMED" && canonical.status !== "RECEIVED") {
+      // PAYMENT_CONFIRMED means the payer completed the payment, but the funds
+      // may not yet be available. Acknowledge it and wait for PAYMENT_RECEIVED;
+      // do not credit the player or make Asaas retry a valid notification.
+      await authPrisma.webhookEvent.updateMany({
+        where: { provider: "ASAAS_PAYMENT", providerEventId: eventId },
+        data: { processedAt: new Date(), processingError: null },
+      });
+      return response({ received: true, awaitingReceipt: true }, 200);
+    }
     if (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED") {
       if (canonical.status !== "RECEIVED") return response({ error: "Pagamento ainda não está recebido no Asaas." }, 503);
       const result = await confirmPixPayment(authPrisma, { paymentId: payment.id, providerStatus: canonical.status, providerStatusDetail: event });
