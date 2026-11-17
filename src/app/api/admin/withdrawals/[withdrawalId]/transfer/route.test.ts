@@ -4,14 +4,13 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), transaction: vi.fn(), queryRaw: vi.fn(),
   withdrawalFindUnique: vi.fn(), withdrawalUpdateMany: vi.fn(),
-  historyCreate: vi.fn(), auditCreate: vi.fn(), decryptPixKey: vi.fn(),
+  historyCreate: vi.fn(), auditCreate: vi.fn(),
   createAsaasPixTransfer: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction, withdrawal: { updateMany: mocks.withdrawalUpdateMany }, withdrawalStatusHistory: { create: mocks.historyCreate } },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
-vi.mock("@/lib/wallet/pix-key-crypto", () => ({ decryptPixKey: mocks.decryptPixKey }));
 vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: mocks.createAsaasPixTransfer }));
 import { POST } from "./route";
 
@@ -37,13 +36,12 @@ describe("admin Asaas wallet transfer authorization", () => {
     mocks.queryRaw.mockResolvedValue([]);
     mocks.withdrawalFindUnique.mockResolvedValue({
       id: "wdr_12345678", status: "PENDING", amountCents: 100000,
-      pixKeyEncrypted: "encrypted", pixKeyType: "CPF", asaasTransferId: null,
+      pixKey: "52998224725", pixKeyType: "CPF", asaasTransferId: null,
       paymentReference: null, userId: "player-1",
     });
     mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
-    mocks.decryptPixKey.mockReturnValue("52998224725");
     mocks.createAsaasPixTransfer.mockResolvedValue({ id: "trf-1", status: "PENDING" });
     mocks.transaction.mockImplementation(async (callback) => callback(tx()));
   });
