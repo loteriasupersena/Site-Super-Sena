@@ -101,9 +101,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const data = {
         purchaseId: purchase.id,
         pixKey: parsed.pixKey,
+        pixKeyEncrypted: null,
         pixKeyMasked: maskPixKey(parsed.pixKey),
         pixKeyType: parsed.pixKeyType,
         holderName: parsed.holderName,
+        holderNameEncrypted: null,
+        holderCpfEncrypted: null,
         holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
