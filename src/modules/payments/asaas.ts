@@ -57,6 +57,56 @@ export async function createAsaasPixTransfer(input: {
 }
 
 
+
+export type AsaasTransferListItem = {
+  id?: string;
+  externalReference?: string | null;
+  status?: string;
+};
+
+/**
+ * Finds transfers by the exact internal reference for recovery after a
+ * timed-out POST. The Asaas list endpoint has date filters, not an
+ * externalReference filter, so every returned item is matched locally.
+ */
+export async function findAsaasTransfersByExternalReference(input: {
+  externalReference: string;
+  requestedAt: Date;
+}): Promise<AsaasTransferListItem[]> {
+  if (!input.externalReference.trim() || Number.isNaN(input.requestedAt.getTime())) {
+    throw new Error("ASAAS_TRANSFER_RECOVERY_INPUT_INVALID");
+  }
+  const { apiKey, baseUrl } = config();
+  const url = new URL(baseUrl + "/transfers");
+  const day = input.requestedAt.toISOString().slice(0, 10);
+  url.searchParams.set("dateCreated[ge]", day);
+  url.searchParams.set("dateCreated[le]", day);
+  url.searchParams.set("limit", "100");
+  const matches: AsaasTransferListItem[] = [];
+  let offset = 0;
+  for (let page = 0; page < 20; page++) {
+    url.searchParams.set("offset", String(offset));
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { access_token: apiKey, Accept: "application/json" },
+      cache: "no-store",
+    });
+    const body = await response.json().catch(() => ({})) as {
+      data?: AsaasTransferListItem[];
+      hasMore?: boolean;
+    };
+    if (!response.ok) throw new Error("ASAAS_TRANSFER_LIST_HTTP_" + response.status);
+    const rows = body.data ?? [];
+    for (const row of rows) {
+      if (row.id && row.externalReference === input.externalReference) matches.push(row);
+    }
+    if (!body.hasMore) return matches;
+    offset += rows.length;
+    if (rows.length === 0) throw new Error("ASAAS_TRANSFER_LIST_PAGINATION_INVALID");
+  }
+  throw new Error("ASAAS_TRANSFER_LIST_TOO_MANY_RESULTS");
+}
+
 export type AsaasStaticPixQrCode = { id: string; payload: string; encodedImage: string; expirationDate?: string | null };
 type AsaasPayment = { id?: string; status?: string; billingType?: string; value?: number; externalReference?: string | null; pixQrCodeId?: string | null };
 
