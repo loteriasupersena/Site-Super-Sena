@@ -5,15 +5,12 @@ import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
+import { calculatePrizeFees, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
 
-// Taxas aplicáveis somente a prêmios de vendas físicas: a partir de R$ 1.000,00.
-const PRIZE_FEE_THRESHOLD_CENTS = 100_000;
-const ADMINISTRATIVE_FEE_RATE = 0.05;
-const BANK_TRANSACTION_FEE_RATE = 0.05;
 
 function validCpf(value: string) {
   const cpf = value.replace(/\D/g, "");
@@ -119,9 +116,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (automatic && !systemAdmin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
       const requestId = line.prizePaymentRequest?.id ?? "ppr_" + randomUUID().replace(/-/g, "");
       const externalReference = "prize_request_" + requestId;
-      const administrativeFee = appliesFees ? Math.round(gross * ADMINISTRATIVE_FEE_RATE) : 0;
-      const transactionFee = appliesFees ? Math.round(gross * BANK_TRANSACTION_FEE_RATE) : 0;
-      const net = gross - administrativeFee - transactionFee;
+      const fees = calculatePrizeFees(gross);
+      const administrativeFee = fees.administrativeFeeCents;
+      const transactionFee = fees.transactionFeeCents;
+      const net = fees.netCents;
       const data = {
         purchaseId: purchase.id,
         pixKey: parsed.pixKey,
@@ -136,7 +134,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         administrativeFeeCents: administrativeFee,
         transactionFeeCents: transactionFee,
         netCents: net,
-        feeRuleVersion: "physical-prize-fees-v1",
+        feeRuleVersion: "prize-fees-v2-physical-and-wallet",
         status: automatic ? "PROCESSING" as const : "PENDING" as const,
         requestedAt: new Date(),
         reviewedAt: automatic ? new Date() : null,
