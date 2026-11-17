@@ -496,11 +496,13 @@ model PrizePaymentRequest {
   id                     String   @id @default(cuid())
   participationLineId    String   @unique
   purchaseId             String
-  pixKeyEncrypted        String?
+  pixKey                 String?
+  pixKeyEncrypted        String? // legado: solicitações criadas antes da remoção da criptografia
   pixKeyMasked           String
   pixKeyType             String?
-  holderNameEncrypted    String?
-  holderCpfEncrypted     String?
+  holderName             String?
+  holderNameEncrypted    String? // legado
+  holderCpfEncrypted     String? // legado
   holderCpfMasked        String?
   grossCents             Int
   administrativeFeeCents Int      @default(0)
