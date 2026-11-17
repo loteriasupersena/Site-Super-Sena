@@ -6,13 +6,13 @@ function makeLine(overrides: Record<string, unknown> = {}) {
   return {
     id: "line-12345678",
     numberValue: "012349",
-    prizeCents: 3000,
+    prizeCents: 500,
     prizeCreditedAt: null,
     unitCents: 500, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0,
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
-    prizePaymentRequest: { id: "request-123", status: "PENDING", netCents: 3000, grossCents: 3000, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
+    prizePaymentRequest: { id: "request-123", status: "PENDING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
     participation: {
       status: "CONFIRMED",
       purchase: {
@@ -32,7 +32,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
 function setup(line = makeLine()) {
   const payoutCreate = vi.fn().mockResolvedValue({
     id: "payout-123", participationLineId: "line-12345678",
-    channel: "PLATFORM_PIX", amountCents: 3000,
+    channel: "PLATFORM_PIX", amountCents: 500,
     paidAt: new Date("2026-11-06T12:30:00.000Z"), reference: null,
   });
   const auditCreate = vi.fn().mockResolvedValue({});
@@ -47,12 +47,12 @@ function setup(line = makeLine()) {
 }
 
 describe("registerNumericPrizePayout", () => {
-  it("allows external payout for a confirmed cashier ticket", async () => {
+  it("allows external payout for a confirmed cashier ticket using the full individual game stake for a unit hit", async () => {
     const { tx, payoutCreate, auditCreate } = setup();
     const result = await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
     });
-    expect(result.amountCents).toBe(3000);
+    expect(result.amountCents).toBe(500);
     expect(payoutCreate).toHaveBeenCalledOnce();
     expect(auditCreate).toHaveBeenCalledOnce();
   });

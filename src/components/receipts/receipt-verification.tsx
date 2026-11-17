@@ -78,7 +78,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
       setHolderName(""); setHolderCpf(""); setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false); setHolderConfirmed(false);
-      setMessage("Solicitação deste prêmio enviada. Aguarde a análise do administrador.");
+      setMessage(body.status === "PROCESSING"
+        ? "Solicitação enviada à Asaas. Aguarde a confirmação do Pix."
+        : "Solicitação recebida. Aguarde a análise do administrador.");
       await onSubmitted();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação.");
