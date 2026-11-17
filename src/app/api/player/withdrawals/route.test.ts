@@ -69,6 +69,16 @@ describe("player withdrawals API", () => {
     }) });
   });
 
+  it("rejects an invalid beneficiary CPF before reserving the wallet balance", async () => {
+    const response = await POST(request("/api/player/withdrawals", {
+      pixKey: "12345678900", pixKeyConfirmation: "12345678900", pixKeyType: "CPF",
+      holderName: "Joao da Silva", holderCpf: "12345678900", pixKeyConfirmed: true, holderConfirmed: true,
+    }));
+    expect(response.status).toBe(400);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
+  });
+
   it("rejects a withdrawal when no balance is available", async () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
     const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
