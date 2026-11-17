@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
-  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(),
+  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany }, $transaction: mocks.transaction },
@@ -23,6 +23,7 @@ function tx() {
     $queryRawUnsafe: mocks.queryRaw,
     ledgerEntry: { aggregate: mocks.aggregate, create: mocks.ledgerCreate },
     withdrawal: { create: mocks.withdrawalCreate },
+    user: { findFirst: mocks.userFindFirst },
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
   };
@@ -34,7 +35,8 @@ describe("player withdrawals API", () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 5000 } });
     mocks.findMany.mockResolvedValue([]);
     mocks.queryRaw.mockResolvedValue([]);
-    mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PENDING", createdAt: new Date("2026-01-01T00:00:00Z") });
+    mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
+    mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
     mocks.ledgerCreate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
@@ -49,11 +51,12 @@ describe("player withdrawals API", () => {
   });
 
   it("reserves the full available balance atomically and records an audit event", async () => {
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "pix@example.com" }));
-    expect(response.status).toBe(201);
-    expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PENDING" } });
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PROCESSING" } });
     expect(mocks.transaction).toHaveBeenCalledOnce();
     expect(mocks.queryRaw).toHaveBeenCalledOnce();
+    expect(mocks.userFindFirst).toHaveBeenCalledOnce();
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_RESERVE",
       amountCents: -5000, idempotencyKey: "withdrawal-reserve:withdrawal-1",
