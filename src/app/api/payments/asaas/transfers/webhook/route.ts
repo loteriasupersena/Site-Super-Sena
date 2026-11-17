@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
             asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? "DONE",
             asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
             asaasTransferFailureReason: null,
-            pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+            pixKey: null, pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
           },
         });
         return "PAID";
