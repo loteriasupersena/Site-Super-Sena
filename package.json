@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma validate && prisma generate && next build",
-    "start": "prisma migrate deploy && npm run admin:provision && next start",
+    "start": "node scripts/start-production.mjs",
+    "start:next": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
