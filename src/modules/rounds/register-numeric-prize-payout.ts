@@ -60,11 +60,12 @@ export async function registerNumericPrizePayout(
   // A physical receipt is settled only by the Asaas transfer webhook after TRANSFER_DONE.
   // Never allow an administrative approval or a pending request to create a paid record.
   if (input.channel === "PLATFORM_PIX" && (
-    input.expectedRequestStatus !== "PROCESSING" ||
+    !["PROCESSING", "FAILED", "CANCELLED"].includes(input.expectedRequestStatus ?? "") ||
     !input.reference?.trim() ||
     !/^prize_(request|batch)_[A-Za-z0-9_-]{8,100}$/.test(input.reference.trim()) ||
     !line.prizePaymentRequest ||
-    line.prizePaymentRequest.status !== "PROCESSING"
+    line.prizePaymentRequest.status !== input.expectedRequestStatus ||
+    line.prizePaymentRequest.paymentReference !== input.reference.trim()
   )) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
