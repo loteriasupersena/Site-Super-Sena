@@ -12,7 +12,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
-    prizePaymentRequest: { id: "request-123", status: "PENDING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
+    prizePaymentRequest: { id: "request-123", status: "PROCESSING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: null },
     participation: {
       status: "CONFIRMED",
       purchase: {
@@ -51,6 +51,7 @@ describe("registerNumericPrizePayout", () => {
     const { tx, payoutCreate, auditCreate } = setup();
     const result = await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
+      expectedRequestStatus: "PROCESSING", reference: "prize_request_request-12345678",
     });
     expect(result.amountCents).toBe(500);
     expect(payoutCreate).toHaveBeenCalledOnce();
@@ -62,6 +63,7 @@ describe("registerNumericPrizePayout", () => {
     const { tx, payoutCreate, auditCreate } = setup(makeLine({ prizeCents: 1000 }));
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
+      expectedRequestStatus: "PROCESSING", reference: "prize_request_request-12345678",
     })).rejects.toMatchObject({ code: "INCONSISTENT_PRIZE" });
     expect(payoutCreate).not.toHaveBeenCalled();
     expect(auditCreate).not.toHaveBeenCalled();
