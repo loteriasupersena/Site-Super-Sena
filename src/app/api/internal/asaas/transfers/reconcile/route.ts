@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, ...results, run: digest }, {
+  return NextResponse.json({ success: true, ...results }, {
     headers: { "Cache-Control": "no-store" },
   });
 }
