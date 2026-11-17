@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     return decision("REFUSED", "Operação não reconhecida.");
   }
 
-  let canonical;
+  let canonical: Awaited<ReturnType<typeof getAsaasTransfer>>;
   try {
     canonical = await getAsaasTransfer(body.transfer.id.trim());
   } catch {
