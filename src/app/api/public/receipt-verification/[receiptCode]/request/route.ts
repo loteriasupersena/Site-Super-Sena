@@ -106,7 +106,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       }))?.round.resultNumber ?? null);
       if (!prizeReview?.calculationConsistent || prizeReview.calculatedPrizeCents !== gross) throw new Error("PRIZE_CALCULATION_MISMATCH");
 
-      const appliesFees = gross >= PRIZE_FEE_THRESHOLD_CENTS;
       const automatic = gross < PRIZE_FEE_THRESHOLD_CENTS;
       const systemAdmin = await tx.user.findFirst({
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
