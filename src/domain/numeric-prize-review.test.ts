@@ -8,7 +8,7 @@ describe("getNumericPrizeReview", () => {
   it("identifies the highest matching category", () => {
     expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 100, multiplier: 6, calculatedPrizeCents: 600, calculationConsistent: true });
   });
-  it("uses the full stake divided across six categories for v2 unit prizes", () => {
+  it("returns the full wager for v2 unit prizes, not six times the unit allocation", () => {
     const oneReal = { numberValue: "506414", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(oneReal.unitCents).toBe(20);
     expect(getNumericPrizeReview(oneReal, "096034")).toMatchObject({
