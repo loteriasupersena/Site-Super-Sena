@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
               actorId: batch.reviewerId,
               channel: "PLATFORM_PIX",
               reference: externalReference,
-              expectedRequestStatus: "PROCESSING",
+              expectedRequestStatus: item.status as "PROCESSING" | "FAILED" | "CANCELLED",
             });
           }
           await tx.prizePaymentBatch.update({
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true, pixKey: true, pixKeyEncrypted: true, pixKeyType: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
