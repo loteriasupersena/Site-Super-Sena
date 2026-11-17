@@ -16,6 +16,7 @@ export async function registerNumericPrizePayout(
     actorId: string;
     channel: NumericPrizePayoutChannel;
     reference?: string | null;
+    expectedRequestStatus?: "PENDING" | "PROCESSING" | "FAILED" | "CANCELLED";
   },
 ) {
   await tx.$queryRaw`SELECT "id" FROM "NumericParticipationLine" WHERE "id" = ${input.lineId} FOR UPDATE`;
@@ -56,7 +57,7 @@ export async function registerNumericPrizePayout(
   ) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
   if (input.channel === "CASHIER_CASH") throw new NumericPrizePayoutError("NOT_ELIGIBLE");
-  if (input.channel === "PLATFORM_PIX" && (!line.prizePaymentRequest || line.prizePaymentRequest.status !== "PENDING")) {
+  if (input.channel === "PLATFORM_PIX" && (!line.prizePaymentRequest || line.prizePaymentRequest.status !== (input.expectedRequestStatus ?? "PENDING"))) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
 
@@ -74,7 +75,7 @@ export async function registerNumericPrizePayout(
   const paidAt = new Date();
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
-    where: { id: line.prizePaymentRequest.id, status: "PENDING" },
+    where: { id: line.prizePaymentRequest.id, status: input.expectedRequestStatus ?? "PENDING" },
     data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");

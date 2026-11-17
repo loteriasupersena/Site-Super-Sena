@@ -13,15 +13,33 @@ const PRIZE_FEE_THRESHOLD_CENTS = 100_000;
 const ADMINISTRATIVE_FEE_RATE = 0.05;
 const BANK_TRANSACTION_FEE_RATE = 0.05;
 
-function parsePayload(value: unknown): { participationLineId: string; pixKey: string } | null {
+function validCpf(value: string) {
+  const cpf = value.replace(/\D/g, "");
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digit = (length: number) => {
+    const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0);
+    const result = (sum * 10) % 11;
+    return result === 10 ? 0 : result;
+  };
+  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+}
+
+function parsePayload(value: unknown): { participationLineId: string; pixKey: string; pixKeyType: string; holderName: string; holderCpf: string } | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
   if (typeof body.participationLineId !== "string" || body.participationLineId.length < 1 ||
       body.participationLineId.length > 128 || typeof body.pixKey !== "string" ||
-      typeof body.pixKeyConfirmation !== "string" || body.pixKeyConfirmed !== true) return null;
+      typeof body.pixKeyConfirmation !== "string" || typeof body.holderName !== "string" ||
+      typeof body.holderCpf !== "string" || typeof body.pixKeyType !== "string" ||
+      body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
   const pixKey = body.pixKey.trim();
+  const holderName = body.holderName.trim().replace(/\s+/g, " ");
+  const holderCpf = body.holderCpf.replace(/\D/g, "");
+  const types = ["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"];
+  if (!types.includes(body.pixKeyType) || holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf)) return null;
   if (pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() || !isPlausiblePixKey(pixKey)) return null;
-  return { participationLineId: body.participationLineId, pixKey };
+  if (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf) return null;
+  return { participationLineId: body.participationLineId, pixKey, pixKeyType: body.pixKeyType, holderName, holderCpf };
 }
 
 function validOrigin(request: NextRequest) {
@@ -43,10 +61,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const parsed = parsePayload(payload);
-  if (!parsed) return NextResponse.json({ error: "Informe duas vezes a mesma chave Pix válida e confirme o destino do prêmio." }, { status: 400, headers });
+  if (!parsed) return NextResponse.json({ error: "Informe nome completo, CPF válido, tipo e chave Pix, e confirme os dados do titular." }, { status: 400, headers });
 
   let encrypted: string;
-  try { encrypted = encryptPixKey(parsed.pixKey); }
+  let encryptedName: string;
+  let encryptedCpf: string;
+  try { encrypted = encryptPixKey(parsed.pixKey); encryptedName = encryptPixKey(parsed.holderName); encryptedCpf = encryptPixKey(parsed.holderCpf); }
   catch { return NextResponse.json({ error: "Não foi possível proteger a chave Pix. A solicitação não foi enviada." }, { status: 503, headers }); }
 
   try {
@@ -88,6 +108,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         purchaseId: purchase.id,
         pixKeyEncrypted: encrypted,
         pixKeyMasked: maskPixKey(parsed.pixKey),
+        pixKeyType: parsed.pixKeyType,
+        holderNameEncrypted: encryptedName,
+        holderCpfEncrypted: encryptedCpf,
+        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
         transactionFeeCents: transactionFee,
@@ -114,6 +138,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         metadata: {
           receiptCode, participationLineId: line.id,
           pixKeyMasked: maskPixKey(parsed.pixKey),
+          pixKeyType: parsed.pixKeyType, holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
           grossCents: gross, administrativeFeeCents: administrativeFee,
           transactionFeeCents: transactionFee, netCents: net,
         },

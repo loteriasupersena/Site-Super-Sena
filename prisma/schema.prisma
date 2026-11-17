@@ -74,8 +74,11 @@ enum NumericPrizePayoutChannel {
 
 enum PrizePaymentRequestStatus {
   PENDING
+  PROCESSING
   PAID
   REJECTED
+  FAILED
+  CANCELLED
 }
 
 enum WithdrawalStatus {
@@ -270,6 +273,7 @@ model Payment {
   purchaseId            String        @unique
   provider              String
   providerPaymentId     String?
+  providerQrCodeId      String? @unique
   pixCopyPaste           String?
   pixQrCodeBase64        String?
   pixTicketUrl           String?
@@ -494,6 +498,10 @@ model PrizePaymentRequest {
   purchaseId             String
   pixKeyEncrypted        String?
   pixKeyMasked           String
+  pixKeyType             String?
+  holderNameEncrypted    String?
+  holderCpfEncrypted     String?
+  holderCpfMasked        String?
   grossCents             Int
   administrativeFeeCents Int      @default(0)
   transactionFeeCents    Int      @default(0)
@@ -504,6 +512,11 @@ model PrizePaymentRequest {
   reviewedAt             DateTime?
   reviewerId             String?
   paymentReference       String?
+  asaasTransferId        String? @unique
+  asaasTransferStatus    String?
+  asaasTransferReceiptUrl String?
+  asaasTransferFailureReason String?
+  transferRequestedAt   DateTime?
   note                   String?
   participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
   purchase               Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
