@@ -3446,15 +3446,8 @@ body:has(.home-page-compact) {
 }
 
 
-/* Recibo oficial no iPhone/Safari: força tinta preta e remove opacidade herdada.
-   A regra também cobre o texto explicativo da divisão dos prêmios. */
-/* Recibo na tela: mesmo componente compartilhado pelo jogador e cambista.
-   Força preto real também no Safari/iOS, sem alterar os geradores de impressão. */
-.receipt-modal .thermal-receipt,
-.receipt-modal .thermal-receipt * {
+/* Altera somente a cor do texto explicativo no recibo exibido na tela. */
+.receipt-modal .thermal-receipt-items > p {
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
-  opacity: 1 !important;
-  text-shadow: none !important;
-  filter: none !important;
 }
