@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (canonical.id !== body.transfer.id.trim() || !canonical.externalReference ||
-      canonical.operationType !== "PIX" || !Number.isFinite(canonical.value)) {
+      canonical.operationType !== "PIX" || canonical.status !== "PENDING" || !Number.isFinite(canonical.value)) {
     return decision("REFUSED", "Transferência não corresponde a uma solicitação Pix válida.");
   }
 
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
     const expected = await findExpectedTransfer(canonical.externalReference);
     if (!expected || expected.status !== "PROCESSING" || !expected.reviewerId ||
         (expected.asaasTransferId && expected.asaasTransferId !== canonical.id) ||
-        !Number.isSafeInteger(expected.amountCents) ||
+        (!Number.isSafeInteger(expected.amountCents) || expected.amountCents <= 0) ||
         Math.round((canonical.value ?? 0) * 100) !== expected.amountCents ||
         !beneficiaryMatches(expected, canonical.bankAccount?.pixAddressKey)) {
       return decision("REFUSED", "Transferência não corresponde a uma solicitação autorizada.");
