@@ -9,7 +9,7 @@ vi.mock("@/lib/auth/session", () => ({
   authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
-vi.mock("@/lib/wallet/pix-key-crypto", () => ({ encryptPixKey: vi.fn(() => "encrypted-key"), isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
+vi.mock("@/lib/wallet/pix-key", () => ({ isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
 vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: vi.fn(async () => ({ id: "transfer-1", status: "PENDING" })) }));
 import { GET, POST } from "./route";
 
@@ -59,6 +59,8 @@ describe("player withdrawals API", () => {
     expect(mocks.transaction).toHaveBeenCalledOnce();
     expect(mocks.queryRaw).toHaveBeenCalledOnce();
     expect(mocks.userFindFirst).toHaveBeenCalledOnce();
+    expect(mocks.withdrawalCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ pixKey: "52998224725", holderName: "Joao da Silva", pixKeyType: "CPF" }) });
+    expect(mocks.withdrawalCreate.mock.calls[0][0].data).not.toHaveProperty("pixKeyEncrypted");
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_RESERVE",
       amountCents: -5000, idempotencyKey: "withdrawal-reserve:withdrawal-1",

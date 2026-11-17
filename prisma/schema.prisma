@@ -396,10 +396,12 @@ model Withdrawal {
   id                  String                 @id @default(cuid())
   userId              String
   amountCents         Int
-  pixKeyEncrypted     String
+  pixKey              String?
+  pixKeyEncrypted     String? // legado: ciphertext de saques anteriores
   pixKeyType          String?
-  holderNameEncrypted String?
-  holderCpfEncrypted  String?
+  holderName          String?
+  holderNameEncrypted String? // legado
+  holderCpfEncrypted  String? // legado
   holderCpfMasked     String?
   pixKeyMasked        String?
   paymentReference    String?                @unique
@@ -550,11 +552,13 @@ model PrizePaymentRequest {
 model PrizePaymentBatch {
   id                       String   @id @default(cuid())
   purchaseId               String
-  pixKeyEncrypted          String
+  pixKey                   String?
+  pixKeyEncrypted          String? // legado
   pixKeyMasked             String
   pixKeyType               String
-  holderNameEncrypted      String
-  holderCpfEncrypted       String
+  holderName               String?
+  holderNameEncrypted      String? // legado
+  holderCpfEncrypted       String? // legado
   holderCpfMasked          String
   grossCents               Int
   administrativeFeeCents   Int      @default(0)
