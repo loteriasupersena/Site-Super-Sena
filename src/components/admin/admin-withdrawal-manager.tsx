@@ -38,7 +38,7 @@ export function AdminWithdrawalManager() {
       if (loadController.current === controller) { loadController.current = null; setLoading(false); }
     }
   }, []);
-  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => { window.clearTimeout(timer); loadController.current?.abort(); }; }, [load]);
+  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); const poll = window.setInterval(() => { void load(); }, 10_000); return () => { window.clearTimeout(timer); window.clearInterval(poll); loadController.current?.abort(); }; }, [load]);
 
   async function act(item: Item, action: "send-asaas" | "reject") {
     const note = action === "send-asaas"
