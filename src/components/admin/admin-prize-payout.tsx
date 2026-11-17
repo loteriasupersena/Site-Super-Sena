@@ -60,7 +60,8 @@ export function AdminPrizePayout() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void load(); }, 0);
-    return () => window.clearTimeout(timer);
+    const poll = window.setInterval(() => { void load(); }, 10_000);
+    return () => { window.clearTimeout(timer); window.clearInterval(poll); };
   }, [load]);
 
   async function sendAsaasPix(winner: Winner) {
