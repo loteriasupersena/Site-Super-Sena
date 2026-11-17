@@ -59,6 +59,15 @@ describe("registerNumericPrizePayout", () => {
   });
 
 
+  it("does not settle a receipt from administrative approval without a confirmed transfer reference", async () => {
+    const { tx, payoutCreate, auditCreate } = setup();
+    await expect(registerNumericPrizePayout(tx as never, {
+      lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
+    })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
+    expect(payoutCreate).not.toHaveBeenCalled();
+    expect(auditCreate).not.toHaveBeenCalled();
+  });
+
   it("blocks payout when the stored prize differs from the deterministic result", async () => {
     const { tx, payoutCreate, auditCreate } = setup(makeLine({ prizeCents: 1000 }));
     await expect(registerNumericPrizePayout(tx as never, {
