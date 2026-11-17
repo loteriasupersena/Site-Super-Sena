@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const item = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
         select: {
-          id: true, status: true, batchId: true, pixKey: true, pixKeyEncrypted: true, pixKeyType: true,
+          id: true, status: true, batchId: true, pixKey: true, pixKeyType: true,
           netCents: true, asaasTransferId: true,
           participationLine: { select: { prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { id: true } } } },
         },
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
       if (item.status === "PROCESSING" || item.asaasTransferId) throw new Error("ALREADY_PROCESSING");
       if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status)) throw new Error("NOT_PAYABLE");
-      if ((!item.pixKey && !item.pixKeyEncrypted) || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
+      if (!item.pixKey || !item.pixKeyType) throw new Error("BENEFICIARY_DATA_MISSING");
       if (item.participationLine.prizeCreditedAt || item.participationLine.prizePayout || (item.participationLine.prizeCents ?? 0) <= 0) throw new Error("PRIZE_ALREADY_PAID");
       const externalReference = "prize_request_" + item.id;
       const changed = await tx.prizePaymentRequest.updateMany({
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       });
       return {
         kind: "REQUEST" as const, id: item.id, netCents: item.netCents,
-        pixKey: item.pixKey ?? (item.pixKeyEncrypted ? decryptPixKey(item.pixKeyEncrypted) : ""),
+        pixKey: item.pixKey,
         pixKeyType: item.pixKeyType, externalReference,
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
