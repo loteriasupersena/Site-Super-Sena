@@ -13,6 +13,7 @@ export type NumericPurchaseInput = {
   cashierId?: string;
   customerId?: string;
   paymentMethod?: "PIX" | "WALLET" | "CASH";
+  paymentProvider?: "ASAAS" | "MERCADO_PAGO";
   roundIds?: string[];
   roundCount?: number;
   numbers: string[];
@@ -148,7 +149,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
                 roundCount, numbers, allocation, ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: snapshot,
               } },
               ...(!isConfirmed ? {
-                payment: { create: { provider: "MERCADO_PAGO", status: "PENDING", amountCents: totalCents, idempotencyKey: "pix-payment:" + input.idempotencyKey } },
+                payment: { create: { provider: input.paymentProvider ?? "MERCADO_PAGO", status: "PENDING", amountCents: totalCents, idempotencyKey: "pix-payment:" + input.idempotencyKey } },
               } : {}),
             }),
           },
