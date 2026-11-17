@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const digest = createHash("sha256").update(JSON.stringify(results)).digest("hex").slice(0, 12);
   return NextResponse.json({ success: true, ...results, run: digest }, {
     headers: { "Cache-Control": "no-store" },
   });
