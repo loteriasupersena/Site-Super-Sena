@@ -69,7 +69,7 @@ describe("player withdrawals API", () => {
 
   it("rejects a withdrawal when no balance is available", async () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "pix@example.com" }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
     expect(response.status).toBe(409);
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe("player withdrawals API", () => {
       },
       body: JSON.stringify({ pixKey: "pix@example.com" }),
     });
-    expect((await POST(proxyRequest)).status).toBe(201);
+    expect((await POST(proxyRequest)).status).toBe(202);
   });
 
   it("rejects cross-origin requests", async () => {
