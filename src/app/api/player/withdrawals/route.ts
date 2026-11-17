@@ -48,16 +48,21 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "É necessário entrar na conta." }, { status: 401, headers });
   if (user.role !== "PLAYER" || user.mustChangePassword) return NextResponse.json({ error: "Acesso não permitido." }, { status: 403, headers });
   try {
-    const [ledger, withdrawals] = await Promise.all([
+    const [ledger, withdrawals, reserved] = await Promise.all([
       authPrisma.ledgerEntry.aggregate({ where: { userId: user.id }, _sum: { amountCents: true } }),
       authPrisma.withdrawal.findMany({
         where: { userId: user.id },
         select: { id: true, amountCents: true, status: true, providerRef: true, asaasTransferStatus: true, asaasTransferFailureReason: true, holderCpfMasked: true, pixKeyMasked: true, createdAt: true, updatedAt: true, statusHistory: { select: { toStatus: true, note: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
         orderBy: { createdAt: "desc" }, take: 100,
       }),
+      authPrisma.withdrawal.aggregate({
+        where: { userId: user.id, status: { in: ["PENDING", "APPROVED", "PROCESSING", "FAILED"] } },
+        _sum: { amountCents: true },
+      }),
     ]);
     return NextResponse.json({
       availableCents: ledger._sum.amountCents ?? 0,
+      reservedCents: reserved._sum.amountCents ?? 0,
       withdrawals: withdrawals.map((item) => ({ ...item, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), statusHistory: item.statusHistory.map((event) => ({ ...event, createdAt: event.createdAt.toISOString() })) })),
     }, { headers });
   } catch {
