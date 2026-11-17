@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     },
     select: { id: true },
     orderBy: { updatedAt: "asc" },
-    take: 100,
+    take: 25,
   });
 
   for (const candidate of candidates) {
