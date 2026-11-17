@@ -5,12 +5,11 @@ import { authPrisma } from "@/lib/auth/session";
 import { encryptPixKey, isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
-import { calculatePrizeFees, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
+import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
-
 
 function validCpf(value: string) {
   const cpf = value.replace(/\D/g, "");
@@ -22,33 +21,28 @@ function validCpf(value: string) {
   };
   return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
 }
-
-function parsePayload(value: unknown): { participationLineId: string; pixKey: string; pixKeyType: string; holderName: string; holderCpf: string } | null {
+function parsePayload(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
-  if (typeof body.participationLineId !== "string" || body.participationLineId.length < 1 ||
-      body.participationLineId.length > 128 || typeof body.pixKey !== "string" ||
-      typeof body.pixKeyConfirmation !== "string" || typeof body.holderName !== "string" ||
-      typeof body.holderCpf !== "string" || typeof body.pixKeyType !== "string" ||
-      body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
+  if (typeof body.participationLineId !== "string" || !body.participationLineId ||
+      typeof body.pixKey !== "string" || typeof body.pixKeyConfirmation !== "string" ||
+      typeof body.holderName !== "string" || typeof body.holderCpf !== "string" ||
+      typeof body.pixKeyType !== "string" || body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
   const pixKey = body.pixKey.trim();
   const holderName = body.holderName.trim().replace(/\s+/g, " ");
   const holderCpf = body.holderCpf.replace(/\D/g, "");
-  const types = ["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"];
-  if (!types.includes(body.pixKeyType) || holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf)) return null;
-  if (pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() || !isPlausiblePixKey(pixKey)) return null;
-  if (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf) return null;
+  if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
+      holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf) ||
+      pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() ||
+      !isPlausiblePixKey(pixKey) || (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf)) return null;
   return { participationLineId: body.participationLineId, pixKey, pixKeyType: body.pixKeyType, holderName, holderCpf };
 }
-
 function validOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host")?.trim().toLowerCase();
   if (!origin || !host) return false;
-  try {
-    const parsed = new URL(origin);
-    return (parsed.protocol === "https:" || parsed.protocol === "http:") && parsed.host.toLowerCase() === host;
-  } catch { return false; }
+  try { const parsed = new URL(origin); return ["https:", "http:"].includes(parsed.protocol) && parsed.host.toLowerCase() === host; }
+  catch { return false; }
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ receiptCode: string }> }) {
@@ -56,165 +50,164 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   const { receiptCode: raw } = await context.params;
   const receiptCode = raw.replace(/\s/g, "").toUpperCase();
   if (!/^SQ-[A-Z0-9]{8,32}$/.test(receiptCode)) return NextResponse.json({ error: "Código de recibo inválido." }, { status: 400, headers });
-
-  let payload: unknown;
-  try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
-  const parsed = parsePayload(payload);
-  if (!parsed) return NextResponse.json({ error: "Informe nome completo, CPF válido, tipo e chave Pix, e confirme os dados do titular." }, { status: 400, headers });
+  let body: unknown;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
+  const input = parsePayload(body);
+  if (!input) return NextResponse.json({ error: "Informe os dados válidos do titular e confirme a chave Pix." }, { status: 400, headers });
 
   try {
-    const result = await authPrisma.$transaction(async (tx) => {
-      const purchase = await tx.purchase.findUnique({
-        where: { receiptCode },
-        select: {
-          id: true, status: true, paymentMethod: true, confirmedAt: true, cashierId: true, playerId: true,
-          payment: { select: { status: true, confirmedAt: true } },
-        },
-      });
+    const batch = await authPrisma.$transaction(async tx => {
+      const purchase = await tx.purchase.findUnique({ where: { receiptCode }, select: {
+        id: true, status: true, paymentMethod: true, confirmedAt: true, cashierId: true, playerId: true,
+        payment: { select: { status: true, confirmedAt: true } },
+      } });
       if (!purchase || !purchase.cashierId || purchase.playerId !== null) throw new Error("PHYSICAL_RECEIPT_ONLY");
-      const confirmed = purchase.status === "CONFIRMED" && purchase.confirmedAt !== null &&
+      const confirmed = purchase.status === "CONFIRMED" && !!purchase.confirmedAt &&
         (purchase.paymentMethod === "CASH" || purchase.paymentMethod === "WALLET" ||
-          (purchase.payment?.status === "CONFIRMED" && purchase.payment.confirmedAt !== null));
+          (purchase.payment?.status === "CONFIRMED" && !!purchase.payment.confirmedAt));
       if (!confirmed) throw new Error("PAYMENT_NOT_CONFIRMED");
 
-      const line = await tx.numericParticipationLine.findFirst({
-        where: {
-          id: parsed.participationLineId,
-          participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
-        },
-        select: {
-          id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
-          unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
-          ruleVersion: true, ruleSnapshot: true,
-          prizePayout: { select: { id: true } },
-          prizePaymentRequest: { select: { id: true, status: true } },
-        },
+      const selected = await tx.numericParticipationLine.findFirst({ where: {
+        id: input.participationLineId,
+        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
+      }, select: { id: true } });
+      if (!selected) throw new Error("PRIZE_NOT_FOUND");
+
+      const openBatch = await tx.prizePaymentBatch.findFirst({ where: {
+        purchaseId: purchase.id, status: { in: ["PENDING", "PROCESSING"] },
+      }, select: { id: true } });
+      if (openBatch) throw new Error("BATCH_ALREADY_EXISTS");
+
+      const candidates = await tx.numericParticipationLine.findMany({ where: {
+        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
+        prizeCents: { gt: 0 }, prizeCreditedAt: null, prizePayout: null,
+      }, select: {
+        id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
+        unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
+        ruleVersion: true, ruleSnapshot: true,
+        participation: { select: { round: { select: { resultNumber: true } } } },
+        prizePaymentRequest: { select: { id: true, status: true, batchId: true } },
+      }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+      if (!candidates.length || !candidates.some(line => line.id === selected.id)) throw new Error("PRIZE_NOT_AVAILABLE");
+      if (candidates.some(line => line.prizePaymentRequest &&
+        (line.prizePaymentRequest.status !== "REJECTED" || line.prizePaymentRequest.batchId))) throw new Error("REQUEST_ALREADY_EXISTS");
+
+      const feeLines = candidates.map(line => {
+        const grossCents = line.prizeCents ?? 0;
+        const review = getNumericPrizeReview({
+          numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
+          hundredsCents: line.hundredsCents, milharCents: line.milharCents,
+          quinaCents: line.quinaCents, senaCents: line.senaCents,
+          ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
+        }, line.participation.round.resultNumber);
+        if (grossCents <= 0 || line.prizeCreditedAt || !review?.calculationConsistent ||
+            review.calculatedPrizeCents !== grossCents) throw new Error("PRIZE_CALCULATION_MISMATCH");
+        return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
-      if (!line) throw new Error("PRIZE_NOT_FOUND");
-      const gross = line.prizeCents ?? 0;
-      if (gross <= 0 || line.prizeCreditedAt || line.prizePayout) throw new Error("PRIZE_NOT_AVAILABLE");
-      if (line.prizePaymentRequest && line.prizePaymentRequest.status !== "REJECTED") throw new Error("REQUEST_ALREADY_EXISTS");
-
-      const prizeReview = getNumericPrizeReview({
-        numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
-        hundredsCents: line.hundredsCents, milharCents: line.milharCents,
-        quinaCents: line.quinaCents, senaCents: line.senaCents,
-        ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
-      }, (await tx.purchaseParticipation.findFirst({
-        where: { purchaseId: purchase.id, numericLines: { some: { id: line.id } } },
-        select: { round: { select: { resultNumber: true } } },
-      }))?.round.resultNumber ?? null);
-      if (!prizeReview?.calculationConsistent || prizeReview.calculatedPrizeCents !== gross) throw new Error("PRIZE_CALCULATION_MISMATCH");
-
-      const automatic = gross < PRIZE_FEE_THRESHOLD_CENTS;
-      const systemAdmin = await tx.user.findFirst({
+      const fees = calculatePrizeFeeBatch(feeLines);
+      const automatic = fees.grossCents < PRIZE_FEE_THRESHOLD_CENTS;
+      const admin = automatic ? await tx.user.findFirst({
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
-        select: { id: true },
-        orderBy: { createdAt: "asc" },
-      });
-      if (automatic && !systemAdmin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
-      const requestId = line.prizePaymentRequest?.id ?? "ppr_" + randomUUID().replace(/-/g, "");
-      const externalReference = "prize_request_" + requestId;
-      const fees = calculatePrizeFees(gross);
-      const administrativeFee = fees.administrativeFeeCents;
-      const transactionFee = fees.transactionFeeCents;
-      const net = fees.netCents;
-      const data = {
-        purchaseId: purchase.id,
-        pixKey: null,
-        pixKeyEncrypted: encryptPixKey(parsed.pixKey),
-        pixKeyMasked: maskPixKey(parsed.pixKey),
-        pixKeyType: parsed.pixKeyType,
-        holderName: null,
-        holderNameEncrypted: encryptPixKey(parsed.holderName),
-        holderCpfEncrypted: encryptPixKey(parsed.holderCpf),
-        holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
-        grossCents: gross,
-        administrativeFeeCents: administrativeFee,
-        transactionFeeCents: transactionFee,
-        netCents: net,
-        feeRuleVersion: "physical-prize-fees-v2",
-        status: automatic ? "PROCESSING" as const : "PENDING" as const,
-        requestedAt: new Date(),
-        reviewedAt: automatic ? new Date() : null,
-        reviewerId: automatic ? systemAdmin!.id : null,
+        select: { id: true }, orderBy: { createdAt: "asc" },
+      }) : null;
+      if (automatic && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+
+      const batchId = "ppb_" + randomUUID().replace(/-/g, "");
+      const externalReference = "prize_batch_" + batchId;
+      const now = new Date();
+      const allocations = new Map(fees.allocations.map(item => [item.id, item]));
+      await tx.prizePaymentBatch.create({ data: {
+        id: batchId, purchaseId: purchase.id,
+        pixKeyEncrypted: encryptPixKey(input.pixKey), pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
+        holderNameEncrypted: encryptPixKey(input.holderName), holderCpfEncrypted: encryptPixKey(input.holderCpf),
+        holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+        grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
+        transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
+        feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
+        requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
         paymentReference: automatic ? externalReference : null,
-        note: null,
-      };
-      if (line.prizePaymentRequest?.status === "REJECTED") {
-        await tx.prizePaymentRequest.update({ where: { id: line.prizePaymentRequest.id }, data });
-      } else {
-        await tx.prizePaymentRequest.create({
-          data: { ...data, id: requestId, participationLineId: line.id },
-        });
-      }
-      await tx.auditEvent.create({ data: {
-        action: "PRIZE_PIX_REQUESTED",
-        entityType: "PrizePaymentRequest",
-        entityId: line.prizePaymentRequest?.id ?? line.id,
-        metadata: {
-          receiptCode, participationLineId: line.id,
-          pixKeyMasked: maskPixKey(parsed.pixKey),
-          pixKeyType: parsed.pixKeyType, holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
-          grossCents: gross, administrativeFeeCents: administrativeFee,
-          transactionFeeCents: transactionFee, netCents: net,
-        },
+        items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
+        requests: { create: feeLines.map(line => {
+          const allocation = allocations.get(line.id)!;
+          return {
+            id: line.oldRequestId ?? "ppr_" + randomUUID().replace(/-/g, ""),
+            participationLineId: line.id, purchaseId: purchase.id, batchId,
+            pixKey: null, pixKeyEncrypted: null, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
+            holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+            holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+            grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
+            transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
+            feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
+            requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
+            paymentReference: automatic ? externalReference : null,
+          };
+        }) },
       } });
-      return {
-        id: requestId, participationLineId: line.id, grossCents: gross,
-        administrativeFeeCents: administrativeFee, transactionFeeCents: transactionFee, netCents: net,
-        automatic, reviewerId: automatic ? systemAdmin!.id : null,
-        pixKey: parsed.pixKey, pixKeyType: parsed.pixKeyType, externalReference,
-      };
+      await tx.auditEvent.create({ data: {
+        action: "PRIZE_PIX_BATCH_REQUESTED", entityType: "PrizePaymentBatch", entityId: batchId,
+        metadata: { receiptCode, lineCount: feeLines.length, grossCents: fees.grossCents,
+          administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
+          netCents: fees.netCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
+          holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2) },
+      } });
+      return { id: batchId, externalReference, grossCents: fees.grossCents,
+        administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
+        netCents: fees.netCents, lineCount: feeLines.length, automatic,
+        pixKey: input.pixKey, pixKeyType: input.pixKeyType };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    if (result.automatic) {
+
+    if (batch.automatic) {
       try {
         const transfer = await createAsaasPixTransfer({
-          amountCents: result.netCents, pixKey: result.pixKey,
-          pixKeyType: result.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
-          externalReference: result.externalReference,
+          amountCents: batch.netCents, pixKey: batch.pixKey,
+          pixKeyType: batch.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
+          externalReference: batch.externalReference,
         });
-        await authPrisma.prizePaymentRequest.updateMany({
-          where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference },
-          data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING" },
+        await authPrisma.$transaction(async tx => {
+          await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
+          await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
+            data: { asaasTransferStatus: transfer.status ?? "PENDING" } });
         });
-        return NextResponse.json({
-          success: true, request: { ...result, pixKey: undefined, reviewerId: undefined, automatic: undefined },
-          status: "PROCESSING",
-          message: "Solicitação aceita. O Pix foi enviado à Asaas e aguarda confirmação bancária.",
-        }, { status: 202, headers });
+        return NextResponse.json({ success: true, batch: {
+          id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
+          transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
+        }, status: "PROCESSING", message: "Solicitação agrupada aceita. Um único Pix foi enviado à Asaas e aguarda confirmação bancária." }, { status: 202, headers });
       } catch (transferError) {
         const status = typeof transferError === "object" && transferError !== null && "status" in transferError ? Number(transferError.status) : 0;
         if (status >= 400 && status < 500) {
-          await authPrisma.prizePaymentRequest.updateMany({
-            where: { id: result.id, status: "PROCESSING", asaasTransferId: null },
-            data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." },
+          await authPrisma.$transaction(async tx => {
+            await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", asaasTransferId: null },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
+            await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
           }).catch(() => undefined);
           return NextResponse.json({ error: "A Asaas recusou a transferência. Nenhum pagamento foi confirmado; revise os dados Pix." }, { status: 502, headers });
         }
-        return NextResponse.json({
-          success: true, status: "PROCESSING",
-          message: "Solicitação registrada. A confirmação de envio está inconclusiva; o sistema bloqueou nova tentativa para evitar Pix duplicado.",
-        }, { status: 202, headers });
+        return NextResponse.json({ success: true, status: "PROCESSING",
+          message: "Solicitação agrupada registrada. A confirmação do envio está inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
       }
     }
-    const { pixKey: _pixKey, reviewerId: _reviewerId, automatic: _automatic, ...publicResult } = result;
-    return NextResponse.json({
-      success: true, request: publicResult,
-      message: "Solicitação recebida. Prêmios de R$ 1.000,00 ou mais aguardam análise da administração.",
-    }, { status: 201, headers });
+    return NextResponse.json({ success: true, batch: {
+      id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
+      transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
+    }, status: "PENDING", message: "Solicitação recebida. O total do recibo é de R$ 1.000,00 ou mais e aguarda análise da administração." }, { status: 201, headers });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2034" || error.code === "P2002")) {
-      return NextResponse.json({ error: "Este prêmio foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
+      return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
     }
     const code = error instanceof Error ? error.message : "";
-    if (code === "PHYSICAL_RECEIPT_ONLY") return NextResponse.json({ error: "Solicitações Pix por recibo estão disponíveis somente para vendas físicas." }, { status: 403, headers });
-    if (code === "PAYMENT_NOT_CONFIRMED") return NextResponse.json({ error: "O pagamento deste recibo ainda não está confirmado." }, { status: 409, headers });
-    if (code === "PRIZE_NOT_FOUND") return NextResponse.json({ error: "O prêmio informado não pertence a este recibo." }, { status: 404, headers });
-    if (code === "PRIZE_NOT_AVAILABLE") return NextResponse.json({ error: "Este prêmio não está disponível para solicitação." }, { status: 409, headers });
-    if (code === "PRIZE_CALCULATION_MISMATCH") return NextResponse.json({ error: "O valor do prêmio diverge do recálculo oficial. O pagamento foi bloqueado para conferência." }, { status: 409, headers });
-    if (code === "AUTOMATIC_PAYOUT_ADMIN_MISSING") return NextResponse.json({ error: "Não foi possível identificar o responsável interno para registrar a transferência automática." }, { status: 503, headers });
-    if (code === "REQUEST_ALREADY_EXISTS") return NextResponse.json({ error: "Este prêmio já possui uma solicitação em análise ou um pagamento registrado." }, { status: 409, headers });
-    return NextResponse.json({ error: "Não foi possível enviar a solicitação Pix." }, { status: 500, headers });
+    const messages: Record<string, [string, number]> = {
+      PHYSICAL_RECEIPT_ONLY: ["Solicitações Pix por recibo estão disponíveis somente para vendas físicas.", 403],
+      PAYMENT_NOT_CONFIRMED: ["O pagamento deste recibo ainda não está confirmado.", 409],
+      PRIZE_NOT_FOUND: ["O prêmio informado não pertence a este recibo.", 404],
+      PRIZE_NOT_AVAILABLE: ["Não há prêmios elegíveis para pagamento neste recibo.", 409],
+      PRIZE_CALCULATION_MISMATCH: ["Um dos valores premiados diverge do recálculo oficial. O lote inteiro foi bloqueado para conferência.", 409],
+      AUTOMATIC_PAYOUT_ADMIN_MISSING: ["Não foi possível identificar o responsável interno para registrar a transferência automática.", 503],
+      REQUEST_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado.", 409],
+      BATCH_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado. Consulte o andamento no próprio recibo.", 409],
+    };
+    const mapped = messages[code];
+    return NextResponse.json({ error: mapped?.[0] ?? "Não foi possível enviar a solicitação Pix." }, { status: mapped?.[1] ?? 500, headers });
   }
 }
