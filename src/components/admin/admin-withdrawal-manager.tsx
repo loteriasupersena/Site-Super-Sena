@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyMasked: string; providerRef: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null; holderCpfMasked?: string | null;
+  pixKey: string | null; pixKeyMasked: string; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null; holderCpfMasked?: string | null;
   createdAt: string; updatedAt: string; reviewedBy: string | null;
   statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
 };
@@ -41,7 +41,7 @@ export function AdminWithdrawalManager() {
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => { window.clearTimeout(timer); loadController.current?.abort(); }; }, [load]);
 
   async function act(item: Item, action: "send-asaas" | "reject") {
-    const note = action === "mark-paid"
+    const note = action === "send-asaas"
       ? "Administrador confirmou a transferência Pix manual. Saque aprovado, pago e encerrado."
       : rejectionReasons[item.id]?.trim() ?? "";
     if (action === "reject" && note.length < 4) {
@@ -63,7 +63,7 @@ export function AdminWithdrawalManager() {
   }
 
   const pending = items.filter((item) => item.status === "PENDING" || item.status === "FAILED");
-  const history = items.filter((item) => item.status !== "PENDING");
+  const history = items.filter((item) => item.status !== "PENDING" && item.status !== "FAILED");
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
@@ -78,7 +78,7 @@ export function AdminWithdrawalManager() {
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>\n        {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}\n        {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
-          <button type="button" disabled={busy !== null || item.amountCents < 100000} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
+          <button type="button" disabled={busy !== null || item.amountCents < 100000 || Boolean(item.asaasTransferId)} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
           <button type="button" className="secondary-button" disabled={busy !== null || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
         </div>
       </article>)}
