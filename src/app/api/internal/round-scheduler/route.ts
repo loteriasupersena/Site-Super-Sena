@@ -76,8 +76,8 @@ function roundCode(date: Date): string {
 }
 
 /**
- * Protected scheduler endpoint. Configure the hosting platform to POST to it every minute
- * with Authorization: Bearer <ROUND_SCHEDULER_SECRET>. It only manages scheduled rounds.
+ * Protected scheduler endpoint. The in-container Node worker calls it every minute
+ * with Authorization: Bearer <ROUND_SCHEDULER_SECRET>; no external cron is required.
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.ROUND_SCHEDULER_SECRET;
