@@ -45,6 +45,7 @@ describe("Asaas wallet transfer webhook", () => {
     }), { status: 200, headers: { "content-type": "application/json" } }));
     mocks.withdrawalUpdate.mockResolvedValue({});
     process.env.ASAAS_WEBHOOK_TOKEN = "a".repeat(40);
+    process.env.ASAAS_API_KEY = "asaas-test-key";
     mocks.webhookFindUnique.mockResolvedValue(null);
     mocks.webhookUpsert.mockResolvedValue({});
     mocks.queryRaw.mockResolvedValue([]);
