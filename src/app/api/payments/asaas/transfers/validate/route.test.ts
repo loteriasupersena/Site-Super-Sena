@@ -37,7 +37,7 @@ function makeRequest(value = 10, pixAddressKey = "52998224725") {
 describe("Asaas transfer validation webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ASAAS_WEBHOOK_TOKEN = "v".repeat(40);
+    process.env.ASAAS_TRANSFER_VALIDATION_TOKEN = "v".repeat(40);
     mocks.withdrawalFindUnique.mockResolvedValue({
       id: "wdr_12345678", status: "PROCESSING", amountCents: 1000,
       pixKey: "529.982.247-25", pixKeyType: "CPF",
