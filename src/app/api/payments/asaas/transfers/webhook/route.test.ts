@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction },
 }));
-vi.mock("@/lib/wallet/pix-key-crypto", () => ({ decryptPixKey: vi.fn(() => "52998224725") }));
 vi.mock("@/modules/rounds/register-numeric-prize-payout", () => ({
   registerNumericPrizePayout: vi.fn(),
 }));
@@ -52,7 +51,7 @@ describe("Asaas wallet transfer webhook", () => {
     mocks.withdrawalFindUnique.mockResolvedValue({
       id: "wdr_12345678", status: "PROCESSING", amountCents: 5000,
       paymentReference: "wallet_withdrawal_wdr_12345678", asaasTransferId: null,
-      reviewedById: "admin-1", userId: "player-1", pixKeyEncrypted: "encrypted", pixKeyType: "CPF",
+      reviewedById: "admin-1", userId: "player-1", pixKey: "52998224725", pixKeyType: "CPF",
     });
     mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
     mocks.ledgerCreate.mockResolvedValue({});
