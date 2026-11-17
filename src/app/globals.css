@@ -3444,3 +3444,10 @@ body:has(.home-page-compact) {
     flex-basis: 8px;
   }
 }
+
+
+/* Altera somente a cor do texto explicativo no recibo exibido na tela. */
+.receipt-modal .thermal-receipt-items > p {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+}
