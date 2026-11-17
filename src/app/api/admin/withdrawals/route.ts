@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { decryptPixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { z } from "zod";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
@@ -53,31 +53,22 @@ export async function GET(request: NextRequest) {
       authPrisma.withdrawal.findMany({ where: { status: { in: ["APPROVED", "PROCESSING", "PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
     ]);
     const withdrawals = [...pendingWithdrawals, ...historicalWithdrawals];
-    let keyConfigError = false;
     const items = withdrawals.map(item => {
-      let pixKey: string | null = null;
-      let holderName: string | null = null;
-      if (["PENDING", "APPROVED", "PROCESSING"].includes(item.status) || (item.status === "FAILED" && !item.asaasTransferId)) {
-        try {
-          pixKey = decryptPixKey(item.pixKeyEncrypted);
-          holderName = item.holderNameEncrypted ? decryptPixKey(item.holderNameEncrypted) : null;
-        } catch { keyConfigError = true; }
-      }
-      let pixKeyMasked = item.pixKeyMasked ?? "Chave indisponível";
-      if (!item.pixKeyMasked) { try { pixKeyMasked = maskPixKey(decryptPixKey(item.pixKeyEncrypted)); } catch { /* keep fallback */ } }
+      const canShowPix = ["PENDING", "APPROVED", "PROCESSING"].includes(item.status) ||
+        (item.status === "FAILED" && !item.asaasTransferId);
       return {
         id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
         asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus,
-        asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked, holderName,
-        pixKey, pixKeyMasked, providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
+        asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked,
+        holderName: canShowPix ? item.holderName : null,
+        pixKey: canShowPix ? item.pixKey : null,
+        pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
+        providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(), reviewedBy: item.reviewedBy?.username ?? null,
         statusHistory: item.statusHistory.map(event => ({ fromStatus: event.fromStatus, toStatus: event.toStatus,
           note: event.note, createdAt: event.createdAt.toISOString(), actor: event.actor?.username ?? "Sistema" })),
       };
     });
-    if (keyConfigError && withdrawals.some(item => ["PENDING", "APPROVED", "PROCESSING"].includes(item.status) || (item.status === "FAILED" && !item.asaasTransferId))) {
-      return NextResponse.json({ error: "Configure WALLET_PIX_ENCRYPTION_KEY para abrir as chaves Pix pendentes. Os saques continuam preservados." }, { status: 503, headers });
-    }
     return NextResponse.json({ items }, { headers });
   } catch {
     return NextResponse.json({ error: "Não foi possível consultar os saques." }, { status: 500, headers });
