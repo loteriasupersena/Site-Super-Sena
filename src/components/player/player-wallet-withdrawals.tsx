@@ -9,7 +9,7 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Pendente", APPROVED: "Estado antigo — contate o administrador", PROCESSING: "Estado antigo — contate o administrador", PAID: "Aprovado e concluído", REJECTED: "Recusado — saldo devolvido" };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Pagamento em análise", APPROVED: "Estado antigo — contate o administrador", PROCESSING: "Estado antigo — contate o administrador", PAID: "Aprovado e concluído", REJECTED: "Valor liberado — saldo devolvido à carteira" };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
@@ -60,7 +60,7 @@ export function PlayerWalletWithdrawals() {
         <div><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         {item.status === "PAID" && <p>Pago e baixado em {dateTime(item.updatedAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>}
-        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.toStatus === "REJECTED" ? "Motivo da recusa: " : ""}{event.note ?? labels[event.toStatus as Withdrawal["status"]]}</small></p>)}
+        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.toStatus === "REJECTED" ? "Motivo da liberação: " : ""}{event.note ?? labels[event.toStatus as Withdrawal["status"]]}</small></p>)}
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy} onClick={() => void load()}>Atualizar carteira</button>
