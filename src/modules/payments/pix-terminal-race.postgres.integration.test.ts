@@ -52,8 +52,8 @@ suite("PostgreSQL Pix confirmation/cancellation race", () => {
     const payment = await prisma.payment.create({
       data: {
         purchaseId,
-        provider: "MERCADO_PAGO",
-        providerPaymentId: `it-order-${suffix}`,
+        provider: "ASAAS",
+        providerPaymentId: `it-asaas-payment-${suffix}`,
         idempotencyKey: `it-pix-payment-${suffix}`,
         amountCents: 100,
         status: PaymentStatus.PENDING,
@@ -79,8 +79,8 @@ suite("PostgreSQL Pix confirmation/cancellation race", () => {
     const results = await Promise.allSettled([
       confirmPixPayment(prisma, {
         paymentId,
-        providerStatus: "processed",
-        providerStatusDetail: "accredited",
+        providerStatus: "RECEIVED",
+        providerStatusDetail: "received",
       }),
       cancelPendingPixPurchase(prisma, {
         paymentId,
@@ -148,8 +148,8 @@ suite("PostgreSQL Pix confirmation/cancellation race", () => {
       const payment = await prisma.payment.create({
         data: {
           purchaseId: testPurchaseId,
-          provider: "MERCADO_PAGO",
-          providerPaymentId: `it-order-double-${testSuffix}`,
+          provider: "ASAAS",
+          providerPaymentId: `it-asaas-payment-double-${testSuffix}`,
           idempotencyKey: `it-pix-payment-double-${testSuffix}`,
           amountCents: 100,
           status: PaymentStatus.PENDING,
@@ -165,13 +165,13 @@ suite("PostgreSQL Pix confirmation/cancellation race", () => {
       const results = await Promise.all([
         confirmPixPayment(prisma, {
           paymentId: testPaymentId,
-          providerStatus: "processed",
-          providerStatusDetail: "accredited",
+          providerStatus: "RECEIVED",
+          providerStatusDetail: "received",
         }),
         confirmPixPayment(prisma, {
           paymentId: testPaymentId,
-          providerStatus: "processed",
-          providerStatusDetail: "accredited",
+          providerStatus: "RECEIVED",
+          providerStatusDetail: "received",
         }),
       ]);
 
