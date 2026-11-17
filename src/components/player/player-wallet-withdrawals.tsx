@@ -13,6 +13,7 @@ const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação r
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
+  const [reservedCents, setReservedCents] = useState(0);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [pixKey, setPixKey] = useState("");
   const [pixKeyConfirmation, setPixKeyConfirmation] = useState("");
@@ -52,10 +53,6 @@ export function PlayerWalletWithdrawals() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao solicitar o saque."); }
     finally { setBusy(false); }
   }
-
-  const reservedCents = withdrawals
-    .filter((item) => ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status))
-    .reduce((total, item) => total + item.amountCents, 0);
 
   return <section className="player-wallet-withdrawals-content">
     <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>saldo disponível</small></p>
