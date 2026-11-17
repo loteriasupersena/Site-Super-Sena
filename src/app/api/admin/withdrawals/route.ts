@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       if (!rows.length) throw new Error("NOT_FOUND");
       const withdrawal = await tx.withdrawal.findUnique({ where: { id: parsed.data.withdrawalId }, include: { user: { select: { username: true } } } });
       if (!withdrawal) throw new Error("NOT_FOUND");
-      if (!["PENDING", "FAILED"].includes(withdrawal.status) || withdrawal.asaasTransferId) throw new Error("INVALID_STATE");
+      if (!["PENDING", "FAILED"].includes(withdrawal.status) || (withdrawal.asaasTransferId && withdrawal.status !== "FAILED")) throw new Error("INVALID_STATE");
       await tx.withdrawal.update({ where: { id: withdrawal.id }, data: { status: "REJECTED", reviewedById: auth.user.id } });
       await tx.ledgerEntry.create({ data: {
         userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
