@@ -91,7 +91,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
     {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Em análise pela administração</p>
       : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
       : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
-      : paymentRequest?.status === "REJECTED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>Solicitação recusada · Preencha novamente para solicitar este prêmio</p>
+      : paymentRequest?.status === "REJECTED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>Valor liberado pela administração · Você poderá solicitar novamente este prêmio</p>
       : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>A transferência não foi concluída. Envie uma nova solicitação com os dados Pix conferidos.</p>
       : <form onSubmit={(event) => { event.preventDefault(); setShowReview(true); setConfirmed(false); }}>
         <div style={{ padding: 12, marginBottom: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb", color: "#78350f" }}><strong>ATENÇÃO: DADOS DO TITULAR DO PIX</strong><p style={{ margin: "6px 0 0", fontWeight: 700 }}>Informe o nome COMPLETO exatamente como aparece no cadastro do CPF e na conta Pix. Não abrevie, não omita sobrenomes e não use dados de outra pessoa. O CPF e a chave Pix devem pertencer ao mesmo titular.</p></div>
