@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { encryptPixKey, isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
@@ -74,14 +74,6 @@ export async function POST(request: NextRequest) {
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const input = parseInput(payload);
   if (!input) return NextResponse.json({ error: "Informe nome completo, CPF válido, tipo de chave Pix e confirme a chave Pix." }, { status: 400, headers });
-  let pixKeyEncrypted: string, holderNameEncrypted: string, holderCpfEncrypted: string;
-  try {
-    pixKeyEncrypted = encryptPixKey(input.pixKey);
-    holderNameEncrypted = encryptPixKey(input.holderName);
-    holderCpfEncrypted = encryptPixKey(input.holderCpf);
-  } catch {
-    return NextResponse.json({ error: "A chave de criptografia de dados Pix não está configurada. O saque não foi solicitado." }, { status: 503, headers });
-  }
 
   try {
     const result = await authPrisma.$transaction(async (tx) => {
@@ -99,8 +91,8 @@ export async function POST(request: NextRequest) {
       const externalReference = "wallet_withdrawal_" + id;
       const automatic = amountCents < LIMIT_CENTS;
       const withdrawal = await tx.withdrawal.create({ data: {
-        id, userId: user.id, amountCents, pixKeyEncrypted, pixKeyType: input.pixKeyType,
-        holderNameEncrypted, holderCpfEncrypted, holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+        id, userId: user.id, amountCents, pixKey: input.pixKey, pixKeyType: input.pixKeyType,
+        holderName: input.holderName, holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
         pixKeyMasked: maskPixKey(input.pixKey), paymentReference: automatic ? externalReference : null,
         status: automatic ? "PROCESSING" : "PENDING", reviewedById: admin?.id ?? null,
         idempotencyKey: "withdrawal:" + randomUUID(),
