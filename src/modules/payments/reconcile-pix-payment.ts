@@ -51,5 +51,5 @@ export async function reconcilePixPaymentFromProvider(
     const result = await confirmPixPayment(prisma, { paymentId: payment.id, providerStatus: canonical.status, providerStatusDetail: "received" });
     return result.outcome;
   }
-
+  return "not_pending";
 }
