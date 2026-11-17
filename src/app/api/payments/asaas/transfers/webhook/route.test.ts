@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   transaction: vi.fn(), webhookFindUnique: vi.fn(), webhookUpsert: vi.fn(),
   withdrawalFindUnique: vi.fn(), withdrawalUpdateMany: vi.fn(), ledgerCreate: vi.fn(),
-  historyCreate: vi.fn(), auditCreate: vi.fn(), queryRaw: vi.fn(),
+  historyCreate: vi.fn(), auditCreate: vi.fn(), queryRaw: vi.fn(), withdrawalUpdate: vi.fn(), asaasFetch: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction },
@@ -18,7 +18,7 @@ import { POST } from "./route";
 function tx() {
   return {
     webhookEvent: { findUnique: mocks.webhookFindUnique, upsert: mocks.webhookUpsert },
-    withdrawal: { findUnique: mocks.withdrawalFindUnique, updateMany: mocks.withdrawalUpdateMany },
+    withdrawal: { findUnique: mocks.withdrawalFindUnique, updateMany: mocks.withdrawalUpdateMany, update: mocks.withdrawalUpdate },
     ledgerEntry: { create: mocks.ledgerCreate },
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
@@ -38,6 +38,12 @@ function request(event = "TRANSFER_DONE", value = 50) {
 describe("Asaas wallet transfer webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("fetch", mocks.asaasFetch);
+    mocks.asaasFetch.mockResolvedValue(new Response(JSON.stringify({
+      id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678",
+      value: 50, operationType: "PIX", bankAccount: { pixAddressKey: "52998224725" },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    mocks.withdrawalUpdate.mockResolvedValue({});
     process.env.ASAAS_WEBHOOK_TOKEN = "a".repeat(40);
     mocks.webhookFindUnique.mockResolvedValue(null);
     mocks.webhookUpsert.mockResolvedValue({});
@@ -78,6 +84,39 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       action: "WITHDRAWAL_ASAAS_TRANSFER_CONFIRMED", entityId: "wdr_12345678",
     }) });
+  });
+
+  it("uses the current Asaas state instead of an intermediate notification", async () => {
+    const response = await POST(request("TRANSFER_PENDING"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ outcome: "WITHDRAWAL_PAID" });
+    expect(mocks.asaasFetch).toHaveBeenCalledWith(
+      "https://api.asaas.com/v3/transfers/trf-1",
+      expect.objectContaining({ method: "GET", cache: "no-store" }),
+    );
+  });
+
+  it("does not mark failed when the latest Asaas state is still intermediate", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-1", status: "IN_BANK_PROCESSING",
+      externalReference: "wallet_withdrawal_wdr_12345678",
+      value: 50, operationType: "PIX",
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    const response = await POST(request("TRANSFER_FAILED"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ outcome: "WITHDRAWAL_PROCESSING" });
+    expect(mocks.withdrawalUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: "PROCESSING" }),
+    }));
+    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not trust webhook payload when the Asaas lookup fails", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response("{}", { status: 503 }));
+    const response = await POST(request("TRANSFER_DONE"));
+    expect(response.status).toBe(503);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
   });
 
   it("rejects a transfer sent to a different Pix beneficiary", async () => {
