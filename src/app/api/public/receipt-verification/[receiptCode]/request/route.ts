@@ -127,22 +127,29 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
         paymentReference: automatic ? externalReference : null,
         items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
-        requests: { create: feeLines.map(line => {
-          const allocation = allocations.get(line.id)!;
-          return {
-            id: line.oldRequestId ?? "ppr_" + randomUUID().replace(/-/g, ""),
-            participationLineId: line.id, purchaseId: purchase.id, batchId,
-            pixKey: null, pixKeyEncrypted: null, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-            holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
-            holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
-            grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
-            transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
-            feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
-            requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
-            paymentReference: automatic ? externalReference : null,
-          };
-        }) },
       } });
+      for (const line of feeLines) {
+        const allocation = allocations.get(line.id)!;
+        const requestData = {
+          purchaseId: purchase.id, batchId,
+          pixKey: null, pixKeyEncrypted: null, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
+          holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+          holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+          grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
+          transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
+          feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" as const : "PENDING" as const,
+          requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
+          paymentReference: automatic ? externalReference : null,
+        };
+        if (line.oldRequestId) {
+          await tx.prizePaymentRequest.update({ where: { id: line.oldRequestId }, data: requestData });
+        } else {
+          await tx.prizePaymentRequest.create({ data: {
+            ...requestData, id: "ppr_" + randomUUID().replace(/-/g, ""),
+            participationLineId: line.id,
+          } });
+        }
+      }
       await tx.auditEvent.create({ data: {
         action: "PRIZE_PIX_BATCH_REQUESTED", entityType: "PrizePaymentBatch", entityId: batchId,
         metadata: { receiptCode, lineCount: feeLines.length, grossCents: fees.grossCents,
