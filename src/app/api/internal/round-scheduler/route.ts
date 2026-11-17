@@ -162,10 +162,12 @@ export async function POST(request: NextRequest) {
   // never the game decision clock.
   const stalePendingPix = await authPrisma.payment.findMany({
     where: {
-      provider: "MERCADO_PAGO",
       status: "PENDING",
-      providerPaymentId: { not: null },
       updatedAt: { lt: new Date(now.getTime() - 10_000) },
+      OR: [
+        { provider: "MERCADO_PAGO", providerPaymentId: { not: null } },
+        { provider: "ASAAS", providerQrCodeId: { not: null } },
+      ],
     },
     select: { id: true },
     orderBy: [{ updatedAt: "asc" }, { createdAt: "asc" }],
