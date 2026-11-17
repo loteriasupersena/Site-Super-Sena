@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyEncrypted: true, pixKeyType: true, holderName: true, holderNameEncrypted: true, holderCpfEncrypted: true, holderCpfMasked: true, asaasTransferId: true, asaasTransferStatus: true, asaasTransferReceiptUrl: true, asaasTransferFailureReason: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
+        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, asaasTransferId: true, asaasTransferStatus: true, asaasTransferReceiptUrl: true, asaasTransferFailureReason: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
         participation: {
           select: {
             totalCents: true,
