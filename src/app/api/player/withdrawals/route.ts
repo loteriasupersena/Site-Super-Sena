@@ -12,7 +12,7 @@ const LIMIT_CENTS = 100000;
 
 function validCpf(value: string) {
   const cpf = value.replace(/\D/g, "");
-  if (!/^\\d{11}$/.test(cpf) || /^(\\d)\\1{10}$/.test(cpf)) return false;
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
   const digit = (length: number) => {
     const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0);
     const result = (sum * 10) % 11;
