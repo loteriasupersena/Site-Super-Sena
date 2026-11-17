@@ -63,27 +63,6 @@ export function AdminPrizePayout() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  async function checkTransfer(winner: Winner) {
-    const transferId = winner.paymentRequest?.asaasTransferId;
-    if (!transferId) return;
-    setBusy(winner.id); setError(""); setNotice("");
-    try {
-      const response = await fetch("/api/admin/asaas/transfers/" + encodeURIComponent(transferId) + "/check", {
-        method: "POST", headers: { "content-type": "application/json" }, body: "{}",
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Não foi possível consultar a transferência no Asaas.");
-      setNotice(body.outcome === "BATCH_PAID" || body.outcome === "PAID"
-        ? "Asaas confirmou o Pix. O recibo e a premiação foram baixados."
-        : body.outcome === "FAILED" || body.outcome === "CANCELLED"
-          ? "Asaas confirmou que o Pix não foi concluído. O recibo permanece sem baixa."
-          : "Consulta concluída. Situação atual: " + (body.providerStatus ?? body.outcome ?? "em processamento") + ".");
-      await load();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao consultar o Asaas.");
-    } finally { setBusy(""); }
-  }
-
   async function sendAsaasPix(winner: Winner) {
     if (!winner.paymentRequest || !window.confirm(
       "Autorizar envio de " + money(winner.paymentRequest.netCents) +
@@ -143,7 +122,7 @@ export function AdminPrizePayout() {
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
     <span className="feature-label">Central de pagamentos</span>
     <h2 id="admin-prize-payout-heading">Ganhadores</h2>
-    <p>Acompanhe todos os prêmios e processe somente solicitações enviadas pelo ganhador na consulta do QR Code do recibo. A confirmação pode ser feita pela consulta direta do site ou pelo webhook; as duas vias usam a mesma validação e dão baixa no recibo pelo mesmo mecanismo.</p>
+    <p>Acompanhe todos os prêmios e processe somente solicitações enviadas pelo ganhador na consulta do QR Code do recibo. A confirmação deve ocorrer depois que o Pix estiver concluído.</p>
 
     {tab === "pending" && <div className="admin-prize-total-panel" style={{
       margin: "1rem 0", padding: "1rem 1.1rem", borderRadius: "16px",
@@ -198,7 +177,7 @@ export function AdminPrizePayout() {
           <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
           <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
           <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
-          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PROCESSING" ? "TRANSFERÊNCIA EM PROCESSAMENTO" : winner.paymentRequest.status === "PAID" ? "PAGA" : winner.paymentRequest.status === "FAILED" ? "FALHA NA TRANSFERÊNCIA" : winner.paymentRequest.status === "CANCELLED" ? "TRANSFERÊNCIA CANCELADA" : "VALOR LIBERADO"}</strong></p><p>Beneficiário: <strong>{winner.paymentRequest.holderName ?? "—"}</strong> · CPF: <strong>{winner.paymentRequest.holderCpf ?? winner.paymentRequest.holderCpfMasked ?? "—"}</strong></p><p>Tipo da chave: <strong>{winner.paymentRequest.pixKeyType ?? "—"}</strong> · Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> <button type="button" className="admin-prize-refresh" disabled={!winner.paymentRequest.pixKey} onClick={() => { if (winner.paymentRequest?.pixKey) void navigator.clipboard.writeText(winner.paymentRequest.pixKey); }}>Copiar chave Pix</button> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p>{winner.paymentRequest.asaasTransferId && <><p>Transferência Asaas: <strong>{winner.paymentRequest.asaasTransferId}</strong> · {winner.paymentRequest.asaasTransferStatus ?? ""}</p>{!winner.paid && <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void checkTransfer(winner)}>{busy === winner.id ? "Consultando Asaas…" : "Consultar pagamento no Asaas"}</button>}</> }{winner.paymentRequest.asaasTransferFailureReason && <p role="alert">Motivo informado: {winner.paymentRequest.asaasTransferFailureReason}</p>}{winner.paymentRequest.asaasTransferReceiptUrl && <p><a href={winner.paymentRequest.asaasTransferReceiptUrl} target="_blank" rel="noreferrer">Abrir comprovante Asaas</a></p>}<p>Prêmio bruto: {money(winner.paymentRequest.grossCents)}</p><p>Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)}</p><p style={{ fontSize: "1.1rem", fontWeight: 800 }}>TOTAL LÍQUIDO A PAGAR: {money(winner.paymentRequest.netCents)}</p></div>}
+          {winner.paymentRequest && <div className="admin-prize-request-details"><p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO ANÁLISE" : winner.paymentRequest.status === "PROCESSING" ? "TRANSFERÊNCIA EM PROCESSAMENTO" : winner.paymentRequest.status === "PAID" ? "PAGA" : winner.paymentRequest.status === "FAILED" ? "FALHA NA TRANSFERÊNCIA" : winner.paymentRequest.status === "CANCELLED" ? "TRANSFERÊNCIA CANCELADA" : "VALOR LIBERADO"}</strong></p><p>Beneficiário: <strong>{winner.paymentRequest.holderName ?? "—"}</strong> · CPF: <strong>{winner.paymentRequest.holderCpf ?? winner.paymentRequest.holderCpfMasked ?? "—"}</strong></p><p>Tipo da chave: <strong>{winner.paymentRequest.pixKeyType ?? "—"}</strong> · Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong> <button type="button" className="admin-prize-refresh" disabled={!winner.paymentRequest.pixKey} onClick={() => { if (winner.paymentRequest?.pixKey) void navigator.clipboard.writeText(winner.paymentRequest.pixKey); }}>Copiar chave Pix</button> · Solicitada: {dateTime(winner.paymentRequest.requestedAt)}</p>{winner.paymentRequest.asaasTransferId && <p>Transferência Asaas: <strong>{winner.paymentRequest.asaasTransferId}</strong> · {winner.paymentRequest.asaasTransferStatus ?? ""}</p>}{winner.paymentRequest.asaasTransferFailureReason && <p role="alert">Motivo informado: {winner.paymentRequest.asaasTransferFailureReason}</p>}{winner.paymentRequest.asaasTransferReceiptUrl && <p><a href={winner.paymentRequest.asaasTransferReceiptUrl} target="_blank" rel="noreferrer">Abrir comprovante Asaas</a></p>}<p>Prêmio bruto: {money(winner.paymentRequest.grossCents)}</p><p>Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)}</p><p style={{ fontSize: "1.1rem", fontWeight: 800 }}>TOTAL LÍQUIDO A PAGAR: {money(winner.paymentRequest.netCents)}</p></div>}
           {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
           {winner.phone && <p>Telefone: {winner.phone}</p>}
           {winner.paid
@@ -211,7 +190,7 @@ export function AdminPrizePayout() {
                   </button>
                   <button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor</button>
                 </div>
-              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Use “Consultar pagamento no Asaas” para verificar diretamente pelo site; o webhook também atualiza este mesmo registro.</p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <div><p role="alert">A transferência não foi concluída. Libere o valor para permitir que o ganhador cadastre novamente os dados Pix.</p><button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor e permitir nova solicitação</button></div> : winner.manualEligible ? <p>A autorização para envio à Asaas ficará disponível após o ganhador solicitar o Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
+              </> : winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Transferência em processamento na Asaas.</strong> O prêmio ainda não está marcado como pago. Aguarde a confirmação do webhook.</p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <div><p role="alert">A transferência não foi concluída. Libere o valor para permitir que o ganhador cadastre novamente os dados Pix.</p><button type="button" className="admin-prize-refresh" disabled={Boolean(busy)} onClick={() => void releaseRequest(winner)}>Liberar valor e permitir nova solicitação</button></div> : winner.manualEligible ? <p>A autorização para envio à Asaas ficará disponível após o ganhador solicitar o Pix pelo recibo.</p> : <p role="alert">Crédito automático ainda não confirmado. Conferir este prêmio.</p>}
             </>}
         </article>)}
       </div>}
