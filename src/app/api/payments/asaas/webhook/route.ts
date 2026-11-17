@@ -9,6 +9,24 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 type AsaasWebhook = { id?: string; event?: string; payment?: { id?: string } };
 function response(body: unknown, status: number) { return NextResponse.json(body, { status, headers }); }
+async function quarantineEvent(input: { eventId: string; event: string; digest: string; reason: string; paymentId?: string }) {
+  const data = {
+    eventType: input.event,
+    payloadDigest: input.digest,
+    processedAt: new Date(),
+    processingError: input.reason,
+    ...(input.paymentId ? { paymentId: input.paymentId } : {}),
+  };
+  await authPrisma.webhookEvent.upsert({
+    where: { provider_providerEventId: { provider: "ASAAS_PAYMENT", providerEventId: input.eventId } },
+    create: {
+      provider: "ASAAS_PAYMENT",
+      providerEventId: input.eventId,
+      ...data,
+    },
+    update: data,
+  });
+}
 function tokenMatches(received: string | null, expected: string) {
   if (!received) return false;
   const a = Buffer.from(received), b = Buffer.from(expected);
@@ -56,7 +74,10 @@ export async function POST(request: NextRequest) {
   }
   try {
     const canonical = await getAsaasPayment(paymentId);
-    if (canonical.id !== paymentId || canonical.billingType !== "PIX") return response({ error: "Pagamento não corresponde a uma cobrança Pix." }, 422);
+    if (canonical.id !== paymentId || canonical.billingType !== "PIX") {
+      await quarantineEvent({ eventId, event, digest, reason: "provider_payment_not_matching_pix" });
+      return response({ received: true, quarantined: true }, 200);
+    }
     if (event === "PAYMENT_REFUNDED" && canonical.status !== "REFUNDED") return response({ error: "Estorno ainda não está confirmado no Asaas." }, 503);
     const payment = await authPrisma.payment.findFirst({
       where: { provider: "ASAAS", providerQrCodeId: canonical.pixQrCodeId ?? undefined },
@@ -65,7 +86,10 @@ export async function POST(request: NextRequest) {
     if (!payment) return response({ error: "Vínculo do QR Code ainda não localizado." }, 503);
     if (canonical.pixQrCodeId !== payment.providerQrCodeId || canonical.externalReference !== "superquina_purchase_" + payment.purchaseId
       || !Number.isFinite(canonical.value) || Math.round((canonical.value ?? 0) * 100) !== payment.amountCents
-      || payment.amountCents !== payment.purchase.totalCents) return response({ error: "Pagamento não corresponde à compra registrada." }, 422);
+      || payment.amountCents !== payment.purchase.totalCents) {
+      await quarantineEvent({ eventId, event, digest, reason: "provider_payment_does_not_match_purchase", paymentId: payment.id });
+      return response({ received: true, quarantined: true }, 200);
+    }
     const prior = await authPrisma.webhookEvent.findUnique({ where: { provider_providerEventId: { provider: "ASAAS_PAYMENT", providerEventId: eventId } }, select: { processedAt: true } });
     if (prior?.processedAt) return response({ received: true, duplicate: true }, 200);
     await authPrisma.webhookEvent.upsert({
@@ -91,7 +115,13 @@ export async function POST(request: NextRequest) {
         await authPrisma.webhookEvent.updateMany({ where: { provider: "ASAAS_PAYMENT", providerEventId: eventId }, data: { processedAt: new Date(), processingError: "reconciliation_required" } });
         return response({ received: true, reconciliationRequired: true }, 200);
       }
-      if (result.outcome === "not_pending") return response({ error: "Compra não está pendente para confirmação." }, 409);
+      if (result.outcome === "not_pending") {
+        await authPrisma.webhookEvent.updateMany({
+          where: { provider: "ASAAS_PAYMENT", providerEventId: eventId },
+          data: { processedAt: new Date(), processingError: "purchase_not_pending" },
+        });
+        return response({ received: true, quarantined: true }, 200);
+      }
     } else {
       await recordUnexpectedExternalRefund(authPrisma, { purchaseId: payment.purchaseId, paymentId: payment.id, providerStatus: canonical.status ?? event, source: "webhook" });
     }
