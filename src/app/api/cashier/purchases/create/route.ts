@@ -87,14 +87,6 @@ export async function POST(request: NextRequest) {
           code: "PIX_CHECKOUT_UNAVAILABLE", purchaseId: purchase.id,
         }, { status: 502, headers: { "Cache-Control": "no-store" } });
       }
-    } else if (payment?.provider === "MERCADO_PAGO" && payment.pixCopyPaste && payment.pixQrCodeBase64) {
-      // Keep an already-created legacy QR available for its original pending purchase.
-      // This branch never creates a new Mercado Pago order.
-      pixCheckout = {
-        copyPaste: payment.pixCopyPaste,
-        qrCodeBase64: payment.pixQrCodeBase64,
-        ticketUrl: payment.pixTicketUrl,
-      };
     }
     return NextResponse.json({
       purchase: {
@@ -116,9 +108,7 @@ export async function POST(request: NextRequest) {
       },
       pixCheckout, paymentActionRequired: true,
       message: pixCheckout
-        ? payment?.provider === "MERCADO_PAGO"
-          ? "Código Pix de uma venda antiga do Mercado Pago. Não gere outro pagamento; aguarde a conciliação desta cobrança."
-          : "Pix preparado pelo Asaas. A venda e o recibo continuam pendentes até a confirmação autêntica do pagamento."
+        ? "Pix preparado pelo Asaas. A venda e o recibo continuam pendentes até a confirmação autêntica do pagamento."
         : "Venda registrada como pendente. Nenhum recibo foi emitido porque o pagamento ainda não foi confirmado. A cobrança Pix ainda não foi criada: configure ASAAS_API_KEY e ASAAS_PIX_KEY no ambiente de produção.",
     }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
