@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
+import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +86,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
         },
         select: {
-          id: true, prizeCents: true, prizeCreditedAt: true,
+          id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
+          unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
+          ruleVersion: true, ruleSnapshot: true,
           prizePayout: { select: { id: true } },
           prizePaymentRequest: { select: { id: true, status: true } },
         },
@@ -94,7 +98,27 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (gross <= 0 || line.prizeCreditedAt || line.prizePayout) throw new Error("PRIZE_NOT_AVAILABLE");
       if (line.prizePaymentRequest && line.prizePaymentRequest.status !== "REJECTED") throw new Error("REQUEST_ALREADY_EXISTS");
 
+      const prizeReview = getNumericPrizeReview({
+        numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
+        hundredsCents: line.hundredsCents, milharCents: line.milharCents,
+        quinaCents: line.quinaCents, senaCents: line.senaCents,
+        ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
+      }, (await tx.purchaseParticipation.findFirst({
+        where: { purchaseId: purchase.id, numericLines: { some: { id: line.id } } },
+        select: { round: { select: { resultNumber: true } } },
+      }))?.round.resultNumber ?? null);
+      if (!prizeReview?.calculationConsistent || prizeReview.calculatedPrizeCents !== gross) throw new Error("PRIZE_CALCULATION_MISMATCH");
+
       const appliesFees = gross >= PRIZE_FEE_THRESHOLD_CENTS;
+      const automatic = gross < PRIZE_FEE_THRESHOLD_CENTS;
+      const systemAdmin = await tx.user.findFirst({
+        where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
+        select: { id: true },
+        orderBy: { createdAt: "asc" },
+      });
+      if (automatic && !systemAdmin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+      const requestId = line.prizePaymentRequest?.id ?? "ppr_" + randomUUID().replace(/-/g, "");
+      const externalReference = "prize_request_" + requestId;
       const administrativeFee = appliesFees ? Math.round(gross * ADMINISTRATIVE_FEE_RATE) : 0;
       const transactionFee = appliesFees ? Math.round(gross * BANK_TRANSACTION_FEE_RATE) : 0;
       const net = gross - administrativeFee - transactionFee;
@@ -113,18 +137,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         transactionFeeCents: transactionFee,
         netCents: net,
         feeRuleVersion: "physical-prize-fees-v1",
-        status: "PENDING" as const,
+        status: automatic ? "PROCESSING" as const : "PENDING" as const,
         requestedAt: new Date(),
-        reviewedAt: null,
-        reviewerId: null,
-        paymentReference: null,
+        reviewedAt: automatic ? new Date() : null,
+        reviewerId: automatic ? systemAdmin!.id : null,
+        paymentReference: automatic ? externalReference : null,
         note: null,
       };
       if (line.prizePaymentRequest?.status === "REJECTED") {
         await tx.prizePaymentRequest.update({ where: { id: line.prizePaymentRequest.id }, data });
       } else {
         await tx.prizePaymentRequest.create({
-          data: { ...data, id: "ppr_" + randomUUID().replace(/-/g, ""), participationLineId: line.id },
+          data: { ...data, id: requestId, participationLineId: line.id },
         });
       }
       await tx.auditEvent.create({ data: {
@@ -139,9 +163,48 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           transactionFeeCents: transactionFee, netCents: net,
         },
       } });
-      return { participationLineId: line.id, grossCents: gross, administrativeFeeCents: administrativeFee, transactionFeeCents: transactionFee, netCents: net };
+      return {
+        id: requestId, participationLineId: line.id, grossCents: gross,
+        administrativeFeeCents: administrativeFee, transactionFeeCents: transactionFee, netCents: net,
+        automatic, reviewerId: automatic ? systemAdmin!.id : null,
+        pixKey: parsed.pixKey, pixKeyType: parsed.pixKeyType, externalReference,
+      };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    return NextResponse.json({ success: true, request: result, message: "Solicitação deste prêmio enviada. Aguarde a análise do administrador." }, { status: 201, headers });
+    if (result.automatic) {
+      try {
+        const transfer = await createAsaasPixTransfer({
+          amountCents: result.netCents, pixKey: result.pixKey,
+          pixKeyType: result.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
+          externalReference: result.externalReference,
+        });
+        await authPrisma.prizePaymentRequest.updateMany({
+          where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference },
+          data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING" },
+        });
+        return NextResponse.json({
+          success: true, request: { ...result, pixKey: undefined, reviewerId: undefined, automatic: undefined },
+          status: "PROCESSING",
+          message: "Solicitação aceita. O Pix foi enviado à Asaas e aguarda confirmação bancária.",
+        }, { status: 202, headers });
+      } catch (transferError) {
+        const status = typeof transferError === "object" && transferError !== null && "status" in transferError ? Number(transferError.status) : 0;
+        if (status >= 400 && status < 500) {
+          await authPrisma.prizePaymentRequest.updateMany({
+            where: { id: result.id, status: "PROCESSING", asaasTransferId: null },
+            data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." },
+          }).catch(() => undefined);
+          return NextResponse.json({ error: "A Asaas recusou a transferência. Nenhum pagamento foi confirmado; revise os dados Pix." }, { status: 502, headers });
+        }
+        return NextResponse.json({
+          success: true, status: "PROCESSING",
+          message: "Solicitação registrada. A confirmação de envio está inconclusiva; o sistema bloqueou nova tentativa para evitar Pix duplicado.",
+        }, { status: 202, headers });
+      }
+    }
+    return NextResponse.json({
+      success: true, request: result,
+      message: "Solicitação recebida. Prêmios de R$ 1.000,00 ou mais aguardam análise da administração.",
+    }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2034" || error.code === "P2002")) {
       return NextResponse.json({ error: "Este prêmio foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
@@ -151,6 +214,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     if (code === "PAYMENT_NOT_CONFIRMED") return NextResponse.json({ error: "O pagamento deste recibo ainda não está confirmado." }, { status: 409, headers });
     if (code === "PRIZE_NOT_FOUND") return NextResponse.json({ error: "O prêmio informado não pertence a este recibo." }, { status: 404, headers });
     if (code === "PRIZE_NOT_AVAILABLE") return NextResponse.json({ error: "Este prêmio não está disponível para solicitação." }, { status: 409, headers });
+    if (code === "PRIZE_CALCULATION_MISMATCH") return NextResponse.json({ error: "O valor do prêmio diverge do recálculo oficial. O pagamento foi bloqueado para conferência." }, { status: 409, headers });
+    if (code === "AUTOMATIC_PAYOUT_ADMIN_MISSING") return NextResponse.json({ error: "Não foi possível identificar o responsável interno para registrar a transferência automática." }, { status: 503, headers });
     if (code === "REQUEST_ALREADY_EXISTS") return NextResponse.json({ error: "Este prêmio já possui uma solicitação em análise ou um pagamento registrado." }, { status: 409, headers });
     return NextResponse.json({ error: "Não foi possível enviar a solicitação Pix." }, { status: 500, headers });
   }
