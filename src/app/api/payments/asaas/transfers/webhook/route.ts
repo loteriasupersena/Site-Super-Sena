@@ -53,11 +53,9 @@ export async function POST(request: NextRequest) {
   const transfer = body.transfer;
   const transferId = transfer?.id?.trim();
   const externalReference = transfer?.externalReference?.trim();
-  if (!eventId || !event || !transferId || !externalReference?.startsWith("prize_request_")) {
+  if (!eventId || !event || !transferId || !externalReference) {
     return response({ error: "Evento de transferência incompleto." }, 400);
   }
-  const requestId = externalReference.slice("prize_request_".length);
-  if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) return response({ error: "Referência inválida." }, 400);
 
   const allowed = new Set([
     "TRANSFER_CREATED", "TRANSFER_PENDING", "TRANSFER_IN_BANK_PROCESSING",
@@ -74,20 +72,109 @@ export async function POST(request: NextRequest) {
       });
       if (prior?.processedAt) return "DUPLICATE";
 
+      if (externalReference.startsWith("prize_batch_")) {
+        const batchId = externalReference.slice("prize_batch_".length);
+        if (!/^[A-Za-z0-9_-]{8,100}$/.test(batchId)) throw new Error("BATCH_REFERENCE_INVALID");
+        const batch = await tx.prizePaymentBatch.findUnique({
+          where: { id: batchId },
+          select: {
+            id: true, status: true, paymentReference: true, asaasTransferId: true,
+            netCents: true, reviewerId: true,
+            requests: { select: { id: true, participationLineId: true, status: true } },
+          },
+        });
+        if (!batch || batch.paymentReference !== externalReference) throw new Error("BATCH_NOT_FOUND");
+        if (batch.asaasTransferId && batch.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
+        if (event === "TRANSFER_DONE" &&
+          (!Number.isFinite(transfer?.value) ||
+           Math.round((transfer?.value ?? 0) * 100) !== batch.netCents ||
+           transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+
+        await tx.webhookEvent.upsert({
+          where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
+          create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
+          update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
+        });
+
+        if (batch.status === "PAID") return "ALREADY_PAID";
+        if (event === "TRANSFER_DONE") {
+          if (!batch.reviewerId || batch.requests.length === 0 ||
+              batch.requests.some(item => item.status !== "PROCESSING")) {
+            throw new Error("BATCH_NOT_READY");
+          }
+          // Each line is settled separately, but only after the single aggregate Pix is confirmed.
+          for (const item of batch.requests) {
+            await registerNumericPrizePayout(tx, {
+              lineId: item.participationLineId,
+              actorId: batch.reviewerId,
+              channel: "PLATFORM_PIX",
+              reference: externalReference,
+              expectedRequestStatus: "PROCESSING",
+            });
+          }
+          await tx.prizePaymentBatch.update({
+            where: { id: batch.id },
+            data: {
+              status: "PAID", asaasTransferId: transferId,
+              asaasTransferStatus: transfer?.status ?? "DONE",
+              asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
+              asaasTransferFailureReason: null,
+            },
+          });
+          await tx.prizePaymentRequest.updateMany({
+            where: { batchId: batch.id },
+            data: {
+              asaasTransferId: transferId,
+              asaasTransferStatus: transfer?.status ?? "DONE",
+              asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
+              asaasTransferFailureReason: null,
+              pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
+            },
+          });
+          return "BATCH_PAID";
+        }
+
+        if (["FAILED", "CANCELLED"].includes(batch.status)) return "TERMINAL_STATE";
+        const status = event === "TRANSFER_FAILED" ? "FAILED"
+          : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
+        const transferStatus = transfer?.status ?? event.replace("TRANSFER_", "");
+        const failure = status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null;
+        await tx.prizePaymentBatch.update({
+          where: { id: batch.id },
+          data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
+        });
+        await tx.prizePaymentRequest.updateMany({
+          where: { batchId: batch.id },
+          data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
+        });
+        await tx.auditEvent.create({
+          data: {
+            action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
+              : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
+            entityType: "PrizePaymentBatch", entityId: batch.id,
+            metadata: { event, transferId, transferStatus, failReason: failure },
+          },
+        });
+        return status;
+      }
+
+      if (!externalReference.startsWith("prize_request_")) throw new Error("REQUEST_REFERENCE_INVALID");
+      const requestId = externalReference.slice("prize_request_".length);
+      if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
         select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
-      if (event === "TRANSFER_DONE" && (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents || transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+      if (event === "TRANSFER_DONE" &&
+        (!Number.isFinite(transfer?.value) ||
+         Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents ||
+         transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
 
       await tx.webhookEvent.upsert({
         where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
-        create: {
-          provider: "ASAAS_TRANSFER", providerEventId: eventId,
-          eventType: event, payloadDigest: digest, processedAt: new Date(),
-        },
+        create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
         update: { eventType: event, payloadDigest: digest, processedAt: new Date(), processingError: null },
       });
 
@@ -104,8 +191,7 @@ export async function POST(request: NextRequest) {
         await tx.prizePaymentRequest.update({
           where: { id: requestId },
           data: {
-            asaasTransferId: transferId,
-            asaasTransferStatus: transfer?.status ?? "DONE",
+            asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? "DONE",
             asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
             asaasTransferFailureReason: null,
             pixKeyEncrypted: null, holderNameEncrypted: null, holderCpfEncrypted: null,
@@ -113,29 +199,23 @@ export async function POST(request: NextRequest) {
         });
         return "PAID";
       }
-      if (["FAILED", "CANCELLED"].includes(requestRow.status) && !["TRANSFER_DONE"].includes(event)) return "TERMINAL_STATE";
-      let status: "PROCESSING" | "FAILED" | "CANCELLED" = "PROCESSING";
-      if (event === "TRANSFER_FAILED") status = "FAILED";
-      else if (event === "TRANSFER_CANCELLED") status = "CANCELLED";
-
-      const data = {
-        status,
-        asaasTransferId: transferId,
-        asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
-        asaasTransferFailureReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null,
-      };
+      if (["FAILED", "CANCELLED"].includes(requestRow.status)) return "TERMINAL_STATE";
+      const status = event === "TRANSFER_FAILED" ? "FAILED"
+        : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
       await tx.prizePaymentRequest.update({
         where: { id: requestId },
-        data,
+        data: {
+          status, asaasTransferId: transferId,
+          asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
+          asaasTransferFailureReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null,
+        },
       });
       await tx.auditEvent.create({
         data: {
-          action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED" : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
+          action: status === "FAILED" ? "PRIZE_ASAAS_TRANSFER_FAILED"
+            : status === "CANCELLED" ? "PRIZE_ASAAS_TRANSFER_CANCELLED" : "PRIZE_ASAAS_TRANSFER_UPDATED",
           entityType: "PrizePaymentRequest", entityId: requestId,
-          metadata: {
-            event, transferId, transferStatus: transfer?.status ?? null,
-            failReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? null : null,
-          },
+          metadata: { event, transferId, transferStatus: transfer?.status ?? null, failReason: transfer?.failReason ?? null },
         },
       });
       return status;
@@ -144,8 +224,9 @@ export async function POST(request: NextRequest) {
     return response({ received: true, outcome }, 200);
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
-    if (code === "REQUEST_NOT_FOUND") return response({ error: "Solicitação não localizada." }, 404);
+    if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
+    if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
   }
 }
