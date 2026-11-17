@@ -42,7 +42,7 @@ export function AdminWithdrawalManager() {
 
   async function act(item: Item, action: "send-asaas" | "reject") {
     const note = action === "send-asaas"
-      ? "Administrador confirmou a transferência Pix manual. Saque aprovado, pago e encerrado."
+      ? "Administrador autorizou o envio Pix pela Asaas."
       : rejectionReasons[item.id]?.trim() ?? "";
     if (action === "reject" && note.length < 4) {
       setError("Informe o motivo da liberação para registrar na auditoria e mostrar ao jogador.");
@@ -50,11 +50,13 @@ export function AdminWithdrawalManager() {
     }
     setBusy(item.id); setError(""); setNotice("");
     try {
-      const response = action === "send-asaas"\n        ? await fetch(`/api/admin/withdrawals/${encodeURIComponent(item.id)}/transfer`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })\n        : await fetch("/api/admin/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ withdrawalId: item.id, action, note }) });
+      const response = action === "send-asaas"
+        ? await fetch(`/api/admin/withdrawals/${encodeURIComponent(item.id)}/transfer`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })
+        : await fetch("/api/admin/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ withdrawalId: item.id, action, note }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível atualizar o saque.");
       setRejectionReasons((current) => { const next = { ...current }; delete next[item.id]; return next; });
-      setNotice(action === "mark-paid"
+      setNotice(action === "send-asaas"
         ? `Saque de ${money(body.withdrawal.amountCents)} de ${body.withdrawal.username} marcado como pago após confirmação do Pix.`
         : `Valor liberado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
       await load();
@@ -75,7 +77,9 @@ export function AdminWithdrawalManager() {
       {pending.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
-        <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>\n        {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}\n        {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
+        <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
+        {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}
+        {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null || item.amountCents < 100000 || Boolean(item.asaasTransferId)} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
