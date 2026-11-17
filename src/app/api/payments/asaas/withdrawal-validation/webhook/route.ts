@@ -39,7 +39,7 @@ function decision(status: "APPROVED" | "REFUSED", refuseReason?: string) {
 
 function normalizePix(value: string, type: string) {
   return ["CPF", "CNPJ", "PHONE"].includes(type)
-    ? value.replace(/\\D/g, "")
+    ? value.replace(/\D/g, "")
     : value.trim().toLowerCase();
 }
 
@@ -155,7 +155,7 @@ async function attachTransfer(expected: ExpectedTransfer, transferId: string, st
  */
 export async function POST(request: NextRequest) {
   const token = process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN?.trim();
-  if (!token || token.length < 32 || token.length > 255 || /\\s/.test(token)) {
+  if (!token || token.length < 32 || token.length > 255 || /\s/.test(token)) {
     return decision("REFUSED", "Validação de transferência não configurada.");
   }
   if (!tokenMatches(request.headers.get("asaas-access-token"), token)) {
