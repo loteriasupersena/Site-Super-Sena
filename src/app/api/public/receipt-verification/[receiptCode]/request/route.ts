@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { encryptPixKey, isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,12 +63,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   const parsed = parsePayload(payload);
   if (!parsed) return NextResponse.json({ error: "Informe nome completo, CPF válido, tipo e chave Pix, e confirme os dados do titular." }, { status: 400, headers });
 
-  let encrypted: string;
-  let encryptedName: string;
-  let encryptedCpf: string;
-  try { encrypted = encryptPixKey(parsed.pixKey); encryptedName = encryptPixKey(parsed.holderName); encryptedCpf = encryptPixKey(parsed.holderCpf); }
-  catch { return NextResponse.json({ error: "Não foi possível proteger a chave Pix. A solicitação não foi enviada." }, { status: 503, headers }); }
-
   try {
     const result = await authPrisma.$transaction(async (tx) => {
       const purchase = await tx.purchase.findUnique({
@@ -106,11 +100,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const net = gross - administrativeFee - transactionFee;
       const data = {
         purchaseId: purchase.id,
-        pixKeyEncrypted: encrypted,
+        pixKey: parsed.pixKey,
+        pixKeyEncrypted: null,
         pixKeyMasked: maskPixKey(parsed.pixKey),
         pixKeyType: parsed.pixKeyType,
-        holderNameEncrypted: encryptedName,
-        holderCpfEncrypted: encryptedCpf,
+        holderName: parsed.holderName,
+        holderNameEncrypted: null,
+        holderCpfEncrypted: null,
         holderCpfMasked: "***.***.***-" + parsed.holderCpf.slice(-2),
         grossCents: gross,
         administrativeFeeCents: administrativeFee,
