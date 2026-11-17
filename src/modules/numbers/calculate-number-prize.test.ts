@@ -14,6 +14,10 @@ describe("calculateNumberPrizeCents", () => {
     const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
   });
+  it("keeps the unit prize at 100% of the wager even if the saved unit multiplier changes", () => {
+    const wager = { ...line("123456"), ruleSnapshot: createNumericPrizeRuleSnapshot({ ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 9 }) };
+    expect(calculateNumberPrizeCents(wager, "999996")).toBe(600);
+  });
   it("preserves legacy v1 unit calculation for existing bets", () => {
     const legacyMultipliers = { ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 5 };
     const wager = { numberValue: "123456", ...allocateNumberStake(100), ruleVersion: LEGACY_NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: { version: LEGACY_NUMERIC_PRIZE_RULE_VERSION, multipliers: legacyMultipliers } };
