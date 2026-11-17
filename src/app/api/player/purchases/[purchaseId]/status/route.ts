@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       status: true,
       receiptCode: true,
       confirmedAt: true,
-      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
     },
   });
   if (!purchase) return NextResponse.json({ error: "Compra não encontrada." }, { status: 404, headers });
@@ -35,8 +35,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // the same idempotent confirmation transaction.
   if (purchase.status === "PENDING_PAYMENT"
     && purchase.payment?.status === "PENDING"
-    && ((purchase.payment.provider === "MERCADO_PAGO" && Boolean(purchase.payment.providerPaymentId))
-      || (purchase.payment.provider === "ASAAS" && Boolean(purchase.payment.providerQrCodeId)))
+    && purchase.payment.provider === "MERCADO_PAGO"
+    && purchase.payment.providerPaymentId
     && Date.now() - purchase.payment.updatedAt.getTime() >= 10_000) {
     const checkClaim = await authPrisma.payment.updateMany({
       where: {
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         status: true,
         receiptCode: true,
         confirmedAt: true,
-        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
       },
     });
   }
