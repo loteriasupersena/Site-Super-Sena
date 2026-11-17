@@ -59,9 +59,9 @@ export async function POST(request: NextRequest) {
 
   const [withdrawals, prizeRequests, batches] = await Promise.all([
     authPrisma.withdrawal.findMany({
-      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { lt: staleBefore } },
+      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { not: null }, updatedAt: { lt: staleBefore } },
       select: { id: true, asaasTransferId: true, paymentReference: true, transferRequestedAt: true },
-      orderBy: { transferRequestedAt: "asc" }, take: 100,
+      orderBy: { updatedAt: "asc" }, take: 100,
     }),
     authPrisma.prizePaymentRequest.findMany({
       where: { batchId: null, status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { not: null }, updatedAt: { lt: staleBefore } },
@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
       orderBy: { updatedAt: "asc" }, take: 200,
     }),
     authPrisma.prizePaymentBatch.findMany({
-      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { not: null }, updatedAt: { lt: staleBefore } },
+      where: { status: "PROCESSING", paymentReference: { not: null }, transferRequestedAt: { lt: staleBefore } },
       select: { id: true, asaasTransferId: true, paymentReference: true, transferRequestedAt: true },
-      orderBy: { updatedAt: "asc" }, take: 100,
+      orderBy: { transferRequestedAt: "asc" }, take: 100,
     }),
   ]);
 
