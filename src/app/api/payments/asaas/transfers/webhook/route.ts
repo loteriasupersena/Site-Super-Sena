@@ -174,7 +174,6 @@ export async function POST(request: NextRequest) {
           return "BATCH_PAID";
         }
 
-        if (["FAILED", "CANCELLED"].includes(batch.status)) return "TERMINAL_STATE";
         const status = event === "TRANSFER_FAILED" ? "FAILED"
           : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
         const transferStatus = transfer?.status ?? event.replace("TRANSFER_", "");
@@ -244,7 +243,6 @@ export async function POST(request: NextRequest) {
             entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, amountCents: withdrawal.amountCents, event, notificationEvent } } });
           return "WITHDRAWAL_PAID";
         }
-        if (["FAILED", "CANCELLED"].includes(withdrawal.status)) return "WITHDRAWAL_TERMINAL";
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
         await tx.withdrawal.update({ where: { id: withdrawal.id }, data: {
           status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
@@ -301,7 +299,6 @@ export async function POST(request: NextRequest) {
         });
         return "PAID";
       }
-      if (["FAILED", "CANCELLED"].includes(requestRow.status)) return "TERMINAL_STATE";
       const status = event === "TRANSFER_FAILED" ? "FAILED"
         : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
       await tx.prizePaymentRequest.update({
