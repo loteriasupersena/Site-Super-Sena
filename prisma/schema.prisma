@@ -87,6 +87,7 @@ enum WithdrawalStatus {
   PROCESSING
   PAID
   REJECTED
+  FAILED
 }
 
 enum PrintJobPurpose {
@@ -396,6 +397,16 @@ model Withdrawal {
   userId              String
   amountCents         Int
   pixKeyEncrypted     String
+  pixKeyType          String?
+  holderNameEncrypted String?
+  holderCpfEncrypted  String?
+  holderCpfMasked     String?
+  pixKeyMasked        String?
+  paymentReference    String?                @unique
+  asaasTransferId     String?                @unique
+  asaasTransferStatus String?
+  asaasTransferFailureReason String?
+  transferRequestedAt DateTime?
   status              WithdrawalStatus       @default(PENDING)
   idempotencyKey      String                 @unique
   reviewedById        String?
