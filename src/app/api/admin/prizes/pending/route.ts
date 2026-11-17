@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { getNumericPrizeReview, NUMERIC_PRIZE_CATEGORY_LABELS } from "@/domain/numeric-prize-review";
-import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
 export const runtime = "nodejs";
@@ -114,19 +113,11 @@ export async function GET(request: NextRequest) {
             asaasTransferReceiptUrl: line.prizePaymentRequest.asaasTransferReceiptUrl,
             asaasTransferFailureReason: line.prizePaymentRequest.asaasTransferFailureReason,
             holderName: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status)
-              ? line.prizePaymentRequest.holderName ?? (line.prizePaymentRequest.holderNameEncrypted
-                ? (() => { try { return decryptPixKey(line.prizePaymentRequest.holderNameEncrypted); } catch { return null; } })()
-                : null)
-              : null,
+              ? line.prizePaymentRequest.holderName : null,
             holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
-            holderCpf: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status) && line.prizePaymentRequest.holderCpfEncrypted
-              ? (() => { try { return decryptPixKey(line.prizePaymentRequest.holderCpfEncrypted); } catch { return null; } })()
-              : null,
+            holderCpf: null,
             pixKey: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status) && !line.prizePayout && !line.prizeCreditedAt
-              ? line.prizePaymentRequest.pixKey ?? (line.prizePaymentRequest.pixKeyEncrypted
-                ? (() => { try { return decryptPixKey(line.prizePaymentRequest.pixKeyEncrypted); } catch { return null; } })()
-                : null)
-              : null,
+              ? line.prizePaymentRequest.pixKey : null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
