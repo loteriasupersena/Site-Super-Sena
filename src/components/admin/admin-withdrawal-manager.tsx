@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyMasked: string; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null; holderCpfMasked?: string | null;
+  pixKey: string | null; pixKeyMasked: string; holderName?: string | null; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null; holderCpfMasked?: string | null;
   createdAt: string; updatedAt: string; reviewedBy: string | null;
   statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
 };
@@ -77,6 +77,7 @@ export function AdminWithdrawalManager() {
       {pending.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
+        <p>Titular: <strong>{item.holderName ?? "Nome não disponível"}</strong></p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
         {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}
         {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
