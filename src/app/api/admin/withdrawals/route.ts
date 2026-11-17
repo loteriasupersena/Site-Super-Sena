@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 const actionSchema = z.object({
   withdrawalId: z.string().min(1).max(128),
-  action: z.enum(["mark-paid", "reject"]),
+  action: z.enum(["reject"]),
   note: z.string().trim().min(4).max(500),
   providerRef: z.string().trim().min(3).max(200).optional(),
 }).strict();
@@ -101,8 +101,7 @@ export async function POST(request: NextRequest) {
       if (!rows.length) throw new Error("NOT_FOUND");
       const withdrawal = await tx.withdrawal.findUnique({ where: { id: parsed.data.withdrawalId }, include: { user: { select: { username: true } } } });
       if (!withdrawal) throw new Error("NOT_FOUND");
-      if (parsed.data.action === "mark-paid") {
-        if (withdrawal.status !== "PENDING") throw new Error("INVALID_STATE");
+      if (!["PENDING", "FAILED"].includes(withdrawal.status) || withdrawal.asaasTransferId) throw new Error("INVALID_STATE");
         const reference = parsed.data.providerRef?.trim() || null;
         const paid = await tx.withdrawal.update({ where: { id: withdrawal.id }, data: { status: "PAID", reviewedById: auth.user.id, ...(reference ? { providerRef: reference } : {}) } });
         await tx.ledgerEntry.create({ data: {
