@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key-crypto";
+import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
