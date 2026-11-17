@@ -19,7 +19,7 @@ await run(npm, ["run", "admin:provision"], "Admin provisioning");
 
 const children = [
   spawn(npm, ["run", "start:next"], { stdio: "inherit", env: process.env }),
-  spawn(node, ["scripts/asaas-transfer-reconciliation-worker.mjs"], { stdio: "inherit", env: process.env }),
+  spawn(node, ["scripts/internal-scheduler-worker.mjs"], { stdio: "inherit", env: process.env }),
 ];
 let stopping = false;
 
