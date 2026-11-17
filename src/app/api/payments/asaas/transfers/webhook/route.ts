@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { decryptPixKey } from "@/lib/wallet/pix-key-crypto";
 import { registerNumericPrizePayout } from "@/modules/rounds/register-numeric-prize-payout";
 
 export const runtime = "nodejs";
@@ -18,6 +19,7 @@ type TransferWebhook = {
     failReason?: string | null;
     value?: number;
     operationType?: string;
+    bankAccount?: { pixAddressKey?: string | null } | null;
   };
 };
 
@@ -163,12 +165,22 @@ export async function POST(request: NextRequest) {
         if (!/^[A-Za-z0-9_-]{8,100}$/.test(withdrawalId)) throw new Error("WITHDRAWAL_REFERENCE_INVALID");
         await tx.$queryRaw`SELECT "id" FROM "Withdrawal" WHERE "id" = ${withdrawalId} FOR UPDATE`;
         const withdrawal = await tx.withdrawal.findUnique({ where: { id: withdrawalId },
-          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true } });
+          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true, pixKeyEncrypted: true, pixKeyType: true } });
         if (!withdrawal || withdrawal.paymentReference !== externalReference) throw new Error("WITHDRAWAL_NOT_FOUND");
         if (withdrawal.asaasTransferId && withdrawal.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
         if (event === "TRANSFER_DONE" &&
           (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== withdrawal.amountCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
+        if (event === "TRANSFER_DONE") {
+          if (!withdrawal.pixKeyEncrypted || !withdrawal.pixKeyType || !transfer?.bankAccount?.pixAddressKey) {
+            throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
+          }
+          const normalizePix = (value: string, type: string) =>
+            ["CPF", "CNPJ", "PHONE"].includes(type) ? value.replace(/\\D/g, "") : value.trim().toLowerCase();
+          const expectedPix = normalizePix(decryptPixKey(withdrawal.pixKeyEncrypted), withdrawal.pixKeyType);
+          const actualPix = normalizePix(transfer.bankAccount.pixAddressKey, withdrawal.pixKeyType);
+          if (expectedPix !== actualPix) throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
+        }
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
           create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
@@ -276,6 +288,7 @@ export async function POST(request: NextRequest) {
     if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
+    if (code === "TRANSFER_BENEFICIARY_MISMATCH" || code === "TRANSFER_BENEFICIARY_UNVERIFIABLE") return response({ error: "A chave Pix de destino não pôde ser confirmada contra o cadastro do saque." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
   }
 }
