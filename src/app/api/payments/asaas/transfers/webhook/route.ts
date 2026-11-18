@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           where: { id: batchId },
           select: {
             id: true, status: true, paymentReference: true, asaasTransferId: true,
-            netCents: true, reviewerId: true, pixKey: true, pixKeyType: true,
+            netCents: true, pixKey: true, pixKeyType: true,
             requests: { select: { id: true, participationLineId: true, status: true } },
           },
         });
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
         if (batch.status === "PAID") return "ALREADY_PAID";
         if (event === "TRANSFER_DONE") {
-          if (!batch.reviewerId || batch.requests.length === 0 ||
+          if (batch.requests.length === 0 ||
               !["PROCESSING", "FAILED", "CANCELLED"].includes(batch.status) ||
               batch.requests.some(item => !["PROCESSING", "FAILED", "CANCELLED"].includes(item.status))) {
             throw new Error("BATCH_NOT_READY");
@@ -144,14 +144,17 @@ export async function POST(request: NextRequest) {
           for (const item of batch.requests) {
             await registerNumericPrizePayout(tx, {
               lineId: item.participationLineId,
-              actorId: batch.reviewerId,
+              actorId: null,
               channel: "PLATFORM_PIX",
               reference: externalReference,
               expectedRequestStatus: item.status as "PROCESSING" | "FAILED" | "CANCELLED",
             });
           }
-          await tx.prizePaymentBatch.update({
-            where: { id: batch.id },
+          const batchSettled = await tx.prizePaymentBatch.updateMany({
+            where: {
+              id: batch.id, status: batch.status,
+              OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }],
+            },
             data: {
               status: "PAID", asaasTransferId: transferId,
               asaasTransferStatus: transfer?.status ?? "DONE",
@@ -159,8 +162,9 @@ export async function POST(request: NextRequest) {
               asaasTransferFailureReason: null,
             },
           });
-          await tx.prizePaymentRequest.updateMany({
-            where: { batchId: batch.id },
+          if (batchSettled.count !== 1) throw new Error("BATCH_SETTLEMENT_CONFLICT");
+          const requestsSettled = await tx.prizePaymentRequest.updateMany({
+            where: { batchId: batch.id, status: "PAID" },
             data: {
               asaasTransferId: transferId,
               asaasTransferStatus: transfer?.status ?? "DONE",
@@ -169,6 +173,7 @@ export async function POST(request: NextRequest) {
               pixKey: null, pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
             },
           });
+          if (requestsSettled.count !== batch.requests.length) throw new Error("BATCH_REQUEST_SETTLEMENT_COUNT_MISMATCH");
           return "BATCH_PAID";
         }
 
@@ -235,12 +240,27 @@ export async function POST(request: NextRequest) {
           return "WITHDRAWAL_PAID";
         }
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
-        await tx.withdrawal.update({ where: { id: withdrawal.id }, data: {
-          status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
-          asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
-        } });
-        await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
-          toStatus: status, note: status === "FAILED" ? "Transferência Asaas não concluída: " + (transfer?.failReason ?? event) : "Atualização da transferência Asaas: " + event } });
+        const changed = await tx.withdrawal.updateMany({
+          where: { id: withdrawal.id, status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: externalReference },
+          data: {
+            status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
+            asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
+          },
+        });
+        if (changed.count === 1) {
+          if (status === "FAILED") {
+            await tx.ledgerEntry.create({ data: {
+              userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
+              amountCents: withdrawal.amountCents, currency: "BRL",
+              idempotencyKey: "withdrawal-release:" + withdrawal.id,
+              description: "Liberação do saldo após confirmação de falha/cancelamento da transferência Asaas " + transferId,
+            } });
+          }
+          await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
+            toStatus: status, note: status === "FAILED"
+              ? "Transferência Asaas confirmada como não concluída; saldo reservado devolvido à carteira. " + (transfer?.failReason ?? event)
+              : "Atualização da transferência Asaas: " + event } });
+        }
         await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
           entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
@@ -251,7 +271,7 @@ export async function POST(request: NextRequest) {
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true, pixKey: true, pixKeyType: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true, pixKey: true, pixKeyType: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
@@ -271,10 +291,9 @@ export async function POST(request: NextRequest) {
 
       if (requestRow.status === "PAID") return "ALREADY_PAID";
       if (event === "TRANSFER_DONE") {
-        if (!requestRow.reviewerId) throw new Error("PAYOUT_REVIEWER_MISSING");
         await registerNumericPrizePayout(tx, {
           lineId: requestRow.participationLineId,
-          actorId: requestRow.reviewerId,
+          actorId: null,
           channel: "PLATFORM_PIX",
           reference: externalReference,
           expectedRequestStatus: requestRow.status as "PROCESSING" | "FAILED" | "CANCELLED",

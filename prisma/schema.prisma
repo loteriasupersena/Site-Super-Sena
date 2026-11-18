@@ -378,13 +378,13 @@ model NumericPrizePayout {
   participationLineId String                    @unique
   channel              NumericPrizePayoutChannel
   amountCents          Int
-  actorId              String
+  actorId              String?
   cashierId            String?
   settlementId         String?
   reference            String?
   paidAt               DateTime                  @default(now())
   participationLine    NumericParticipationLine  @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
-  actor                User                      @relation("NumericPrizePayoutActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actor                User?                     @relation("NumericPrizePayoutActor", fields: [actorId], references: [id], onDelete: Restrict)
   cashier              User?                     @relation("NumericPrizePayoutCashier", fields: [cashierId], references: [id], onDelete: Restrict)
   settlement           CashierSettlement?        @relation(fields: [settlementId], references: [id], onDelete: Restrict)
 

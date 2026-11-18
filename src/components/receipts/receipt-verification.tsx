@@ -21,7 +21,7 @@ type VerifiedReceipt = {
   totalCents?: number;
   currency?: string;
   confirmedAt?: string | null;
-  manualPayoutEligible?: boolean;
+  physicalReceiptEligible?: boolean;
   rounds?: VerifiedRound[];
   message: string;
 };
@@ -60,19 +60,18 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   const [showReview, setShowReview] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [requesting, setRequesting] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   const batch = paymentRequest?.batch ?? null;
   const displayedGross = batch?.grossCents ?? grossCents;
-  const requiresAdminApproval = displayedGross >= 100000;
-  const adminFee = batch?.administrativeFeeCents ?? (requiresAdminApproval ? Math.round(displayedGross * 0.05) : 0);
-  const bankFee = batch?.transactionFeeCents ?? (requiresAdminApproval ? Math.round(displayedGross * 0.05) : 0);
+
+  const adminFee = batch?.administrativeFeeCents ?? 0;
+  const bankFee = batch?.transactionFeeCents ?? 0;
   const displayedNet = batch?.netCents ?? (displayedGross - adminFee - bankFee);
   const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
 
   async function submit() {
-    setRequesting(true); setError(""); setMessage("");
+    setRequesting(true); setError("");
     try {
       const response = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}/request`, {
         method: "POST",
@@ -82,9 +81,6 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível solicitar o pagamento.");
       setHolderName(""); setHolderCpf(""); setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false); setHolderConfirmed(false);
-      setMessage(body.status === "PROCESSING"
-        ? "Solicitação enviada à Asaas. Aguarde a confirmação do Pix."
-        : "Solicitação recebida. Aguarde a análise da administração antes do envio do Pix.");
       await onSubmitted();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação.");
@@ -93,10 +89,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
 
   return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
     <strong style={{ color: "#111827" }}>{batch ? "Todos os prêmios deste recibo" : numberValue} · Prêmio bruto: {money(displayedGross)}</strong>
-    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {requiresAdminApproval ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {requiresAdminApproval ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
-    {requiresAdminApproval && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Prêmios físicos com total igual ou superior a R$ 1.000,00 aguardam autorização da administração antes do envio do Pix.</p>}
-    {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Valor liberado pela administração. Você pode solicitar novamente este prêmio.</p>}
-    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Aguardando análise da administração</p>
+    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa: {money(adminFee)}<br />Taxa de transação bancária: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
+    {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação anterior encerrada. Você pode enviar uma nova solicitação.</p>}
+    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação registrada. Aguardando processamento automático do Pix.</p>
       : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
       : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
 
@@ -123,7 +118,6 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
           </div>}
       </form>}
     {error && <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>{error}</p>}
-    {message && <p role="status" style={{ color: "#166534", fontWeight: 700 }}>{message}</p>}
   </div>;
 }
 
@@ -178,7 +172,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   if (!data) return <p role="alert" style={{ color: "#b91c1c", fontWeight: 700 }}>Não foi possível consultar o recibo.</p>;
 
   const rounds = data.valid ? data.rounds ?? [] : [];
-  const physicalReceipt = Boolean(data.manualPayoutEligible);
+  const physicalReceipt = Boolean(data.physicalReceiptEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
   const hasPaidPrize = rounds.some((round) => round.numbers.some((number) => number.prizePaid));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);

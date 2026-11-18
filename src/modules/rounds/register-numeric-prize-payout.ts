@@ -13,7 +13,7 @@ export async function registerNumericPrizePayout(
   tx: Prisma.TransactionClient,
   input: {
     lineId: string;
-    actorId: string;
+    actorId: string | null;
     channel: NumericPrizePayoutChannel;
     reference?: string | null;
     expectedRequestStatus?: "PENDING" | "PROCESSING" | "FAILED" | "CANCELLED";
@@ -85,7 +85,7 @@ export async function registerNumericPrizePayout(
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
     where: { id: line.prizePaymentRequest.id, status: input.expectedRequestStatus ?? "PENDING" },
-    data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId, paymentReference: input.reference?.trim() || null },
+    data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
@@ -94,7 +94,7 @@ export async function registerNumericPrizePayout(
       participationLineId: line.id,
       channel: "PLATFORM_PIX",
       amountCents: line.prizePaymentRequest.netCents,
-      actorId: input.actorId,
+      actorId: input.actorId ?? undefined,
       cashierId: null,
       reference: input.reference?.trim() || null,
       paidAt,
@@ -110,7 +110,7 @@ export async function registerNumericPrizePayout(
   });
   await tx.auditEvent.create({
     data: {
-      actorId: input.actorId,
+      actorId: input.actorId ?? undefined,
       action: "PLATFORM_PRIZE_PAID_PIX",
       entityType: "NumericPrizePayout",
       entityId: payout.id,

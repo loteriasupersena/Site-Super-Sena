@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
           phone: line.participation.purchase.customer?.phone ?? null,
           cashierName: line.participation.purchase.cashier?.fullName
             ?? line.participation.purchase.cashier?.username ?? null,
-          manualEligible: Boolean(line.participation.purchase.cashierId && !line.participation.purchase.playerId),
+          physicalReceiptEligible: Boolean(line.participation.purchase.cashierId && !line.participation.purchase.playerId),
           paid: Boolean(line.prizePayout || line.prizeCreditedAt),
           payoutChannel: line.prizePayout?.channel ?? (line.prizeCreditedAt ? "WALLET" : null),
           paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null,

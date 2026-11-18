@@ -4,8 +4,9 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
-import { createAsaasPixTransfer } from "@/modules/payments/asaas";
-import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
+import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
+import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
+import { calculatePrizeFeeBatch } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,13 +106,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
       const fees = calculatePrizeFeeBatch(feeLines);
-      // Preserve the existing threshold: smaller prizes are automatic; larger prizes wait for admin approval.
-      const automatic = fees.grossCents < PRIZE_FEE_THRESHOLD_CENTS;
-      const admin = automatic ? await tx.user.findFirst({
-        where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
-        select: { id: true }, orderBy: { createdAt: "asc" },
-      }) : null;
-      if (automatic && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+      // Every eligible physical-prize request is sent directly to Asaas.
+      // The admin area is monitoring-only; no manual payment authorization is required.
 
       const batchId = "ppb_" + randomUUID().replace(/-/g, "");
       const externalReference = "prize_batch_" + batchId;
@@ -124,10 +120,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
-        feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
-        requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
-        paymentReference: automatic ? externalReference : null,
-        transferRequestedAt: automatic ? now : null,
+        feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING",
+        requestedAt: now, reviewedAt: null, reviewerId: null,
+        paymentReference: externalReference,
+        transferRequestedAt: now,
         items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
       } });
       for (const line of feeLines) {
@@ -139,10 +135,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
           grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
           transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
-          feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" as const : "PENDING" as const,
-          requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
-          paymentReference: automatic ? externalReference : null,
-          transferRequestedAt: automatic ? now : null,
+          feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
+          requestedAt: now, reviewedAt: null, reviewerId: null,
+          paymentReference: externalReference,
+          transferRequestedAt: now,
         };
         if (line.oldRequestId) {
           await tx.prizePaymentRequest.update({ where: { id: line.oldRequestId }, data: requestData });
@@ -162,46 +158,101 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       } });
       return { id: batchId, externalReference, grossCents: fees.grossCents,
         administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
-        netCents: fees.netCents, lineCount: feeLines.length, automatic,
-        pixKey: input.pixKey, pixKeyType: input.pixKeyType };
+        netCents: fees.netCents, lineCount: feeLines.length,
+        pixKey: input.pixKey, pixKeyType: input.pixKeyType, requestedAt: now };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    if (batch.automatic) {
-      try {
+    try {
         const transfer = await createAsaasPixTransfer({
           amountCents: batch.netCents, pixKey: batch.pixKey,
           pixKeyType: batch.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
           externalReference: batch.externalReference,
         });
         await authPrisma.$transaction(async tx => {
-          await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
-            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
-          await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
-            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
+          const batchLink = await tx.prizePaymentBatch.updateMany({
+            where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
+          });
+          if (batchLink.count !== 1) throw new Error("PRIZE_BATCH_TRANSFER_LINK_FAILED");
+          const requestLinks = await tx.prizePaymentRequest.updateMany({
+            where: { batchId: batch.id, status: "PROCESSING" },
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
+          });
+          if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_TRANSFER_LINK_FAILED");
         });
         return NextResponse.json({ success: true, batch: {
           id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
           transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
         }, status: "PROCESSING", message: "Solicitação agrupada aceita. Um único Pix foi enviado automaticamente à Asaas e aguarda confirmação bancária." }, { status: 202, headers });
       } catch (transferError) {
-        const status = typeof transferError === "object" && transferError !== null && "status" in transferError ? Number(transferError.status) : 0;
-        if (status >= 400 && status < 500) {
-          await authPrisma.$transaction(async tx => {
-            await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", asaasTransferId: null },
-              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
-            await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
-              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
-          }).catch(() => undefined);
-          return NextResponse.json({ error: "A Asaas recusou a transferência. Nenhum pagamento foi confirmado; revise os dados Pix." }, { status: 502, headers });
+        const status = typeof transferError === "object" && transferError !== null && "status" in transferError
+          ? Number(transferError.status) : 0;
+        // Always reconcile first, including HTTP 4xx responses. Never assume
+        // that a failed POST proves no transfer exists at the provider.
+        let lookupCompleted = false;
+        let matchingTransfers = 0;
+        try {
+          const matches = await findAsaasTransfersByExternalReference({
+            externalReference: batch.externalReference,
+            requestedAt: batch.requestedAt,
+          });
+          lookupCompleted = true;
+          matchingTransfers = matches.length;
+          if (matches.length === 1 && matches[0]?.id) {
+            const recoveredTransferId = matches[0].id;
+            const linked = await authPrisma.$transaction(async tx => {
+              const result = await tx.prizePaymentBatch.updateMany({
+                where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference,
+                  OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
+                data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+              });
+              if (result.count !== 1) return false;
+              const requestLinks = await tx.prizePaymentRequest.updateMany({
+                where: { batchId: batch.id, status: "PROCESSING",
+                  OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
+                data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+              });
+              if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_RECOVERY_LINK_FAILED");
+              return true;
+            });
+            if (linked) {
+              await reconcileAsaasTransferFromPlatform({
+                transferId: recoveredTransferId,
+                externalReference: batch.externalReference,
+              });
+              return NextResponse.json({ success: true, status: "PROCESSING",
+                message: "Transferência localizada na Asaas e vinculada ao recibo. A confirmação bancária está sendo reconciliada." }, { status: 202, headers });
+            }
+          }
+        } catch {
+          // An unavailable or ambiguous lookup must preserve the reservation.
         }
+
+        // A definitive provider rejection may be closed only after a successful
+        // exact-reference lookup confirms that no transfer was created.
+        const definitiveRejection = status >= 400 && status < 500 && status !== 408 && status !== 429;
+        if (definitiveRejection && lookupCompleted && matchingTransfers === 0) {
+          await authPrisma.$transaction(async tx => {
+            const batchFailed = await tx.prizePaymentBatch.updateMany({
+              where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference, asaasTransferId: null },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED",
+                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta por referência confirmou que ela não foi criada." },
+            });
+            if (batchFailed.count !== 1) throw new Error("PRIZE_BATCH_REJECTION_STATE_CONFLICT");
+            const requestsFailed = await tx.prizePaymentRequest.updateMany({
+              where: { batchId: batch.id, status: "PROCESSING", asaasTransferId: null },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED",
+                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta por referência confirmou que ela não foi criada." },
+            });
+            if (requestsFailed.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_REJECTION_COUNT_MISMATCH");
+          });
+          return NextResponse.json({ error: "A Asaas recusou a transferência. A consulta confirmou que nenhum Pix foi criado; o pagamento ficou bloqueado para conferência." }, { status: 502, headers });
+        }
+
         return NextResponse.json({ success: true, status: "PROCESSING",
-          message: "Solicitação agrupada registrada. A confirmação do envio está inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
-      }
+          message: "Não foi possível confirmar o resultado do envio. O saldo permanece reservado e uma nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
+
     }
-    return NextResponse.json({ success: true, batch: {
-      id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
-      transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
-    }, status: "PENDING", message: "Solicitação recebida. O total do recibo é de R$ 1.000,00 ou mais e aguarda análise da administração." }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
       return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
@@ -213,7 +264,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       PRIZE_NOT_FOUND: ["O prêmio informado não pertence a este recibo.", 404],
       PRIZE_NOT_AVAILABLE: ["Não há prêmios elegíveis para pagamento neste recibo.", 409],
       PRIZE_CALCULATION_MISMATCH: ["Um dos valores premiados diverge do recálculo oficial. O lote inteiro foi bloqueado para conferência.", 409],
-      AUTOMATIC_PAYOUT_ADMIN_MISSING: ["Não foi possível identificar o responsável técnico para registrar a transferência automática.", 503],
       REQUEST_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado.", 409],
       BATCH_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado. Consulte o andamento no próprio recibo.", 409],
     };

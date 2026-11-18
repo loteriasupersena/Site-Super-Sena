@@ -62,7 +62,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     });
     return NextResponse.json({ valid: true, receiptCode: purchase.receiptCode, status: "CONFIRMED",
       paymentMethod: purchase.paymentMethod, totalCents: purchase.totalCents, currency: purchase.currency,
-      manualPayoutEligible: Boolean(purchase.cashierId && !purchase.playerId),
+      physicalReceiptEligible: Boolean(purchase.cashierId && !purchase.playerId),
       confirmedAt: purchase.confirmedAt?.toISOString() ?? null,
       rounds,
       message: "Recibo registrado e pagamento confirmado no sistema oficial." }, { headers });
