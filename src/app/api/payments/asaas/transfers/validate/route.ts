@@ -78,10 +78,11 @@ export async function POST(request: NextRequest) {
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
           normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix ?? "", batch.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
-        await tx.prizePaymentBatch.updateMany({
+        const linked = await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
-        });
+        })
+        if (linked.count !== 1) return { approved: false, entityType: "Lote", entityId: batch.id, reason: "Registro alterado durante a validação." };;
         await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentBatch", entityId: batch.id, metadata: { transferId, externalReference, valueCents } } });
         return { approved: true, entityType: "PrizePaymentBatch", entityId: batch.id };
       }
@@ -97,10 +98,11 @@ export async function POST(request: NextRequest) {
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
           normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix ?? "", prizeRequest.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
-        await tx.prizePaymentRequest.updateMany({
+        const linked = await tx.prizePaymentRequest.updateMany({
           where: { id: prizeRequest.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
-        });
+        })
+        if (linked.count !== 1) return { approved: false, entityType: "Solicitação", entityId: prizeRequest.id, reason: "Registro alterado durante a validação." };;
         await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentRequest", entityId: prizeRequest.id, metadata: { transferId, externalReference, valueCents } } });
         return { approved: true, entityType: "PrizePaymentRequest", entityId: prizeRequest.id };
       }
@@ -116,10 +118,11 @@ export async function POST(request: NextRequest) {
           withdrawal.amountCents === valueCents && !!withdrawal.pixKey && !!withdrawal.pixKeyType &&
           normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix ?? "", withdrawal.pixKeyType ?? "");
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
-        await tx.withdrawal.updateMany({
+        const linked = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
-        });
+        })
+        if (linked.count !== 1) return { approved: false, entityType: "Saque", entityId: withdrawal.id, reason: "Registro alterado durante a validação." };;
         await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, externalReference, valueCents } } });
         return { approved: true, entityType: "Withdrawal", entityId: withdrawal.id };
       }
