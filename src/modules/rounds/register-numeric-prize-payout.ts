@@ -13,7 +13,7 @@ export async function registerNumericPrizePayout(
   tx: Prisma.TransactionClient,
   input: {
     lineId: string;
-    actorId: string;
+    actorId: string | null;
     channel: NumericPrizePayoutChannel;
     reference?: string | null;
     expectedRequestStatus?: "PENDING" | "PROCESSING" | "FAILED" | "CANCELLED";
