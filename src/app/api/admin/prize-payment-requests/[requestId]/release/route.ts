@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       });
       if (!item) throw new Error("NOT_FOUND");
       const reviewedAt = new Date();
-      const terminalTransfer = ["DONE", "FAILED", "CANCELLED", "REJECTED"].includes(item.asaasTransferStatus ?? "");
+      const terminalTransfer = ["FAILED", "CANCELLED", "REJECTED"].includes(item.asaasTransferStatus ?? "");
       if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status) || (item.asaasTransferId && !terminalTransfer)) throw new Error("NOT_PENDING");
 
       if (item.batchId) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         if (!batch || !batch.requests.length) throw new Error("NOT_PENDING");
         const terminalStatuses = ["PENDING", "FAILED", "CANCELLED"];
         const safeTransfer = (id: string | null, status: string | null) =>
-          !id || ["DONE", "FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
+          !id || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
         if (!terminalStatuses.includes(batch.status) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus) ||
             batch.requests.some(row => !terminalStatuses.includes(row.status) || !safeTransfer(row.asaasTransferId, row.asaasTransferStatus))) {
           throw new Error("NOT_PENDING");
