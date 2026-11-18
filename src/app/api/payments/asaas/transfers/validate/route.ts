@@ -114,11 +114,13 @@ export async function POST(request: NextRequest) {
         select: { id: true, status: true, paymentReference: true, asaasTransferId: true, amountCents: true, pixKey: true, pixKeyType: true, reviewedById: true },
       });
       if (withdrawal) {
+        const storedPixKey = withdrawal.pixKey;
+        const storedPixKeyType = withdrawal.pixKeyType;
         const valid = withdrawal.status === "PROCESSING" && !!withdrawal.reviewedById &&
           (!externalReference || withdrawal.paymentReference === externalReference) &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
-          withdrawal.amountCents === valueCents && !!withdrawal.pixKey && !!withdrawal.pixKeyType &&
-          (!actualPix || normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix, withdrawal.pixKeyType));
+          withdrawal.amountCents === valueCents && !!storedPixKey && !!storedPixKeyType &&
+          (!actualPix || normalizePix(storedPixKey, storedPixKeyType) === normalizePix(actualPix, storedPixKeyType));
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         const linked = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
