@@ -42,8 +42,7 @@ function refuse(reason: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const expectedToken = process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN?.trim()
-    || process.env.ASAAS_WEBHOOK_TOKEN?.trim();
+  const expectedToken = process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN?.trim();
   if (!expectedToken || expectedToken.length < 32 ||
       !tokenMatches(request.headers.get("asaas-access-token"), expectedToken)) {
     return NextResponse.json({ error: "Autenticação inválida." }, { status: 401, headers: { "Cache-Control": "no-store" } });
@@ -131,7 +130,7 @@ export async function POST(request: NextRequest) {
     if (!decision.approved) return refuse("reason" in decision ? decision.reason : "Transferência não autorizada.");
     return NextResponse.json({ status: "APPROVED" }, { status: 200, headers: { "Cache-Control": "no-store" } });
   } catch {
-    // Fail closed: Asaas cancels the operation if validation cannot be completed.
-    return refuse("Não foi possível validar a transferência com segurança.");
+    // A transient database failure must trigger Asaas retry, not a false decision.
+    return NextResponse.json({ error: "Validação temporariamente indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
