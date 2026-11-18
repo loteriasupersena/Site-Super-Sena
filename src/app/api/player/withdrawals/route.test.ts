@@ -57,13 +57,15 @@ describe("player withdrawals API", () => {
   });
 
   it("reserves the full available balance atomically and records an audit event", async () => {
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PROCESSING" } });
     expect(mocks.transaction).toHaveBeenCalledOnce();
     expect(mocks.queryRaw).toHaveBeenCalledOnce();
     expect(mocks.userFindFirst).toHaveBeenCalledOnce();
-    expect(mocks.withdrawalCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ pixKey: "52998224725", holderName: "Joao da Silva", pixKeyType: "CPF" }) });
+    expect(mocks.withdrawalCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ pixKey: "52998224725", pixKeyType: "CPF" }) });
+    expect(mocks.withdrawalCreate.mock.calls[0][0].data).not.toHaveProperty("holderName");
+    expect(mocks.withdrawalCreate.mock.calls[0][0].data).not.toHaveProperty("holderCpfMasked");
     expect(mocks.withdrawalCreate.mock.calls[0][0].data).not.toHaveProperty("pixKeyEncrypted");
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       userId: "player-1", withdrawalId: "withdrawal-1", type: "WITHDRAWAL_RESERVE",
@@ -80,7 +82,6 @@ describe("player withdrawals API", () => {
     mocks.findTransfers.mockResolvedValueOnce([]);
     const response = await POST(request("/api/player/withdrawals", {
       pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
-      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
     }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
@@ -129,10 +130,9 @@ describe("player withdrawals API", () => {
     expect(mocks.reconcileTransfer).not.toHaveBeenCalled();
   });
 
-  it("rejects an invalid beneficiary CPF before reserving the wallet balance", async () => {
+  it("rejects a mismatched Pix key confirmation before reserving the wallet balance", async () => {
     const response = await POST(request("/api/player/withdrawals", {
-      pixKey: "12345678900", pixKeyConfirmation: "12345678900", pixKeyType: "CPF",
-      holderName: "Joao da Silva", holderCpf: "12345678900", pixKeyConfirmed: true, holderConfirmed: true,
+      pixKey: "52998224725", pixKeyConfirmation: "11111111111", pixKeyType: "CPF",
     }));
     expect(response.status).toBe(400);
     expect(mocks.transaction).not.toHaveBeenCalled();
