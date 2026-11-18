@@ -107,7 +107,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const fees = calculatePrizeFeeBatch(feeLines);
       // Every eligible physical-prize request is sent directly to Asaas.
       // The admin area is monitoring-only; no manual payment authorization is required.
-      const automatic = true;
 
       const batchId = "ppb_" + randomUUID().replace(/-/g, "");
       const externalReference = "prize_batch_" + batchId;
@@ -120,10 +119,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
-        feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
-        requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: null,
-        paymentReference: automatic ? externalReference : null,
-        transferRequestedAt: automatic ? now : null,
+        feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING",
+        requestedAt: now, reviewedAt: null, reviewerId: null,
+        paymentReference: externalReference,
+        transferRequestedAt: now,
         items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
       } });
       for (const line of feeLines) {
@@ -135,10 +134,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
           grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
           transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
-          feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" as const : "PENDING" as const,
-          requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: null,
-          paymentReference: automatic ? externalReference : null,
-          transferRequestedAt: automatic ? now : null,
+          feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
+          requestedAt: now, reviewedAt: null, reviewerId: null,
+          paymentReference: externalReference,
+          transferRequestedAt: now,
         };
         if (line.oldRequestId) {
           await tx.prizePaymentRequest.update({ where: { id: line.oldRequestId }, data: requestData });
@@ -158,12 +157,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       } });
       return { id: batchId, externalReference, grossCents: fees.grossCents,
         administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
-        netCents: fees.netCents, lineCount: feeLines.length, automatic,
+        netCents: fees.netCents, lineCount: feeLines.length,
         pixKey: input.pixKey, pixKeyType: input.pixKeyType };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    if (batch.automatic) {
-      try {
+    try {
         const transfer = await createAsaasPixTransfer({
           amountCents: batch.netCents, pixKey: batch.pixKey,
           pixKeyType: batch.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
@@ -192,12 +190,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         }
         return NextResponse.json({ success: true, status: "PROCESSING",
           message: "Solicitação agrupada registrada. A confirmação do envio está inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
-      }
     }
-    return NextResponse.json({ success: true, batch: {
-      id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
-      transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
-    }, status: "PENDING", message: "Solicitação recebida e encaminhada automaticamente à Asaas. Aguarde a confirmação bancária." }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
       return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
