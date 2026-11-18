@@ -64,7 +64,7 @@ export function AdminTestWalletCredit() {
   return <section className="feature-card" aria-labelledby="admin-test-wallet-credit-heading">
     <span className="feature-label">Ferramenta administrativa</span>
     <h2 id="admin-test-wallet-credit-heading">Adicionar crédito para jogador de teste</h2>
-    <p>Adiciona saldo diretamente à carteira de um jogador já cadastrado, sem gerar cobrança Pix ou acionar o Asaas. O lançamento fica registrado no livro-razão e na auditoria como ajuste administrativo de teste.</p>
+    <p>Adiciona saldo sacável à carteira de um jogador já cadastrado, sem gerar cobrança Pix ou acionar o Asaas. Use somente valores que já estejam disponíveis na conta Asaas da operação; o crédito registra esse lastro no livro-razão para permitir testar compras, prêmios e saques Pix reais. A operação fica registrada na auditoria administrativa.</p>
     {loading ? <p>Carregando jogadores…</p> : <form className="admin-round-create" onSubmit={submit}>
       <label>Buscar jogador
         <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" disabled={saving} />
@@ -91,6 +91,6 @@ export function AdminTestWalletCredit() {
       {error && <p role="alert" className="note-inline form-feedback-error">{error}</p>}
       {notice && <p role="status" className="note-inline form-feedback-success">{notice}</p>}
     </div>
-    <p className="note-inline">Esse crédito não representa dinheiro recebido, depósito Pix ou prêmio. Use somente em contas de teste. A concessão é permanente no histórico e qualquer reversão deverá ser feita por lançamento compensatório auditado.</p>
+    <p className="note-inline">Este lançamento não movimenta dinheiro no Asaas: ele registra na carteira um valor que já deve estar disponível no saldo Asaas para cobrir eventual saque. Confirme o lastro antes de conceder. A concessão é permanente no histórico e qualquer reversão deverá ser feita por lançamento compensatório auditado.</p>
   </section>;
 }
