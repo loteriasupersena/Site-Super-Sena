@@ -21,13 +21,10 @@ function validOrigin(request: NextRequest) {
 function parseInput(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
-  if (typeof body.pixKey !== "string" ||
-      typeof body.pixKeyConfirmation !== "string" ||
-      typeof body.pixKeyType !== "string") return null;
+  if (typeof body.pixKey !== "string" || typeof body.pixKeyType !== "string") return null;
   const pixKey = body.pixKey.trim();
   if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
       pixKey.length < 3 || pixKey.length > 200 ||
-      pixKey !== body.pixKeyConfirmation.trim() ||
       !isPlausiblePixKey(pixKey)) return null;
   return { pixKey, pixKeyType: body.pixKeyType };
 }
@@ -62,7 +59,7 @@ export async function POST(request: NextRequest) {
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const input = parseInput(payload);
-  if (!input) return NextResponse.json({ error: "Informe o tipo da chave Pix, a chave e confirme a chave." }, { status: 400, headers });
+  if (!input) return NextResponse.json({ error: "Informe o tipo e a chave Pix." }, { status: 400, headers });
 
   try {
     const result = await authPrisma.$transaction(async (tx) => {
