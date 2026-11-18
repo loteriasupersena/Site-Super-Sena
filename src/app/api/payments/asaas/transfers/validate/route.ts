@@ -58,22 +58,6 @@ export async function POST(request: NextRequest) {
 
   const transfer = payload.transfer!;
   const transferId = transfer.id!.trim();
-  let externalReference = transfer.externalReference?.trim() || null;
-  // The validation payload example from Asaas may omit externalReference.
-  // Recover it from the transfer itself when the callback arrives before our
-  // post-creation database update has linked transfer.id to the withdrawal.
-  if (!externalReference) {
-    const providerTransfer = await getAsaasTransfer(transferId);
-    if (providerTransfer.id !== transferId ||
-        providerTransfer.value !== transfer.value ||
-        providerTransfer.operationType !== "PIX") {
-      return refuse("Os dados recuperados da transferência não correspondem à solicitação.");
-    }
-    externalReference = providerTransfer.externalReference?.trim() || null;
-  }
-  const transferLookup = externalReference
-    ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
-    : { asaasTransferId: transferId };
   const valueCents = Math.round((transfer.value ?? 0) * 100);
   const actualPix = transfer.bankAccount?.pixAddressKey?.trim() || null;
   if (!Number.isSafeInteger(valueCents) || valueCents <= 0) {
@@ -81,6 +65,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    let externalReference = transfer.externalReference?.trim() || null;
+    // Asaas' validation payload may omit externalReference. Recover it from
+    // the provider when the callback races our post-creation database update.
+    if (!externalReference) {
+      const providerTransfer = await getAsaasTransfer(transferId);
+      if (providerTransfer.id !== transferId ||
+          providerTransfer.value !== transfer.value ||
+          providerTransfer.operationType !== "PIX") {
+        return refuse("Os dados recuperados da transferência não correspondem à solicitação.");
+      }
+      externalReference = providerTransfer.externalReference?.trim() || null;
+    }
+    const transferLookup = externalReference
+      ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
+      : { asaasTransferId: transferId };
     const decision = await authPrisma.$transaction(async tx => {
       const batch = await tx.prizePaymentBatch.findFirst({
         where: transferLookup,
