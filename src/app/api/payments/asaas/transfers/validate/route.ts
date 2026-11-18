@@ -42,7 +42,7 @@ function refuse(reason: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const expectedToken = process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN?.trim();
+  const expectedToken = process.env.ASAAS_TRANSFER_VALIDATION_TOKEN?.trim();
   if (!expectedToken || expectedToken.length < 32 ||
       !tokenMatches(request.headers.get("asaas-access-token"), expectedToken)) {
     return NextResponse.json({ error: "Autenticação inválida." }, { status: 401, headers: { "Cache-Control": "no-store" } });
