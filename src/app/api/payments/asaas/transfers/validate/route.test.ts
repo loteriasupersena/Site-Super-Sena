@@ -95,7 +95,13 @@ describe("Asaas withdrawal validation endpoint", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "APPROVED" });
-    expect(mocks.batchFind).toHaveBeenCalledWith({ where: { asaasTransferId: "trf_12345678" }, select: expect.any(Object) });
+    expect(mocks.batchFind).toHaveBeenCalledWith(expect.objectContaining({
+      where: { OR: [
+        { paymentReference: "prize_batch_ppb_12345678" },
+        { asaasTransferId: "trf_12345678" },
+      ] },
+      select: expect.any(Object),
+    }));
   });
 
   it("approves a registered transfer when Asaas sends pixAddressKey as null", async () => {
