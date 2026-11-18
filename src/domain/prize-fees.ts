@@ -1,6 +1,4 @@
-import { PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
-
-export const PRIZE_FEE_THRESHOLD_CENTS = PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS;
+import { PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/payout-threshold";
 export const ADMINISTRATIVE_FEE_RATE = 0.05;
 export const BANK_TRANSACTION_FEE_RATE = 0.05;
 
