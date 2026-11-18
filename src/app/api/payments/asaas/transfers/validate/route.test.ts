@@ -38,7 +38,7 @@ describe("Asaas withdrawal validation endpoint", () => {
     delete process.env.ASAAS_WEBHOOK_TOKEN;
     mocks.batchFind.mockResolvedValue({
       id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
-      asaasTransferId: null, netCents: 100, pixKey: "+55 (11) 99999-9999", pixKeyType: "PHONE",
+      asaasTransferId: null, netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
     });
     mocks.batchUpdate.mockResolvedValue({ count: 1 });
     mocks.requestFind.mockResolvedValue(null);
