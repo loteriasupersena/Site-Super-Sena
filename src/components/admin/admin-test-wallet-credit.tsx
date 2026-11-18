@@ -15,6 +15,7 @@ export function AdminTestWalletCredit() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     let active = true;
@@ -50,12 +51,12 @@ export function AdminTestWalletCredit() {
       const response = await fetch("/api/admin/test-wallet-credit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ userId, amountCents: Math.round(value * 100), reason: reason.trim() }),
+        body: JSON.stringify({ userId, amountCents: Math.round(value * 100), reason: reason.trim(), idempotencyKey }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o crédito.");
       setNotice(`Crédito de ${money(body.credit.amountCents)} registrado para ${body.credit.player}. O lançamento foi identificado no extrato como ajuste administrativo de teste.`);
-      setAmount(""); setReason("");
+      setAmount(""); setReason(""); setIdempotencyKey(crypto.randomUUID());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao registrar o crédito.");
     } finally { setSaving(false); }
