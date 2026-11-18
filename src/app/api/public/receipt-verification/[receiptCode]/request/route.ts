@@ -136,7 +136,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
           transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
           feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" as const : "PENDING" as const,
-          requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
+          requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: null,
           paymentReference: automatic ? externalReference : null,
           transferRequestedAt: automatic ? now : null,
         };
