@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       return { approved: false, entityType: "Unknown", entityId: null, reason: "Transferência não encontrada no banco de dados." };
     }, { isolationLevel: "Serializable" });
 
-    if (!decision.approved) return refuse("reason" in decision ? decision.reason : "Transferência não autorizada.");
+    if (!decision.approved) return refuse("reason" in decision && typeof decision.reason === "string" ? decision.reason : "Transferência não autorizada.");
     return NextResponse.json({ status: "APPROVED" }, { status: 200, headers: { "Cache-Control": "no-store" } });
   } catch {
     // A transient database failure must trigger Asaas retry, not a false decision.
