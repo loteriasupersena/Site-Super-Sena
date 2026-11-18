@@ -4,7 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
-import { PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
+import { WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
