@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           where: { id: batchId },
           select: {
             id: true, status: true, paymentReference: true, asaasTransferId: true,
-            netCents: true, reviewerId: true, pixKey: true, pixKeyType: true,
+            netCents: true, pixKey: true, pixKeyType: true,
             requests: { select: { id: true, participationLineId: true, status: true } },
           },
         });
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
         if (batch.status === "PAID") return "ALREADY_PAID";
         if (event === "TRANSFER_DONE") {
-          if (!batch.reviewerId || batch.requests.length === 0 ||
+          if (batch.requests.length === 0 ||
               !["PROCESSING", "FAILED", "CANCELLED"].includes(batch.status) ||
               batch.requests.some(item => !["PROCESSING", "FAILED", "CANCELLED"].includes(item.status))) {
             throw new Error("BATCH_NOT_READY");
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
           for (const item of batch.requests) {
             await registerNumericPrizePayout(tx, {
               lineId: item.participationLineId,
-              actorId: batch.reviewerId,
+              actorId: null,
               channel: "PLATFORM_PIX",
               reference: externalReference,
               expectedRequestStatus: item.status as "PROCESSING" | "FAILED" | "CANCELLED",
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, reviewerId: true, netCents: true, pixKey: true, pixKeyType: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true, pixKey: true, pixKeyType: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
@@ -271,10 +271,9 @@ export async function POST(request: NextRequest) {
 
       if (requestRow.status === "PAID") return "ALREADY_PAID";
       if (event === "TRANSFER_DONE") {
-        if (!requestRow.reviewerId) throw new Error("PAYOUT_REVIEWER_MISSING");
         await registerNumericPrizePayout(tx, {
           lineId: requestRow.participationLineId,
-          actorId: requestRow.reviewerId,
+          actorId: null,
           channel: "PLATFORM_PIX",
           reference: externalReference,
           expectedRequestStatus: requestRow.status as "PROCESSING" | "FAILED" | "CANCELLED",
