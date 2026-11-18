@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
-import { createAsaasPixTransfer } from "@/modules/payments/asaas";
+import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
+import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 import { WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
 
 export const runtime = "nodejs";
@@ -90,13 +91,14 @@ export async function POST(request: NextRequest) {
       const id = "wdr_" + randomUUID().replace(/-/g, "");
       const externalReference = "wallet_withdrawal_" + id;
       const automatic = amountCents < WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS;
+      const transferRequestedAt = automatic ? new Date() : null;
       const withdrawal = await tx.withdrawal.create({ data: {
         id, userId: user.id, amountCents, pixKey: input.pixKey, pixKeyType: input.pixKeyType,
         holderName: input.holderName, holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
         pixKeyMasked: maskPixKey(input.pixKey), paymentReference: automatic ? externalReference : null,
         status: automatic ? "PROCESSING" : "PENDING", reviewedById: admin?.id ?? null,
         idempotencyKey: "withdrawal:" + randomUUID(),
-        ...(automatic ? { transferRequestedAt: new Date(), asaasTransferStatus: "CREATING" } : {}),
+        ...(automatic ? { transferRequestedAt, asaasTransferStatus: "CREATING" } : {}),
       } });
       await tx.ledgerEntry.create({ data: {
         userId: user.id, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RESERVE",
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
         actorId: user.id, action: "WITHDRAWAL_REQUESTED", entityType: "Withdrawal", entityId: withdrawal.id,
         metadata: { amountCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType, holderCpfMasked: withdrawal.holderCpfMasked, status: withdrawal.status, automatic },
       } });
-      return { id: withdrawal.id, amountCents, status: withdrawal.status, automatic, externalReference, availableCents: 0 };
+      return { id: withdrawal.id, amountCents, status: withdrawal.status, automatic, externalReference, transferRequestedAt, availableCents: 0 };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     if (result.automatic) {
@@ -128,14 +130,37 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json({ success: true, withdrawal: { id: result.id, amountCents: result.amountCents, status: "PROCESSING", availableCents: 0 }, message: "Transferência enviada à Asaas. O saque só será marcado como pago após a confirmação do webhook." }, { status: 202, headers });
       } catch (error) {
-        const status = typeof error === "object" && error !== null && "status" in error ? Number(error.status) : 0;
-        if (status >= 400 && status < 500) {
-          await authPrisma.withdrawal.updateMany({ where: { id: result.id, status: "PROCESSING", asaasTransferId: null },
-            data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise os dados e solicite suporte." } });
-          await authPrisma.withdrawalStatusHistory.create({ data: { withdrawalId: result.id, fromStatus: "PROCESSING", toStatus: "FAILED", note: "A Asaas recusou a transferência; o valor permanece reservado até análise e liberação." } });
-          return NextResponse.json({ error: "A Asaas recusou a transferência. O valor permanece reservado para evitar perda de saldo; procure o suporte." }, { status: 502, headers });
+        // A POST failure is not proof that Asaas did not create the transfer.
+        // Search by the exact idempotent reference before changing the reserved balance.
+        try {
+          const matches = await findAsaasTransfersByExternalReference({
+            externalReference: result.externalReference,
+            requestedAt: result.transferRequestedAt ?? new Date(),
+          });
+          if (matches.length === 1 && matches[0]?.id) {
+            const transferId = matches[0].id;
+            await authPrisma.withdrawal.updateMany({
+              where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference },
+              data: { asaasTransferId: transferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+            });
+            const outcome = await reconcileAsaasTransferFromPlatform({
+              transferId,
+              externalReference: result.externalReference,
+            });
+            return NextResponse.json({
+              success: true, status: outcome === "WITHDRAWAL_FAILED" ? "FAILED" : "PROCESSING",
+              message: outcome === "WITHDRAWAL_FAILED"
+                ? "A Asaas confirmou que a transferência falhou; o saldo foi devolvido à carteira."
+                : "A transferência foi localizada e está em conciliação. O saldo permanece reservado até confirmação.",
+            }, { status: 202, headers });
+          }
+        } catch {
+          // An unavailable or incomplete lookup must never release the reservation.
         }
-        return NextResponse.json({ success: true, status: "PROCESSING", message: "A resposta da Asaas está inconclusiva. O saque foi bloqueado contra duplicidade e aguarda conciliação." }, { status: 202, headers });
+        return NextResponse.json({
+          success: true, status: "PROCESSING",
+          message: "Não foi possível confirmar se a Asaas criou a transferência. O saldo permanece reservado e o saque bloqueado contra duplicidade para conciliação.",
+        }, { status: 202, headers });
       }
     }
     return NextResponse.json({ success: true, withdrawal: { id: result.id, amountCents: result.amountCents, status: "PENDING", availableCents: 0 }, message: "Saque de R$ 1.000,00 ou mais recebido e encaminhado para aprovação administrativa." }, { status: 201, headers });
