@@ -185,25 +185,20 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
         }, status: "PROCESSING", message: "Solicitação agrupada aceita. Um único Pix foi enviado automaticamente à Asaas e aguarda confirmação bancária." }, { status: 202, headers });
       } catch (transferError) {
-        const status = typeof transferError === "object" && transferError !== null && "status" in transferError ? Number(transferError.status) : 0;
-        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
-          await authPrisma.$transaction(async tx => {
-            await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", asaasTransferId: null },
-              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
-            await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
-              data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
-          }).catch(() => undefined);
-          return NextResponse.json({ error: "A Asaas recusou a transferência. Nenhum pagamento foi confirmado; revise os dados Pix." }, { status: 502, headers });
-        }
-        // The POST may have reached Asaas even when the connection failed before
-        // the response was received. Search by the unique reference before leaving
-        // the batch pending; never issue a second transfer from this recovery path.
+        const status = typeof transferError === "object" && transferError !== null && "status" in transferError
+          ? Number(transferError.status) : 0;
+        // Always reconcile first, including HTTP 4xx responses. Never assume
+        // that a failed POST proves no transfer exists at the provider.
+        let lookupCompleted = false;
+        let matchingTransfers = 0;
         try {
           const matches = await findAsaasTransfersByExternalReference({
             externalReference: batch.externalReference,
             requestedAt: batch.requestedAt,
           });
-          if (matches.length === 1 && matches[0].id) {
+          lookupCompleted = true;
+          matchingTransfers = matches.length;
+          if (matches.length === 1 && matches[0]?.id) {
             const recoveredTransferId = matches[0].id;
             const linked = await authPrisma.$transaction(async tx => {
               const result = await tx.prizePaymentBatch.updateMany({
@@ -230,11 +225,33 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
             }
           }
         } catch {
-          // Preserve the pending batch. An ambiguous or unavailable lookup must
-          // never cause another Pix attempt or an unverified paid status.
+          // An unavailable or ambiguous lookup must preserve the reservation.
         }
+
+        // A definitive provider rejection may be closed only after a successful
+        // exact-reference lookup confirms that no transfer was created.
+        const definitiveRejection = status >= 400 && status < 500 && status !== 408 && status !== 429;
+        if (definitiveRejection && lookupCompleted && matchingTransfers === 0) {
+          await authPrisma.$transaction(async tx => {
+            const batchFailed = await tx.prizePaymentBatch.updateMany({
+              where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference, asaasTransferId: null },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED",
+                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta por referência confirmou que ela não foi criada." },
+            });
+            if (batchFailed.count !== 1) throw new Error("PRIZE_BATCH_REJECTION_STATE_CONFLICT");
+            const requestsFailed = await tx.prizePaymentRequest.updateMany({
+              where: { batchId: batch.id, status: "PROCESSING", asaasTransferId: null },
+              data: { status: "FAILED", asaasTransferStatus: "REJECTED",
+                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta por referência confirmou que ela não foi criada." },
+            });
+            if (requestsFailed.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_REJECTION_COUNT_MISMATCH");
+          });
+          return NextResponse.json({ error: "A Asaas recusou a transferência. A consulta confirmou que nenhum Pix foi criado; o pagamento ficou bloqueado para conferência." }, { status: 502, headers });
+        }
+
         return NextResponse.json({ success: true, status: "PROCESSING",
-          message: "Solicitação registrada. A confirmação permanece inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
+          message: "Não foi possível confirmar o resultado do envio. O saldo permanece reservado e uma nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
+
     }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
