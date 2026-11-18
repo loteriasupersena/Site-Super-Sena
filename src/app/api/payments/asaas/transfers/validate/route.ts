@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
           batch.paymentReference === externalReference &&
           (!batch.asaasTransferId || batch.asaasTransferId === transferId) &&
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
-          normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType);
+          normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix ?? "", batch.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
         await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           prizeRequest.paymentReference === externalReference &&
           (!prizeRequest.asaasTransferId || prizeRequest.asaasTransferId === transferId) &&
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
-          normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType);
+          normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix ?? "", prizeRequest.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
         await tx.prizePaymentRequest.updateMany({
           where: { id: prizeRequest.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
           withdrawal.paymentReference === externalReference &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
           withdrawal.amountCents === valueCents && !!withdrawal.pixKey && !!withdrawal.pixKeyType &&
-          normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix, withdrawal.pixKeyType ?? "");
+          normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix ?? "", withdrawal.pixKeyType ?? "");
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
