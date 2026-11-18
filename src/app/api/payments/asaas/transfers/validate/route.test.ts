@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   requestFind: vi.fn(), requestUpdate: vi.fn(), withdrawalFind: vi.fn(),
   withdrawalUpdate: vi.fn(), auditCreate: vi.fn(),
 }));
-vi.mock("@/lib/auth/session", () => ({ authPrisma: { $transaction: mocks.transaction } }));
+vi.mock("@/lib/auth/session", () => ({
+  authPrisma: { $transaction: mocks.transaction, auditEvent: { create: mocks.auditCreate } },
+}));
 import { POST } from "./route";
 
 function makeRequest(overrides: Record<string, unknown> = {}, token = "v".repeat(40)) {
