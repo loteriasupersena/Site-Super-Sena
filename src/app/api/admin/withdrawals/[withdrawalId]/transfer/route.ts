@@ -68,10 +68,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ wi
       });
       if (matches.length === 1 && matches[0]?.id) {
         const transferId = matches[0].id;
-        await authPrisma.withdrawal.updateMany({
-          where: { id: transferData.id, status: "PROCESSING", paymentReference: transferData.externalReference },
+        const linked = await authPrisma.withdrawal.updateMany({
+          where: { id: transferData.id, status: "PROCESSING", paymentReference: transferData.externalReference, asaasTransferId: null },
           data: { asaasTransferId: transferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
         });
+        if (linked.count !== 1) {
+          return NextResponse.json({
+            success: true, status: "PROCESSING",
+            message: "A transferência foi localizada, mas não foi possível vinculá-la com segurança. O saldo permanece reservado para conciliação.",
+          }, { status: 202, headers });
+        }
         const outcome = await reconcileAsaasTransferFromPlatform({
           transferId,
           externalReference: transferData.externalReference,
