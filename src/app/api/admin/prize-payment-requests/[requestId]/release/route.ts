@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           },
         });
         if (!batch || !batch.requests.length) throw new Error("NOT_PENDING");
-        const terminalStatuses = ["PENDING", "FAILED", "CANCELLED"];
+        const terminalStatuses: ("PENDING" | "FAILED" | "CANCELLED")[] = ["PENDING", "FAILED", "CANCELLED"];
         const safeTransfer = (id: string | null, status: string | null) =>
           !id || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
         if (!terminalStatuses.includes(batch.status) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus) ||
