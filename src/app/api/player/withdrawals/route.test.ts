@@ -101,7 +101,6 @@ describe("player withdrawals API", () => {
     mocks.reconcileTransfer.mockResolvedValueOnce("WITHDRAWAL_PROCESSING");
     const response = await POST(request("/api/player/withdrawals", {
       pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
-      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
     }));
     expect(response.status).toBe(202);
     expect(mocks.reconcileTransfer).toHaveBeenCalledWith({
@@ -141,7 +140,7 @@ describe("player withdrawals API", () => {
 
   it("rejects a withdrawal when no balance is available", async () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }));
     expect(response.status).toBe(409);
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
