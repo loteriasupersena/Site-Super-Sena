@@ -3,14 +3,15 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
-  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(),
+  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(), createTransfer: vi.fn(), findTransfers: vi.fn(), reconcileTransfer: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
 vi.mock("@/lib/wallet/pix-key", () => ({ isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
-vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: vi.fn(async () => ({ id: "transfer-1", status: "PENDING" })) }));
+vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: mocks.createTransfer, findAsaasTransfersByExternalReference: mocks.findTransfers }));
+vi.mock("@/modules/payments/reconcile-asaas-transfer", () => ({ reconcileAsaasTransferFromPlatform: mocks.reconcileTransfer }));
 import { GET, POST } from "./route";
 
 function request(path = "/api/player/withdrawals", body?: unknown, origin = "https://example.test") {
@@ -39,6 +40,9 @@ describe("player withdrawals API", () => {
     mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
     mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
     mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.createTransfer.mockResolvedValue({ id: "transfer-1", status: "PENDING" });
+    mocks.findTransfers.mockResolvedValue([]);
+    mocks.reconcileTransfer.mockResolvedValue("WITHDRAWAL_PROCESSING");
     mocks.ledgerCreate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
@@ -69,6 +73,44 @@ describe("player withdrawals API", () => {
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       actorId: "player-1", action: "WITHDRAWAL_REQUESTED", entityType: "Withdrawal",
     }) });
+  });
+
+  it("keeps the reservation pending when Asaas rejects the POST but no transfer can be confirmed", async () => {
+    mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("Asaas rejected"), { status: 400 }));
+    mocks.findTransfers.mockResolvedValueOnce([]);
+    const response = await POST(request("/api/player/withdrawals", {
+      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
+    }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
+    expect(mocks.findTransfers).toHaveBeenCalledWith(expect.objectContaining({
+      externalReference: "wallet_withdrawal_withdrawal-1",
+      requestedAt: expect.any(Date),
+    }));
+    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      type: "WITHDRAWAL_RESERVE", amountCents: -5000,
+    }) });
+  });
+
+  it("reconciles a uniquely recovered Asaas transfer instead of creating another Pix", async () => {
+    mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("timeout"), { status: 503 }));
+    mocks.findTransfers.mockResolvedValueOnce([{ id: "transfer-recovered", status: "PENDING" }]);
+    mocks.reconcileTransfer.mockResolvedValueOnce("WITHDRAWAL_PROCESSING");
+    const response = await POST(request("/api/player/withdrawals", {
+      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
+    }));
+    expect(response.status).toBe(202);
+    expect(mocks.reconcileTransfer).toHaveBeenCalledWith({
+      transferId: "transfer-recovered",
+      externalReference: "wallet_withdrawal_withdrawal-1",
+    });
+    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "withdrawal-1", status: "PROCESSING", paymentReference: "wallet_withdrawal_withdrawal-1" },
+      data: expect.objectContaining({ asaasTransferId: "transfer-recovered" }),
+    }));
   });
 
   it("rejects an invalid beneficiary CPF before reserving the wallet balance", async () => {
