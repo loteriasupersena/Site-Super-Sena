@@ -122,7 +122,6 @@ describe("player withdrawals API", () => {
     mocks.withdrawalUpdateMany.mockResolvedValueOnce({ count: 0 });
     const response = await POST(request("/api/player/withdrawals", {
       pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
-      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
     }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
@@ -155,7 +154,7 @@ describe("player withdrawals API", () => {
         cookie: "superquina_session=session-token",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF", holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true }),
+      body: JSON.stringify({ pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }),
     });
     expect((await POST(proxyRequest)).status).toBe(202);
   });
