@@ -169,10 +169,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           externalReference: batch.externalReference,
         });
         await authPrisma.$transaction(async tx => {
-          await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
-            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
-          await tx.prizePaymentRequest.updateMany({ where: { batchId: batch.id, status: "PROCESSING" },
-            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() } });
+          const batchLink = await tx.prizePaymentBatch.updateMany({
+            where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference },
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
+          });
+          if (batchLink.count !== 1) throw new Error("PRIZE_BATCH_TRANSFER_LINK_FAILED");
+          const requestLinks = await tx.prizePaymentRequest.updateMany({
+            where: { batchId: batch.id, status: "PROCESSING" },
+            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
+          });
+          if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_TRANSFER_LINK_FAILED");
         });
         return NextResponse.json({ success: true, batch: {
           id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
@@ -180,7 +186,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         }, status: "PROCESSING", message: "Solicitação agrupada aceita. Um único Pix foi enviado automaticamente à Asaas e aguarda confirmação bancária." }, { status: 202, headers });
       } catch (transferError) {
         const status = typeof transferError === "object" && transferError !== null && "status" in transferError ? Number(transferError.status) : 0;
-        if (status >= 400 && status < 500) {
+        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           await authPrisma.$transaction(async tx => {
             await tx.prizePaymentBatch.updateMany({ where: { id: batch.id, status: "PROCESSING", asaasTransferId: null },
               data: { status: "FAILED", asaasTransferStatus: "REJECTED", asaasTransferFailureReason: "A Asaas recusou a transferência. Revise a chave Pix e a configuração." } });
