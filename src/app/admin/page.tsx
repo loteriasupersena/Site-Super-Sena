@@ -3,6 +3,7 @@ import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-c
 import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
+import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-credit";
 import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
@@ -17,6 +18,13 @@ export default async function AdminPage() {
       <div className="admin-page-layout">
         <div className="admin-accordion-list">
           <AdminPrizePayout />
+
+          <details className="admin-accordion">
+            <summary><span>Crédito de teste na carteira</span></summary>
+            <div className="admin-accordion-content">
+              <AdminTestWalletCredit />
+            </div>
+          </details>
 
           <details className="admin-accordion">
             <summary><span>Ganhadores e conferência</span></summary>
