@@ -51,7 +51,7 @@ export function AdminTestWalletCredit() {
     setError(""); setNotice("");
     const rawAmount = amount.trim();
     const normalized = rawAmount.includes(",")
-      ? rawAmount.replace(/\\./g, "").replace(",", ".")
+      ? rawAmount.replace(/\./g, "").replace(",", ".")
       : rawAmount;
     const value = Number(normalized);
     if (!userId) { setError("Selecione um jogador."); return; }
