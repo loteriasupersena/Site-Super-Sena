@@ -59,6 +59,19 @@ describe("Asaas withdrawal validation endpoint", () => {
     }));
   });
 
+  it("approves a registered transfer by ID when Asaas omits externalReference", async () => {
+    mocks.batchFind.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
+      asaasTransferId: "trf_12345678", netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
+    });
+
+    const response = await POST(makeRequest({ externalReference: undefined }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+    expect(mocks.batchFind).toHaveBeenCalledWith({ where: { asaasTransferId: "trf_12345678" }, select: expect.any(Object) });
+  });
+
   it("refuses an unknown transfer", async () => {
     mocks.batchFind.mockResolvedValue(null);
     const response = await POST(makeRequest());

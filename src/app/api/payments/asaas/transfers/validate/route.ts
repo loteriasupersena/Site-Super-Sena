@@ -32,7 +32,6 @@ function normalizePix(value: string, type: string) {
 function validTransfer(payload: ValidationPayload) {
   const transfer = payload.transfer;
   return payload.type === "TRANSFER" && !!transfer?.id?.trim() &&
-    !!transfer.externalReference?.trim() &&
     Number.isFinite(transfer.value) && (transfer.value ?? 0) > 0 &&
     transfer.operationType === "PIX";
 }
@@ -58,7 +57,10 @@ export async function POST(request: NextRequest) {
 
   const transfer = payload.transfer!;
   const transferId = transfer.id!.trim();
-  const externalReference = transfer.externalReference!.trim();
+  const externalReference = transfer.externalReference?.trim() || null;
+  const transferLookup = externalReference
+    ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
+    : { asaasTransferId: transferId };
   const valueCents = Math.round((transfer.value ?? 0) * 100);
   const actualPix = transfer.bankAccount?.pixAddressKey?.trim();
   if (!actualPix || !Number.isSafeInteger(valueCents) || valueCents <= 0) {
@@ -68,18 +70,18 @@ export async function POST(request: NextRequest) {
   try {
     const decision = await authPrisma.$transaction(async tx => {
       const batch = await tx.prizePaymentBatch.findFirst({
-        where: { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] },
+        where: transferLookup,
         select: { id: true, status: true, paymentReference: true, asaasTransferId: true, netCents: true, pixKey: true, pixKeyType: true },
       });
       if (batch) {
         const valid = batch.status === "PROCESSING" &&
-          batch.paymentReference === externalReference &&
+          (!externalReference || batch.paymentReference === externalReference) &&
           (!batch.asaasTransferId || batch.asaasTransferId === transferId) &&
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
           normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentBatch.updateMany({
-          where: { id: batch.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
+          where: { id: batch.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Lote", entityId: batch.id, reason: "Registro alterado durante a validação." };
@@ -88,18 +90,18 @@ export async function POST(request: NextRequest) {
       }
 
       const prizeRequest = await tx.prizePaymentRequest.findFirst({
-        where: { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] },
+        where: transferLookup,
         select: { id: true, status: true, paymentReference: true, asaasTransferId: true, netCents: true, pixKey: true, pixKeyType: true },
       });
       if (prizeRequest) {
         const valid = prizeRequest.status === "PROCESSING" &&
-          prizeRequest.paymentReference === externalReference &&
+          (!externalReference || prizeRequest.paymentReference === externalReference) &&
           (!prizeRequest.asaasTransferId || prizeRequest.asaasTransferId === transferId) &&
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
           normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType);
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentRequest.updateMany({
-          where: { id: prizeRequest.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
+          where: { id: prizeRequest.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Solicitação", entityId: prizeRequest.id, reason: "Registro alterado durante a validação." };
@@ -108,18 +110,18 @@ export async function POST(request: NextRequest) {
       }
 
       const withdrawal = await tx.withdrawal.findFirst({
-        where: { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] },
+        where: transferLookup,
         select: { id: true, status: true, paymentReference: true, asaasTransferId: true, amountCents: true, pixKey: true, pixKeyType: true, reviewedById: true },
       });
       if (withdrawal) {
         const valid = withdrawal.status === "PROCESSING" && !!withdrawal.reviewedById &&
-          withdrawal.paymentReference === externalReference &&
+          (!externalReference || withdrawal.paymentReference === externalReference) &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
           withdrawal.amountCents === valueCents && !!withdrawal.pixKey && !!withdrawal.pixKeyType &&
           normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix, withdrawal.pixKeyType ?? "");
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         const linked = await tx.withdrawal.updateMany({
-          where: { id: withdrawal.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
+          where: { id: withdrawal.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Saque", entityId: withdrawal.id, reason: "Registro alterado durante a validação." };
