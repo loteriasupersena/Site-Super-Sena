@@ -21,7 +21,7 @@ type VerifiedReceipt = {
   totalCents?: number;
   currency?: string;
   confirmedAt?: string | null;
-  manualPayoutEligible?: boolean;
+  physicalReceiptEligible?: boolean;
   rounds?: VerifiedRound[];
   message: string;
 };
@@ -172,7 +172,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   if (!data) return <p role="alert" style={{ color: "#b91c1c", fontWeight: 700 }}>Não foi possível consultar o recibo.</p>;
 
   const rounds = data.valid ? data.rounds ?? [] : [];
-  const physicalReceipt = Boolean(data.manualPayoutEligible);
+  const physicalReceipt = Boolean(data.physicalReceiptEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
   const hasPaidPrize = rounds.some((round) => round.numbers.some((number) => number.prizePaid));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
