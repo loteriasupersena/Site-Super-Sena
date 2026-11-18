@@ -86,10 +86,10 @@ export async function POST(request: NextRequest) {
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
         select: { id: true }, orderBy: { createdAt: "asc" },
       }) : null;
-      if (amountCents < LIMIT_CENTS && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+      if (amountCents < PRIZE_FEE_THRESHOLD_CENTS && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
       const id = "wdr_" + randomUUID().replace(/-/g, "");
       const externalReference = "wallet_withdrawal_" + id;
-      const automatic = amountCents < LIMIT_CENTS;
+      const automatic = amountCents < PRIZE_FEE_THRESHOLD_CENTS;
       const withdrawal = await tx.withdrawal.create({ data: {
         id, userId: user.id, amountCents, pixKey: input.pixKey, pixKeyType: input.pixKeyType,
         holderName: input.holderName, holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
