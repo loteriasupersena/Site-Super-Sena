@@ -22,7 +22,7 @@ type Winner = {
   playerName: string;
   phone: string | null;
   cashierName: string | null;
-  manualEligible: boolean;
+  physicalReceiptEligible: boolean;
   paid: boolean;
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
@@ -65,11 +65,11 @@ export function AdminPrizePayout() {
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
-  const asaasProcessing = pending.filter((winner) => winner.manualEligible && winner.paymentRequest?.status === "PROCESSING");
+  const asaasProcessing = pending.filter((winner) => winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING");
   const totalToPayCents = asaasProcessing.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
-  const allPhysicalPending = pending.filter((winner) => winner.manualEligible);
+  const allPhysicalPending = pending.filter((winner) => winner.physicalReceiptEligible);
   const totalPhysicalGrossCents = allPhysicalPending.reduce((total, winner) => total + winner.prizeCents, 0);
-  const reviewPending = pending.filter((winner) => !winner.manualEligible);
+  const reviewPending = pending.filter((winner) => !winner.physicalReceiptEligible);
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
@@ -135,7 +135,7 @@ export function AdminPrizePayout() {
           {winner.paid
             ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
             : <>
-              {winner.manualEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento automático em processamento.</strong></p> : winner.manualEligible && winner.paymentRequest?.status === "PENDING" ? <p><strong>Pagamento pendente.</strong></p> : winner.manualEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação técnica necessária.</p> : winner.manualEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
+              {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento automático em processamento.</strong></p> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <p><strong>Pagamento pendente.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação técnica necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
             </>}
         </article>)}
       </div>}
