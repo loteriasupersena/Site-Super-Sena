@@ -212,11 +212,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
                 data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
               });
               if (result.count !== 1) return false;
-              await tx.prizePaymentRequest.updateMany({
+              const requestLinks = await tx.prizePaymentRequest.updateMany({
                 where: { batchId: batch.id, status: "PROCESSING",
                   OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
                 data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
               });
+              if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_RECOVERY_LINK_FAILED");
               return true;
             });
             if (linked) {
