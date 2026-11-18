@@ -42,7 +42,9 @@ const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo",
 }).format(new Date(value));
 
-const requestStatus = (status: Winner["paymentRequest"] extends infer T ? T extends { status: infer S } ? S : never : never) => ({
+type PaymentRequestStatus = NonNullable<Winner["paymentRequest"]>["status"];
+
+const requestStatus = (status: PaymentRequestStatus) => ({
   PENDING: "Aguardando análise",
   PROCESSING: "Transferência em processamento",
   PAID: "Pago",
