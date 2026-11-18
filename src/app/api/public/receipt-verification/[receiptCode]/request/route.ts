@@ -4,7 +4,8 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
-import { createAsaasPixTransfer } from "@/modules/payments/asaas";
+import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
+import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 import { calculatePrizeFeeBatch } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       return { id: batchId, externalReference, grossCents: fees.grossCents,
         administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
         netCents: fees.netCents, lineCount: feeLines.length,
-        pixKey: input.pixKey, pixKeyType: input.pixKeyType };
+        pixKey: input.pixKey, pixKeyType: input.pixKeyType, requestedAt: now };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     try {
@@ -188,8 +189,45 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           }).catch(() => undefined);
           return NextResponse.json({ error: "A Asaas recusou a transferência. Nenhum pagamento foi confirmado; revise os dados Pix." }, { status: 502, headers });
         }
+        // The POST may have reached Asaas even when the connection failed before
+        // the response was received. Search by the unique reference before leaving
+        // the batch pending; never issue a second transfer from this recovery path.
+        try {
+          const matches = await findAsaasTransfersByExternalReference({
+            externalReference: batch.externalReference,
+            requestedAt: batch.requestedAt,
+          });
+          if (matches.length === 1 && matches[0].id) {
+            const recoveredTransferId = matches[0].id;
+            const linked = await authPrisma.$transaction(async tx => {
+              const result = await tx.prizePaymentBatch.updateMany({
+                where: { id: batch.id, status: "PROCESSING", paymentReference: batch.externalReference,
+                  OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
+                data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+              });
+              if (result.count !== 1) return false;
+              await tx.prizePaymentRequest.updateMany({
+                where: { batchId: batch.id, status: "PROCESSING",
+                  OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
+                data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+              });
+              return true;
+            });
+            if (linked) {
+              await reconcileAsaasTransferFromPlatform({
+                transferId: recoveredTransferId,
+                externalReference: batch.externalReference,
+              });
+              return NextResponse.json({ success: true, status: "PROCESSING",
+                message: "Transferência localizada na Asaas e vinculada ao recibo. A confirmação bancária está sendo reconciliada." }, { status: 202, headers });
+            }
+          }
+        } catch {
+          // Preserve the pending batch. An ambiguous or unavailable lookup must
+          // never cause another Pix attempt or an unverified paid status.
+        }
         return NextResponse.json({ success: true, status: "PROCESSING",
-          message: "Solicitação agrupada registrada. A confirmação do envio está inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
+          message: "Solicitação registrada. A confirmação permanece inconclusiva; nova tentativa foi bloqueada para evitar Pix duplicado." }, { status: 202, headers });
     }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
