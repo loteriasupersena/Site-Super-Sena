@@ -5,7 +5,7 @@ import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
-import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
+import { calculatePrizeFeeBatch } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,13 +105,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
       const fees = calculatePrizeFeeBatch(feeLines);
-      // Preserve the existing threshold: smaller prizes are automatic; larger prizes wait for admin approval.
-      const automatic = fees.grossCents < PRIZE_FEE_THRESHOLD_CENTS;
-      const admin = automatic ? await tx.user.findFirst({
-        where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
-        select: { id: true }, orderBy: { createdAt: "asc" },
-      }) : null;
-      if (automatic && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+      // Every eligible physical-prize request is sent directly to Asaas.
+      // The admin area is monitoring-only; no manual payment authorization is required.
+      const automatic = true;
 
       const batchId = "ppb_" + randomUUID().replace(/-/g, "");
       const externalReference = "prize_batch_" + batchId;
@@ -125,7 +121,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
         feeRuleVersion: "physical-prize-fees-v2", status: automatic ? "PROCESSING" : "PENDING",
-        requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: admin?.id ?? null,
+        requestedAt: now, reviewedAt: automatic ? now : null, reviewerId: null,
         paymentReference: automatic ? externalReference : null,
         transferRequestedAt: automatic ? now : null,
         items: { create: feeLines.map(line => ({ participationLineId: line.id, amountCents: line.grossCents })) },
@@ -201,7 +197,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     return NextResponse.json({ success: true, batch: {
       id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
       transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
-    }, status: "PENDING", message: "Solicitação recebida. O total do recibo é de R$ 1.000,00 ou mais e aguarda análise da administração." }, { status: 201, headers });
+    }, status: "PENDING", message: "Solicitação recebida e encaminhada automaticamente à Asaas. Aguarde a confirmação bancária." }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
       return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
@@ -213,7 +209,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       PRIZE_NOT_FOUND: ["O prêmio informado não pertence a este recibo.", 404],
       PRIZE_NOT_AVAILABLE: ["Não há prêmios elegíveis para pagamento neste recibo.", 409],
       PRIZE_CALCULATION_MISMATCH: ["Um dos valores premiados diverge do recálculo oficial. O lote inteiro foi bloqueado para conferência.", 409],
-      AUTOMATIC_PAYOUT_ADMIN_MISSING: ["Não foi possível identificar o responsável técnico para registrar a transferência automática.", 503],
       REQUEST_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado.", 409],
       BATCH_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado. Consulte o andamento no próprio recibo.", 409],
     };
