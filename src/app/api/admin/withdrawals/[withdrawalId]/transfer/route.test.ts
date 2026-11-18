@@ -90,10 +90,13 @@ describe("admin Asaas wallet transfer authorization", () => {
       transferId: "trf-recovered",
       externalReference: "wallet_withdrawal_wdr_12345678",
     });
-    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: "wdr_12345678", status: "PROCESSING", paymentReference: "wallet_withdrawal_wdr_12345678" },
-      data: expect.objectContaining({ asaasTransferId: "trf-recovered" }),
-    }));
+    expect(mocks.withdrawalUpdateMany.mock.calls.some(([args]) =>
+      args.where.id === "wdr_12345678" &&
+      args.where.status === "PROCESSING" &&
+      args.where.paymentReference === "wallet_withdrawal_wdr_12345678" &&
+      args.where.asaasTransferId === null &&
+      args.data.asaasTransferId === "trf-recovered"
+    )).toBe(true);
   });
 
   it("does not reconcile a recovered transfer when its database link was not acquired", async () => {
