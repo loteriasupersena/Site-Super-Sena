@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { getAsaasTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +58,19 @@ export async function POST(request: NextRequest) {
 
   const transfer = payload.transfer!;
   const transferId = transfer.id!.trim();
-  const externalReference = transfer.externalReference?.trim() || null;
+  let externalReference = transfer.externalReference?.trim() || null;
+  // The validation payload example from Asaas may omit externalReference.
+  // Recover it from the transfer itself when the callback arrives before our
+  // post-creation database update has linked transfer.id to the withdrawal.
+  if (!externalReference) {
+    const providerTransfer = await getAsaasTransfer(transferId);
+    if (providerTransfer.id !== transferId ||
+        providerTransfer.value !== transfer.value ||
+        providerTransfer.operationType !== "PIX") {
+      return refuse("Os dados recuperados da transferência não correspondem à solicitação.");
+    }
+    externalReference = providerTransfer.externalReference?.trim() || null;
+  }
   const transferLookup = externalReference
     ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
     : { asaasTransferId: transferId };
