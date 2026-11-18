@@ -240,12 +240,27 @@ export async function POST(request: NextRequest) {
           return "WITHDRAWAL_PAID";
         }
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
-        await tx.withdrawal.update({ where: { id: withdrawal.id }, data: {
-          status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
-          asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
-        } });
-        await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
-          toStatus: status, note: status === "FAILED" ? "Transferência Asaas não concluída: " + (transfer?.failReason ?? event) : "Atualização da transferência Asaas: " + event } });
+        const changed = await tx.withdrawal.updateMany({
+          where: { id: withdrawal.id, status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: externalReference },
+          data: {
+            status, asaasTransferId: transferId, asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
+            asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
+          },
+        });
+        if (changed.count === 1) {
+          if (status === "FAILED") {
+            await tx.ledgerEntry.create({ data: {
+              userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
+              amountCents: withdrawal.amountCents, currency: "BRL",
+              idempotencyKey: "withdrawal-release:" + withdrawal.id,
+              description: "Liberação do saldo após confirmação de falha/cancelamento da transferência Asaas " + transferId,
+            } });
+          }
+          await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
+            toStatus: status, note: status === "FAILED"
+              ? "Transferência Asaas confirmada como não concluída; saldo reservado devolvido à carteira. " + (transfer?.failReason ?? event)
+              : "Atualização da transferência Asaas: " + event } });
+        }
         await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
           entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
