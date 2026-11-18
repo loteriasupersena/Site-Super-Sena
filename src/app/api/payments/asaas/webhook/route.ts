@@ -21,9 +21,13 @@ export async function POST(request: NextRequest) {
   let raw: string, body: AsaasWebhook;
   try { raw = await request.text(); body = JSON.parse(raw) as AsaasWebhook; }
   catch { return response({ error: "Payload inválido." }, 400); }
-  const eventId = body.id?.trim(), event = body.event?.trim().toUpperCase(), paymentId = body.payment?.id?.trim();
-  if (!eventId || !event || !paymentId) return response({ error: "Evento de pagamento incompleto." }, 400);
-  if (!["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED"].includes(event)) return response({ received: true, ignored: true }, 200);
+  const eventId = body.id?.trim(), event = body.event?.trim().toUpperCase();
+  if (!eventId || !event) return response({ error: "Evento de pagamento incompleto." }, 400);
+  if (!["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED"].includes(event)) {
+    return response({ received: true, ignored: true }, 200);
+  }
+  const paymentId = body.payment?.id?.trim();
+  if (!paymentId) return response({ error: "Evento de pagamento incompleto." }, 400);
   try {
     const canonical = await getAsaasPayment(paymentId);
     if (canonical.id !== paymentId || canonical.billingType !== "PIX") return response({ error: "Pagamento não corresponde a uma cobrança Pix." }, 422);
