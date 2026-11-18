@@ -45,7 +45,7 @@ const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", {
 type PaymentRequestStatus = NonNullable<Winner["paymentRequest"]>["status"];
 
 const requestStatus = (status: PaymentRequestStatus) => ({
-  PENDING: "Aguardando análise",
+  PENDING: "Aguardando processamento automático",
   PROCESSING: "Transferência em processamento",
   PAID: "Pago",
   REJECTED: "Solicitação encerrada",
@@ -107,7 +107,7 @@ export function AdminPrizePayout() {
       <strong style={{ display: "block", marginTop: ".2rem", fontSize: "clamp(1.7rem, 6vw, 2.2rem)", lineHeight: 1.1, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{money(totalPhysicalPending)}</strong>
       <span style={{ display: "block", marginTop: ".35rem", color: "#c5d2e4", fontSize: ".85rem" }}>{physicalPending.length} prêmios físicos ainda não pagos</span>
       <div style={{ marginTop: ".8rem", paddingTop: ".8rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
-        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Solicitações Pix aguardando análise</span>
+        <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Solicitações Pix pendentes de processamento</span>
         <strong style={{ display: "block", marginTop: ".2rem", fontSize: "1.25rem", color: "#fff" }}>{money(totalAwaitingAuthorization)}</strong>
         <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>{physicalAwaitingPix.length} solicitações registradas</span>
       </div>
