@@ -5,7 +5,7 @@ import { authPrisma } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
-import { calculatePrizeFeeBatch } from "@/domain/prize-fees";
+import { calculatePrizeFeeBatch, PRIZE_FEE_THRESHOLD_CENTS } from "@/domain/prize-fees";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,8 +105,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
       const fees = calculatePrizeFeeBatch(feeLines);
-      // Every physical prize request is paid automatically by Asaas after beneficiary validation.
-      const automatic = true;
+      // Preserve the existing threshold: smaller prizes are automatic; larger prizes wait for admin approval.
+      const automatic = fees.grossCents < PRIZE_FEE_THRESHOLD_CENTS;
       const admin = automatic ? await tx.user.findFirst({
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
         select: { id: true }, orderBy: { createdAt: "asc" },
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     return NextResponse.json({ success: true, batch: {
       id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
       transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
-    }, status: "PENDING", message: "Solicitação recebida e enviada automaticamente à Asaas. Aguarde a confirmação bancária." }, { status: 201, headers });
+    }, status: "PENDING", message: "Solicitação recebida. O total do recibo é de R$ 1.000,00 ou mais e aguarda análise da administração." }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
       return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });
