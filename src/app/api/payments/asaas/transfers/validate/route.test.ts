@@ -9,6 +9,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction, auditEvent: { create: mocks.auditCreate } },
 }));
+vi.mock("@/modules/payments/asaas", () => ({
+  getAsaasTransfer: vi.fn().mockResolvedValue({
+    id: "trf_12345678", externalReference: "prize_batch_ppb_12345678",
+    value: 1, operationType: "PIX",
+  }),
+}));
 import { POST } from "./route";
 
 function makeRequest(overrides: Record<string, unknown> = {}, token = "v".repeat(40)) {
