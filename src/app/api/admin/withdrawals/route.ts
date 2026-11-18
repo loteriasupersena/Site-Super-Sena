@@ -59,8 +59,7 @@ export async function GET(request: NextRequest) {
       return {
         id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
         asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus,
-        asaasTransferFailureReason: item.asaasTransferFailureReason, holderCpfMasked: item.holderCpfMasked,
-        holderName: canShowPix ? item.holderName : null,
+        asaasTransferFailureReason: item.asaasTransferFailureReason,
         pixKey: canShowPix ? item.pixKey : null,
         pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
         providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
