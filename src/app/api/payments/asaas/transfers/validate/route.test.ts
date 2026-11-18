@@ -31,7 +31,7 @@ function tx() {
     auditEvent: { create: mocks.auditCreate },
   };
 }
-describe("Asaas withdrawal validation endpoint", () => {
+describe("Asaas transfer validation endpoint", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ASAAS_TRANSFER_VALIDATION_TOKEN = "v".repeat(40);
