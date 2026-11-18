@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       } });
       await tx.auditEvent.create({ data: {
         actorId: user.id, action: "WITHDRAWAL_REQUESTED", entityType: "Withdrawal", entityId: withdrawal.id,
-        metadata: { amountCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType, holderCpfMasked: withdrawal.holderCpfMasked, status: withdrawal.status, automatic },
+        metadata: { amountCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType, status: withdrawal.status, automatic },
       } });
       return { id: withdrawal.id, amountCents, status: withdrawal.status, automatic, externalReference, transferRequestedAt, availableCents: 0 };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
