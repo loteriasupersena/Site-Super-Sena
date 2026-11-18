@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyMasked: string; holderName?: string | null; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null; holderCpfMasked?: string | null;
+  pixKey: string | null; pixKeyMasked: string; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null;
   createdAt: string; updatedAt: string; reviewedBy: string | null;
   statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
 };
@@ -70,16 +70,14 @@ export function AdminWithdrawalManager() {
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
     <h2 id="admin-withdrawals-heading">Saques das carteiras digitais</h2>
-    <p>Confira os dados do titular. Saques de R$ 1.000,00 ou mais aguardam sua autorização; ao autorizar, a Asaas envia o Pix. O saque só é concluído após a confirmação bancária.</p>
+    <p>Confira a chave Pix informada. Saques de R$ 1.000,00 ou mais aguardam sua autorização; ao autorizar, a Asaas envia o Pix. O saque só é concluído após a confirmação bancária.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
       {pending.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
-        <p>Titular: <strong>{item.holderName ?? "Nome não disponível"}</strong></p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
-        {item.holderCpfMasked && <p>CPF do titular: {item.holderCpfMasked}</p>}
         {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
