@@ -57,7 +57,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         const safeTransfer = (id: string | null, status: string | null, reference: string | null, requestedAt: Date | null) =>
           id ? ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "") :
           !(reference || requestedAt) || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
-        if (!terminalStatuses.includes(batch.status) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus, batch.paymentReference, batch.transferRequestedAt) ||
+        if (!terminalStatuses.includes(batch.status as (typeof terminalStatuses)[number]) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus, batch.paymentReference, batch.transferRequestedAt) ||
             batch.requests.some(row => !terminalStatuses.includes(row.status as (typeof terminalStatuses)[number]) || !safeTransfer(row.asaasTransferId, row.asaasTransferStatus, row.paymentReference, row.transferRequestedAt))) {
           throw new Error("NOT_PENDING");
         }
