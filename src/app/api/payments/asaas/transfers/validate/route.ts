@@ -25,7 +25,7 @@ function tokenMatches(received: string | null, expected: string) {
 
 function normalizePix(value: string, type: string) {
   return ["CPF", "CNPJ", "PHONE"].includes(type)
-    ? value.replace(/\\D/g, "")
+    ? value.replace(/\D/g, "")
     : value.trim().toLowerCase();
 }
 
