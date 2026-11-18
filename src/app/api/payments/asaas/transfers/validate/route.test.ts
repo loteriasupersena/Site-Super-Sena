@@ -72,6 +72,32 @@ describe("Asaas withdrawal validation endpoint", () => {
     expect(mocks.batchFind).toHaveBeenCalledWith({ where: { asaasTransferId: "trf_12345678" }, select: expect.any(Object) });
   });
 
+  it("approves a registered transfer when Asaas sends pixAddressKey as null", async () => {
+    mocks.batchFind.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
+      asaasTransferId: "trf_12345678", netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
+    });
+
+    const response = await POST(makeRequest({
+      externalReference: undefined,
+      bankAccount: { pixAddressKey: null },
+    }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+    expect(mocks.batchUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ asaasTransferId: "trf_12345678" }),
+    }));
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        metadata: expect.objectContaining({
+          beneficiaryKeyComparedFromPayload: false,
+          beneficiaryValidatedAgainstStoredRequest: true,
+        }),
+      }),
+    }));
+  });
+
   it("refuses an unknown transfer", async () => {
     mocks.batchFind.mockResolvedValue(null);
     const response = await POST(makeRequest());

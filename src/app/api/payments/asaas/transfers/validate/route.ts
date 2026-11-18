@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
     ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
     : { asaasTransferId: transferId };
   const valueCents = Math.round((transfer.value ?? 0) * 100);
-  const actualPix = transfer.bankAccount?.pixAddressKey?.trim();
-  if (!actualPix || !Number.isSafeInteger(valueCents) || valueCents <= 0) {
-    return refuse("Não foi possível validar o favorecido ou o valor.");
+  const actualPix = transfer.bankAccount?.pixAddressKey?.trim() || null;
+  if (!Number.isSafeInteger(valueCents) || valueCents <= 0) {
+    return refuse("Não foi possível validar o valor da transferência.");
   }
 
   try {
@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
           (!externalReference || batch.paymentReference === externalReference) &&
           (!batch.asaasTransferId || batch.asaasTransferId === transferId) &&
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
-          normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType);
+          (!actualPix || normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Lote", entityId: batch.id, reason: "Registro alterado durante a validação." };
-        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentBatch", entityId: batch.id, metadata: { transferId, externalReference, valueCents } } });
+        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentBatch", entityId: batch.id, metadata: { transferId, externalReference, valueCents, beneficiaryKeyComparedFromPayload: Boolean(actualPix), beneficiaryValidatedAgainstStoredRequest: true } } });
         return { approved: true, entityType: "PrizePaymentBatch", entityId: batch.id };
       }
 
@@ -98,14 +98,14 @@ export async function POST(request: NextRequest) {
           (!externalReference || prizeRequest.paymentReference === externalReference) &&
           (!prizeRequest.asaasTransferId || prizeRequest.asaasTransferId === transferId) &&
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
-          normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType);
+          (!actualPix || normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentRequest.updateMany({
           where: { id: prizeRequest.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Solicitação", entityId: prizeRequest.id, reason: "Registro alterado durante a validação." };
-        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentRequest", entityId: prizeRequest.id, metadata: { transferId, externalReference, valueCents } } });
+        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "PrizePaymentRequest", entityId: prizeRequest.id, metadata: { transferId, externalReference, valueCents, beneficiaryKeyComparedFromPayload: Boolean(actualPix), beneficiaryValidatedAgainstStoredRequest: true } } });
         return { approved: true, entityType: "PrizePaymentRequest", entityId: prizeRequest.id };
       }
 
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Saque", entityId: withdrawal.id, reason: "Registro alterado durante a validação." };
-        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, externalReference, valueCents } } });
+        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, externalReference, valueCents, beneficiaryKeyComparedFromPayload: Boolean(actualPix), beneficiaryValidatedAgainstStoredRequest: true } } });
         return { approved: true, entityType: "Withdrawal", entityId: withdrawal.id };
       }
 
