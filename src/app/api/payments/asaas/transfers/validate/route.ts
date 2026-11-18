@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
           withdrawal.paymentReference === externalReference &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
           withdrawal.amountCents === valueCents && !!withdrawal.pixKey && !!withdrawal.pixKeyType &&
-          normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix, withdrawal.pixKeyType);
+          normalizePix(withdrawal.pixKey, withdrawal.pixKeyType) === normalizePix(actualPix, withdrawal.pixKeyType ?? "");
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", paymentReference: externalReference, OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
