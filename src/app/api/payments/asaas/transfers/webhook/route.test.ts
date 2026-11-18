@@ -137,7 +137,7 @@ describe("Asaas wallet transfer webhook", () => {
 
     const response = await POST(batchRequest());
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(503);
     expect(mocks.registerPayout).toHaveBeenCalledTimes(2);
     expect(mocks.batchUpdate).toHaveBeenCalledOnce();
     expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledOnce();
