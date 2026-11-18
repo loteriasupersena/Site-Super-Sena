@@ -96,6 +96,16 @@ describe("admin Asaas wallet transfer authorization", () => {
     }));
   });
 
+  it("does not reconcile a recovered transfer when its database link was not acquired", async () => {
+    mocks.createAsaasPixTransfer.mockRejectedValueOnce(Object.assign(new Error("timeout"), { status: 503 }));
+    mocks.findTransfers.mockResolvedValueOnce([{ id: "trf-recovered", status: "PENDING" }]);
+    mocks.withdrawalUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
+    expect(mocks.reconcileTransfer).not.toHaveBeenCalled();
+  });
+
   it("does not send withdrawals below the R$ 1,000 threshold", async () => {
     mocks.withdrawalFindUnique.mockResolvedValue({ ...await mocks.withdrawalFindUnique(), amountCents: 99999 });
     const response = await POST(request(), context);
