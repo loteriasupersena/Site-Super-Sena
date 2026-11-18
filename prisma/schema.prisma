@@ -378,7 +378,7 @@ model NumericPrizePayout {
   participationLineId String                    @unique
   channel              NumericPrizePayoutChannel
   amountCents          Int
-  actorId              String
+  actorId              String?
   cashierId            String?
   settlementId         String?
   reference            String?
