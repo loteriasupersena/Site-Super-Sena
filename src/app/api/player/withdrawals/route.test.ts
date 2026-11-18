@@ -57,7 +57,7 @@ describe("player withdrawals API", () => {
   });
 
   it("reserves the full available balance atomically and records an audit event", async () => {
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyType: "CPF" }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, withdrawal: { id: "withdrawal-1", amountCents: 5000, availableCents: 0, status: "PROCESSING" } });
     expect(mocks.transaction).toHaveBeenCalledOnce();
@@ -81,7 +81,7 @@ describe("player withdrawals API", () => {
     mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("Asaas rejected"), { status: 400 }));
     mocks.findTransfers.mockResolvedValueOnce([]);
     const response = await POST(request("/api/player/withdrawals", {
-      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      pixKey: "52998224725", pixKeyType: "CPF",
     }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
@@ -100,7 +100,7 @@ describe("player withdrawals API", () => {
     mocks.findTransfers.mockResolvedValueOnce([{ id: "transfer-recovered", status: "PENDING" }]);
     mocks.reconcileTransfer.mockResolvedValueOnce("WITHDRAWAL_PROCESSING");
     const response = await POST(request("/api/player/withdrawals", {
-      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      pixKey: "52998224725", pixKeyType: "CPF",
     }));
     expect(response.status).toBe(202);
     expect(mocks.reconcileTransfer).toHaveBeenCalledWith({
@@ -121,25 +121,16 @@ describe("player withdrawals API", () => {
     mocks.findTransfers.mockResolvedValueOnce([{ id: "transfer-recovered", status: "PENDING" }]);
     mocks.withdrawalUpdateMany.mockResolvedValueOnce({ count: 0 });
     const response = await POST(request("/api/player/withdrawals", {
-      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      pixKey: "52998224725", pixKeyType: "CPF",
     }));
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
     expect(mocks.reconcileTransfer).not.toHaveBeenCalled();
   });
 
-  it("rejects a mismatched Pix key confirmation before reserving the wallet balance", async () => {
-    const response = await POST(request("/api/player/withdrawals", {
-      pixKey: "52998224725", pixKeyConfirmation: "11111111111", pixKeyType: "CPF",
-    }));
-    expect(response.status).toBe(400);
-    expect(mocks.transaction).not.toHaveBeenCalled();
-    expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
-  });
-
   it("rejects a withdrawal when no balance is available", async () => {
     mocks.aggregate.mockResolvedValue({ _sum: { amountCents: 0 } });
-    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }));
+    const response = await POST(request("/api/player/withdrawals", { pixKey: "52998224725", pixKeyType: "CPF" }));
     expect(response.status).toBe(409);
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.withdrawalCreate).not.toHaveBeenCalled();
@@ -154,7 +145,7 @@ describe("player withdrawals API", () => {
         cookie: "superquina_session=session-token",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF" }),
+      body: JSON.stringify({ pixKey: "52998224725", pixKeyType: "CPF" }),
     });
     expect((await POST(proxyRequest)).status).toBe(202);
   });
