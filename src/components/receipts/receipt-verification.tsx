@@ -65,9 +65,10 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   const batch = paymentRequest?.batch ?? null;
   const displayedGross = batch?.grossCents ?? grossCents;
-  const adminFee = batch?.administrativeFeeCents ?? (grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0);
-  const bankFee = batch?.transactionFeeCents ?? (grossCents >= 100000 ? Math.round(grossCents * 0.05) : 0);
-  const displayedNet = batch?.netCents ?? (grossCents - adminFee - bankFee);
+  const requiresAdminApproval = displayedGross >= 100000;
+  const adminFee = batch?.administrativeFeeCents ?? (requiresAdminApproval ? Math.round(displayedGross * 0.05) : 0);
+  const bankFee = batch?.transactionFeeCents ?? (requiresAdminApproval ? Math.round(displayedGross * 0.05) : 0);
+  const displayedNet = batch?.netCents ?? (displayedGross - adminFee - bankFee);
   const canSubmit = holderName.trim().length >= 5 && holderCpf.replace(/\D/g, "").length === 11 && pixKey.trim().length >= 3 && pixKey.trim() === pixKeyConfirmation.trim();
 
   async function submit() {
@@ -83,7 +84,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
       setHolderName(""); setHolderCpf(""); setPixKey(""); setPixKeyConfirmation(""); setShowReview(false); setConfirmed(false); setHolderConfirmed(false);
       setMessage(body.status === "PROCESSING"
         ? "Solicitação enviada à Asaas. Aguarde a confirmação do Pix."
-        : "Solicitação recebida e encaminhada automaticamente à Asaas. Aguarde a confirmação do Pix.");
+        : "Solicitação recebida. Aguarde a análise da administração antes do envio do Pix.");
       await onSubmitted();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação.");
@@ -92,10 +93,10 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
 
   return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
     <strong style={{ color: "#111827" }}>{batch ? "Todos os prêmios deste recibo" : numberValue} · Prêmio bruto: {money(displayedGross)}</strong>
-    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {grossCents >= 100000 ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
-    {grossCents >= 100000 && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Todos os prêmios físicos elegíveis são enviados automaticamente para pagamento via Pix pela plataforma.</p>}
+    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa {requiresAdminApproval ? "(5%)" : "(isenta)"}: {money(adminFee)}<br />Taxa de transação bancária {requiresAdminApproval ? "(5%)" : "(isenta)"}: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
+    {requiresAdminApproval && <p style={{ margin: "8px 0", color: "#92400e", fontWeight: 700 }}>Prêmios físicos com total igual ou superior a R$ 1.000,00 aguardam autorização da administração antes do envio do Pix.</p>}
     {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Valor liberado pela administração. Você pode solicitar novamente este prêmio.</p>}
-    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Aguardando processamento automático pela Asaas</p>
+    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida · Aguardando análise da administração</p>
       : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
       : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
 
