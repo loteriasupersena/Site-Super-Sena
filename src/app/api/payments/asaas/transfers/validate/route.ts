@@ -155,14 +155,6 @@ export async function POST(request: NextRequest) {
       });
       return refuse(reason);
     }
-    await authPrisma.auditEvent.create({
-      data: {
-        action: "ASAAS_TRANSFER_VALIDATION_APPROVED",
-        entityType: "AsaasTransferValidation",
-        entityId: transferId,
-        metadata: { transferId, externalReference, valueCents, decision: "APPROVED" },
-      },
-    });
     return NextResponse.json({ status: "APPROVED" }, { status: 200, headers: { "Cache-Control": "no-store" } });
   } catch {
     // A transient database failure must trigger Asaas retry, not a false decision.
