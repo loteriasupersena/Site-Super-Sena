@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           id ? ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "") :
           !(reference || requestedAt) || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
         if (!terminalStatuses.includes(batch.status) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus, batch.paymentReference, batch.transferRequestedAt) ||
-            batch.requests.some(row => !terminalStatuses.includes(row.status) || !safeTransfer(row.asaasTransferId, row.asaasTransferStatus, row.paymentReference, row.transferRequestedAt))) {
+            batch.requests.some(row => !terminalStatuses.includes(row.status as (typeof terminalStatuses)[number]) || !safeTransfer(row.asaasTransferId, row.asaasTransferStatus, row.paymentReference, row.transferRequestedAt))) {
           throw new Error("NOT_PENDING");
         }
         const batchChanged = await tx.prizePaymentBatch.updateMany({
