@@ -85,7 +85,7 @@ describe("player withdrawals API", () => {
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
     expect(mocks.findTransfers).toHaveBeenCalledWith(expect.objectContaining({
-      externalReference: "wallet_withdrawal_withdrawal-1",
+      externalReference: expect.stringMatching(/^wallet_withdrawal_wdr_[a-f0-9]{32}$/),
       requestedAt: expect.any(Date),
     }));
     expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
@@ -105,12 +105,25 @@ describe("player withdrawals API", () => {
     expect(response.status).toBe(202);
     expect(mocks.reconcileTransfer).toHaveBeenCalledWith({
       transferId: "transfer-recovered",
-      externalReference: "wallet_withdrawal_withdrawal-1",
+      externalReference: expect.stringMatching(/^wallet_withdrawal_wdr_[a-f0-9]{32}$/),
     });
     expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "withdrawal-1", status: "PROCESSING", paymentReference: "wallet_withdrawal_withdrawal-1" },
       data: expect.objectContaining({ asaasTransferId: "transfer-recovered" }),
     }));
+  });
+
+  it("does not reconcile a recovered transfer when its database link was not acquired", async () => {
+    mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("timeout"), { status: 503 }));
+    mocks.findTransfers.mockResolvedValueOnce([{ id: "transfer-recovered", status: "PENDING" }]);
+    mocks.withdrawalUpdateMany.mockResolvedValueOnce({ count: 0 });
+    const response = await POST(request("/api/player/withdrawals", {
+      pixKey: "52998224725", pixKeyConfirmation: "52998224725", pixKeyType: "CPF",
+      holderName: "Joao da Silva", holderCpf: "52998224725", pixKeyConfirmed: true, holderConfirmed: true,
+    }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
+    expect(mocks.reconcileTransfer).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid beneficiary CPF before reserving the wallet balance", async () => {
