@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
@@ -46,6 +45,7 @@ const schema = z.object({
   userId: z.string().min(1).max(128),
   amountCents: z.number().int().min(1).max(1_000_000_00),
   reason: z.string().trim().min(8).max(300),
+  idempotencyKey: z.string().uuid(),
 }).strict();
 
 export async function POST(request: NextRequest) {
@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
   const parsed = schema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Selecione um jogador, informe um valor válido e justifique o crédito." }, { status: 400, headers });
 
-  const idempotencyKey = "admin-test-credit:" + randomUUID();
   try {
     const result = await authPrisma.$transaction(async (tx) => {
       const player = await tx.user.findUnique({ where: { id: parsed.data.userId }, select: { id: true, username: true, role: true, status: true } });
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
         type: "ADJUSTMENT",
         amountCents: parsed.data.amountCents,
         currency: "BRL",
-        idempotencyKey,
+        idempotencyKey: "admin-test-credit:" + parsed.data.idempotencyKey,
         description: "Crédito administrativo de teste: " + parsed.data.reason.trim(),
       } });
       await tx.auditEvent.create({ data: {
@@ -89,6 +88,7 @@ export async function POST(request: NextRequest) {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return NextResponse.json({ success: true, credit: result }, { headers });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return NextResponse.json({ error: "Esta operação já foi processada ou enviada. Confira o extrato antes de tentar novamente." }, { status: 409, headers });
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return NextResponse.json({ error: "A carteira foi atualizada simultaneamente. Tente novamente." }, { status: 409, headers });
     const code = error instanceof Error ? error.message : "";
     if (code === "PLAYER_NOT_FOUND") return NextResponse.json({ error: "Jogador não encontrado." }, { status: 404, headers });
