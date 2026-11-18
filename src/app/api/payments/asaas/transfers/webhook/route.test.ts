@@ -22,7 +22,7 @@ function tx() {
     ledgerEntry: { create: mocks.ledgerCreate },
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
-    prizePaymentBatch: { findUnique: mocks.batchFindUnique, update: mocks.batchUpdate },
+    prizePaymentBatch: { findUnique: mocks.batchFindUnique, updateMany: mocks.batchUpdate },
     prizePaymentRequest: { updateMany: mocks.prizeRequestUpdateMany },
     $queryRaw: mocks.queryRaw,
   };
@@ -72,7 +72,7 @@ describe("Asaas wallet transfer webhook", () => {
     mocks.ledgerCreate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
-    mocks.batchUpdate.mockResolvedValue({});
+    mocks.batchUpdate.mockResolvedValue({ count: 1 });
     mocks.prizeRequestUpdateMany.mockResolvedValue({ count: 1 });
     mocks.registerPayout.mockResolvedValue({});
     mocks.transaction.mockImplementation(async (callback) => callback(tx()));
@@ -109,13 +109,38 @@ describe("Asaas wallet transfer webhook", () => {
       reference: "prize_batch_ppb_12345678", expectedRequestStatus: "PROCESSING",
     });
     expect(mocks.batchUpdate).toHaveBeenCalledWith({
-      where: { id: "ppb_12345678" },
+      where: { id: "ppb_12345678", status: "PROCESSING", OR: [{ asaasTransferId: null }, { asaasTransferId: "trf-batch-1" }] },
       data: expect.objectContaining({ status: "PAID", asaasTransferId: "trf-batch-1" }),
     });
     expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledWith({
-      where: { batchId: "ppb_12345678" },
+      where: { batchId: "ppb_12345678", status: "PAID" },
       data: expect.objectContaining({ asaasTransferId: "trf-batch-1", pixKey: null }),
     });
+  });
+
+
+  it("rolls back settlement when not every request row is linked", async () => {
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-batch-1", status: "DONE", externalReference: "prize_batch_ppb_12345678",
+      value: 50, operationType: "PIX", bankAccount: { pixAddressKey: "11999999999" },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    mocks.batchFindUnique.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING",
+      paymentReference: "prize_batch_ppb_12345678", asaasTransferId: "trf-batch-1",
+      netCents: 5000, pixKey: "11999999999", pixKeyType: "PHONE",
+      requests: [
+        { id: "ppr_1", participationLineId: "line-1", status: "PROCESSING" },
+        { id: "ppr_2", participationLineId: "line-2", status: "PROCESSING" },
+      ],
+    });
+    mocks.prizeRequestUpdateMany.mockResolvedValueOnce({ count: 1 });
+
+    const response = await POST(batchRequest());
+
+    expect(response.status).toBe(500);
+    expect(mocks.registerPayout).toHaveBeenCalledTimes(2);
+    expect(mocks.batchUpdate).toHaveBeenCalledOnce();
+    expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledOnce();
   });
 
   it("does not settle a prize batch when the confirmed Pix beneficiary differs", async () => {
