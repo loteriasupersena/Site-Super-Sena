@@ -107,10 +107,13 @@ describe("player withdrawals API", () => {
       transferId: "transfer-recovered",
       externalReference: expect.stringMatching(/^wallet_withdrawal_wdr_[a-f0-9]{32}$/),
     });
-    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: "withdrawal-1", status: "PROCESSING", paymentReference: "wallet_withdrawal_withdrawal-1" },
-      data: expect.objectContaining({ asaasTransferId: "transfer-recovered" }),
-    }));
+    expect(mocks.withdrawalUpdateMany.mock.calls.some(([args]) =>
+      args.where.id === "withdrawal-1" &&
+      args.where.status === "PROCESSING" &&
+      args.where.asaasTransferId === null &&
+      args.where.paymentReference === mocks.reconcileTransfer.mock.calls[0]?.[0]?.externalReference &&
+      args.data.asaasTransferId === "transfer-recovered"
+    )).toBe(true);
   });
 
   it("does not reconcile a recovered transfer when its database link was not acquired", async () => {
