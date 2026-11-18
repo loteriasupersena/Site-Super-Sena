@@ -199,10 +199,11 @@ describe("Asaas wallet transfer webhook", () => {
     const response = await POST(request("TRANSFER_FAILED"));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ outcome: "WITHDRAWAL_PROCESSING" });
-    expect(mocks.withdrawalUpdate).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "wdr_12345678", status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: "wallet_withdrawal_wdr_12345678" },
       data: expect.objectContaining({ status: "PROCESSING" }),
     }));
-    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
   it("does not trust webhook payload when the Asaas lookup fails", async () => {
@@ -242,7 +243,7 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
   });
 
-  it("keeps the reserved balance and records a failed transfer", async () => {
+  it("releases the reserved balance exactly once after Asaas confirms a terminal failure", async () => {
     mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
       id: "trf-1", status: "FAILED", externalReference: "wallet_withdrawal_wdr_12345678",
       value: 50, operationType: "PIX", failReason: "bank rejected transfer",
@@ -250,10 +251,17 @@ describe("Asaas wallet transfer webhook", () => {
     const response = await POST(request("TRANSFER_FAILED"));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ received: true, outcome: "WITHDRAWAL_FAILED" });
-    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
-    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
+    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledWith({
+      where: { id: "wdr_12345678", status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: "wallet_withdrawal_wdr_12345678" },
+      data: expect.objectContaining({ status: "FAILED", asaasTransferId: "trf-1" }),
+    });
+    expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      userId: "player-1", withdrawalId: "wdr_12345678", type: "WITHDRAWAL_RELEASE",
+      amountCents: 5000, idempotencyKey: "withdrawal-release:wdr_12345678",
+    }) });
     expect(mocks.historyCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       fromStatus: "PROCESSING", toStatus: "FAILED",
+      note: expect.stringContaining("saldo reservado devolvido à carteira"),
     }) });
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       action: "WITHDRAWAL_ASAAS_TRANSFER_FAILED", entityId: "wdr_12345678",
