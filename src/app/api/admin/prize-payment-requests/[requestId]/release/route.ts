@@ -70,7 +70,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         const requestsChanged = await tx.prizePaymentRequest.updateMany({
           where: { batchId: batch.id, status: { in: terminalStatuses } },
           data: {
-            status: "REJECTED", pixKey: null, pixKeyEncrypted: null, holderName: null,
+            status: "REJECTED", batchId: null, pixKey: null, pixKeyEncrypted: null, holderName: null,
             holderNameEncrypted: null, holderCpfEncrypted: null,
             asaasTransferId: null, asaasTransferStatus: null, asaasTransferReceiptUrl: null,
             asaasTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
