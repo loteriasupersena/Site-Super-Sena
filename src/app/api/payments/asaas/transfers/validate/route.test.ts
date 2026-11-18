@@ -31,12 +31,11 @@ function tx() {
     auditEvent: { create: mocks.auditCreate },
   };
 }
-describe("Asaas transfer validation endpoint", () => {
+describe("Asaas withdrawal validation endpoint", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ASAAS_TRANSFER_VALIDATION_TOKEN = "v".repeat(40);
+    process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN = "v".repeat(40);
     delete process.env.ASAAS_WEBHOOK_TOKEN;
-    delete process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN;
     mocks.batchFind.mockResolvedValue({
       id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
       asaasTransferId: null, netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
@@ -78,14 +77,6 @@ describe("Asaas transfer validation endpoint", () => {
     const response = await POST(makeRequest({ bankAccount: { pixAddressKey: "11988887777" } }));
     expect(await response.json()).toMatchObject({ status: "REFUSED" });
     expect(mocks.batchUpdate).not.toHaveBeenCalled();
-  });
-
-  it("does not accept the legacy withdrawal variable as a substitute", async () => {
-    delete process.env.ASAAS_TRANSFER_VALIDATION_TOKEN;
-    process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN = "v".repeat(40);
-    const response = await POST(makeRequest());
-    expect(response.status).toBe(401);
-    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid authentication token", async () => {
