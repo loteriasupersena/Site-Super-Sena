@@ -94,7 +94,7 @@ export async function registerNumericPrizePayout(
       participationLineId: line.id,
       channel: "PLATFORM_PIX",
       amountCents: line.prizePaymentRequest.netCents,
-      actorId: input.actorId,
+      actorId: input.actorId ?? undefined,
       cashierId: null,
       reference: input.reference?.trim() || null,
       paidAt,
@@ -110,7 +110,7 @@ export async function registerNumericPrizePayout(
   });
   await tx.auditEvent.create({
     data: {
-      actorId: input.actorId,
+      actorId: input.actorId ?? undefined,
       action: "PLATFORM_PRIZE_PAID_PIX",
       entityType: "NumericPrizePayout",
       entityId: payout.id,
