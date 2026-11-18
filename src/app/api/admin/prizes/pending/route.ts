@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, asaasTransferId: true, asaasTransferStatus: true, asaasTransferReceiptUrl: true, asaasTransferFailureReason: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true } },
+        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, asaasTransferId: true, asaasTransferStatus: true, asaasTransferReceiptUrl: true, asaasTransferFailureReason: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true, batch: { select: { id: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } },
         participation: {
           select: {
             totalCents: true,
@@ -112,12 +112,10 @@ export async function GET(request: NextRequest) {
             asaasTransferStatus: line.prizePaymentRequest.asaasTransferStatus,
             asaasTransferReceiptUrl: line.prizePaymentRequest.asaasTransferReceiptUrl,
             asaasTransferFailureReason: line.prizePaymentRequest.asaasTransferFailureReason,
-            holderName: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status)
-              ? line.prizePaymentRequest.holderName : null,
+            holderName: null,
             holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
             holderCpf: null,
-            pixKey: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status) && !line.prizePayout && !line.prizeCreditedAt
-              ? line.prizePaymentRequest.pixKey : null,
+            pixKey: null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,

@@ -4,11 +4,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
+import { PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, private" };
-const LIMIT_CENTS = 100000;
 
 function validCpf(value: string) {
   const cpf = value.replace(/\D/g, "");
@@ -82,14 +82,14 @@ export async function POST(request: NextRequest) {
       const available = ledger._sum.amountCents ?? 0;
       if (available <= 0) throw new Error("INSUFFICIENT_BALANCE");
       const amountCents = available;
-      const admin = amountCents < LIMIT_CENTS ? await tx.user.findFirst({
+      const admin = amountCents < PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS ? await tx.user.findFirst({
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
         select: { id: true }, orderBy: { createdAt: "asc" },
       }) : null;
-      if (amountCents < LIMIT_CENTS && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
+      if (amountCents < PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
       const id = "wdr_" + randomUUID().replace(/-/g, "");
       const externalReference = "wallet_withdrawal_" + id;
-      const automatic = amountCents < LIMIT_CENTS;
+      const automatic = amountCents < PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS;
       const withdrawal = await tx.withdrawal.create({ data: {
         id, userId: user.id, amountCents, pixKey: input.pixKey, pixKeyType: input.pixKeyType,
         holderName: input.holderName, holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
