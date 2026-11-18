@@ -105,7 +105,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
       const fees = calculatePrizeFeeBatch(feeLines);
-      // Every physical prize request is paid automatically by Asaas after beneficiary validation.\n      const automatic = true;
+      // Every physical prize request is paid automatically by Asaas after beneficiary validation.
+      const automatic = true;
       const admin = automatic ? await tx.user.findFirst({
         where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
         select: { id: true }, orderBy: { createdAt: "asc" },
