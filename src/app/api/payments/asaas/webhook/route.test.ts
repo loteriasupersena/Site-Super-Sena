@@ -23,18 +23,18 @@ vi.mock("@/modules/payments/record-unexpected-refund", () => ({
 
 import { POST } from "./route";
 
-function request() {
+function request(body: unknown = {
+  id: "evt-refund-1",
+  event: "PAYMENT_REFUNDED",
+  payment: { id: "pay-1" },
+}) {
   return new NextRequest("https://example.test/api/payments/asaas/webhook", {
     method: "POST",
     headers: {
       "asaas-access-token": "a".repeat(40),
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      id: "evt-refund-1",
-      event: "PAYMENT_REFUNDED",
-      payment: { id: "pay-1" },
-    }),
+    body: JSON.stringify(body),
   });
 }
 
@@ -49,6 +49,23 @@ describe("Asaas payment webhook refund validation", () => {
       pixQrCodeId: "qr-1",
     });
     mocks.paymentFindFirst.mockResolvedValue(null);
+  });
+
+  it("acknowledges transfer events without treating them as incomplete payments", async () => {
+    const response = await POST(request({
+      id: "evt-transfer-created",
+      event: "TRANSFER_CREATED",
+      transfer: {
+        id: "d0d7bd5c-d89f-4198-af81-b86e8e9af1bd",
+        status: "CANCELLED",
+        value: 1,
+      },
+    }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, ignored: true });
+    expect(mocks.getAsaasPayment).not.toHaveBeenCalled();
+    expect(mocks.paymentFindFirst).not.toHaveBeenCalled();
   });
 
   it("does not process a refund notification until Asaas confirms REFUNDED", async () => {
