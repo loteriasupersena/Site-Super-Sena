@@ -112,12 +112,10 @@ export async function GET(request: NextRequest) {
             asaasTransferStatus: line.prizePaymentRequest.asaasTransferStatus,
             asaasTransferReceiptUrl: line.prizePaymentRequest.asaasTransferReceiptUrl,
             asaasTransferFailureReason: line.prizePaymentRequest.asaasTransferFailureReason,
-            holderName: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status)
-              ? line.prizePaymentRequest.holderName : null,
+            holderName: null,
             holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
             holderCpf: null,
-            pixKey: ["PENDING", "FAILED", "CANCELLED"].includes(line.prizePaymentRequest.status) && !line.prizePayout && !line.prizeCreditedAt
-              ? line.prizePaymentRequest.pixKey : null,
+            pixKey: null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
