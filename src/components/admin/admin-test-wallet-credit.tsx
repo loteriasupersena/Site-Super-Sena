@@ -49,7 +49,10 @@ export function AdminTestWalletCredit() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(""); setNotice("");
-    const normalized = amount.trim().replace(/\./g, "").replace(",", ".");
+    const rawAmount = amount.trim();
+    const normalized = rawAmount.includes(",")
+      ? rawAmount.replace(/\\./g, "").replace(",", ".")
+      : rawAmount;
     const value = Number(normalized);
     if (!userId) { setError("Selecione um jogador."); return; }
     if (!Number.isFinite(value) || value <= 0 || Math.round(value * 100) !== value * 100 || value > 1_000_000) {
