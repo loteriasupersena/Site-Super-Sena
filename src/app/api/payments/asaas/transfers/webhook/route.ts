@@ -150,8 +150,11 @@ export async function POST(request: NextRequest) {
               expectedRequestStatus: item.status as "PROCESSING" | "FAILED" | "CANCELLED",
             });
           }
-          await tx.prizePaymentBatch.update({
-            where: { id: batch.id },
+          const batchSettled = await tx.prizePaymentBatch.updateMany({
+            where: {
+              id: batch.id, status: batch.status,
+              OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }],
+            },
             data: {
               status: "PAID", asaasTransferId: transferId,
               asaasTransferStatus: transfer?.status ?? "DONE",
@@ -159,8 +162,9 @@ export async function POST(request: NextRequest) {
               asaasTransferFailureReason: null,
             },
           });
-          await tx.prizePaymentRequest.updateMany({
-            where: { batchId: batch.id },
+          if (batchSettled.count !== 1) throw new Error("BATCH_SETTLEMENT_CONFLICT");
+          const requestsSettled = await tx.prizePaymentRequest.updateMany({
+            where: { batchId: batch.id, status: "PAID" },
             data: {
               asaasTransferId: transferId,
               asaasTransferStatus: transfer?.status ?? "DONE",
@@ -169,6 +173,7 @@ export async function POST(request: NextRequest) {
               pixKey: null, pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
             },
           });
+          if (requestsSettled.count !== batch.requests.length) throw new Error("BATCH_REQUEST_SETTLEMENT_COUNT_MISMATCH");
           return "BATCH_PAID";
         }
 
