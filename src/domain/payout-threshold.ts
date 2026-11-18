@@ -1,2 +1,2 @@
-/** Shared gross-value threshold for requiring manual administrator approval before a Pix payout. */
-export const PAYOUT_ADMIN_APPROVAL_THRESHOLD_CENTS = 100_000;
+/** Gross prize threshold from which the two physical-prize fees apply. */
+export const PRIZE_FEE_THRESHOLD_CENTS = 100_000;
