@@ -105,39 +105,47 @@ export function AdminPrizePayout() {
       </div>}
     </div>}
 
-    <div className="round-options admin-prize-tabs" role="group" aria-label="Filtrar ganhadores">
-      <button type="button" className={"admin-prize-tab" + (tab === "pending" ? " is-active" : "")} onClick={() => setTab("pending")}>
-        A pagar ({pending.length})
-      </button>
-      <button type="button" className={"admin-prize-tab" + (tab === "paid" ? " is-active" : "")} onClick={() => setTab("paid")}>
-        Já pagos ({paid.length})
-      </button>
-      <button type="button" className="admin-prize-refresh" disabled={loading} onClick={() => { setLoading(true); setError(""); void load(); }}>
-        Atualizar
-      </button>
-    </div>
+    <details className="admin-accordion admin-prize-history">
+      <summary>
+        <span>Histórico de premiações ({winners.length})</span>
+        <span aria-hidden="true" className="admin-prize-history-count">{pending.length} a pagar · {paid.length} pagos</span>
+      </summary>
+      <div className="admin-accordion-content">
+        <div className="round-options admin-prize-tabs" role="group" aria-label="Filtrar ganhadores">
+          <button type="button" className={"admin-prize-tab" + (tab === "pending" ? " is-active" : "")} onClick={() => setTab("pending")}>
+            A pagar ({pending.length})
+          </button>
+          <button type="button" className={"admin-prize-tab" + (tab === "paid" ? " is-active" : "")} onClick={() => setTab("paid")}>
+            Já pagos ({paid.length})
+          </button>
+          <button type="button" className="admin-prize-refresh" disabled={loading} onClick={() => { setLoading(true); setError(""); void load(); }}>
+            Atualizar
+          </button>
+        </div>
 
-    {error && <p role="alert" className="note-inline">{error}</p>}
-    {loading ? <p>Carregando ganhadores…</p> : visible.length === 0
-      ? <p>{tab === "pending" ? "Nenhum pagamento pendente." : "Nenhum prêmio pago registrado ainda."}</p>
-      : <div className="admin-round-list">
-        {visible.map((winner) => <article className="round-option admin-prize-card" key={winner.id}>
-          <strong>{winner.playerName}</strong>
-          <p><strong>Prêmio: {money(winner.prizeCents)}</strong> · Acerto: <strong>{winner.prizeCategoryLabel ?? "Não identificado"}</strong></p>
-          <p>Número apostado: <strong>{winner.numberValue}</strong> · Número sorteado: <strong>{winner.resultNumber ?? "Indisponível"}</strong></p>
-          <p>Rodada: {winner.roundCode} · Data e horário do sorteio: {dateTime(winner.resultAt)}</p>
-          <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
-          <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
-          <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
+        {error && <p role="alert" className="note-inline">{error}</p>}
+        {loading ? <p>Carregando ganhadores…</p> : visible.length === 0
+          ? <p>{tab === "pending" ? "Nenhum pagamento pendente." : "Nenhum prêmio pago registrado ainda."}</p>
+          : <div className="admin-round-list">
+            {visible.map((winner) => <article className="round-option admin-prize-card" key={winner.id}>
+              <strong>{winner.playerName}</strong>
+              <p><strong>Prêmio: {money(winner.prizeCents)}</strong> · Acerto: <strong>{winner.prizeCategoryLabel ?? "Não identificado"}</strong></p>
+              <p>Número apostado: <strong>{winner.numberValue}</strong> · Número sorteado: <strong>{winner.resultNumber ?? "Indisponível"}</strong></p>
+              <p>Rodada: {winner.roundCode} · Data e horário do sorteio: {dateTime(winner.resultAt)}</p>
+              <p>Valor desta aposta: <strong>{money(winner.stakeCents)}</strong> · Total da rodada nesta compra: {money(winner.participationTotalCents)} · Total do recibo: {money(winner.purchaseTotalCents)}</p>
+              <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
+              <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
 
-          {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
-          {winner.phone && <p>Telefone: {winner.phone}</p>}
-          {winner.paid
-            ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
-            : <>
-              {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento automático em processamento.</strong></p> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <p><strong>Pagamento pendente.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação técnica necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
-            </>}
-        </article>)}
-      </div>}
+              {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
+              {winner.phone && <p>Telefone: {winner.phone}</p>}
+              {winner.paid
+                ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
+                : <>
+                  {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento automático em processamento.</strong></p> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <p><strong>Pagamento pendente.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação técnica necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
+                </>}
+            </article>)}
+          </div>}
+      </div>
+    </details>
   </section>;
 }
