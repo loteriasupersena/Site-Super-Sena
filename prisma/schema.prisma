@@ -593,6 +593,5 @@ model PrizePaymentBatchItem {
   participationLine NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
 
   @@unique([batchId, participationLineId])
-  @@unique([participationLineId])
   @@index([batchId])
 }
