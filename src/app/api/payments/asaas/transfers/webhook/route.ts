@@ -189,14 +189,16 @@ export async function POST(request: NextRequest) {
           where: { batchId: batch.id },
           data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
         });
-        await tx.auditEvent.create({
-          data: {
-            action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
-              : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
-            entityType: "PrizePaymentBatch", entityId: batch.id,
-            metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
-          },
-        });
+        if (batch.status !== status) {
+          await tx.auditEvent.create({
+            data: {
+              action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
+                : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
+              entityType: "PrizePaymentBatch", entityId: batch.id,
+              metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
+            },
+          });
+        }
         return status;
       }
 
