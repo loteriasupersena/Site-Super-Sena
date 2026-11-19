@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { normalizePixKeyForComparison, type PixKeyType } from "@/lib/wallet/pix-key";
 import { registerNumericPrizePayout } from "@/modules/rounds/register-numeric-prize-payout";
 import { getAsaasTransfer } from "@/modules/payments/asaas";
 
@@ -34,17 +35,22 @@ function response(body: unknown, status: number) {
   return NextResponse.json(body, { status, headers });
 }
 
-function normalizePix(value: string, type: string) {
-  return ["CPF", "CNPJ", "PHONE"].includes(type)
-    ? value.replace(/\D/g, "")
-    : value.trim().toLowerCase();
-}
-
 function verifyPixBeneficiary(expectedPlain: string | null, type: string | null, actual: string | null | undefined) {
-  if (!expectedPlain || !type || !actual) throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
-  if (normalizePix(expectedPlain, type) !== normalizePix(actual, type)) {
+  if (!expectedPlain || !type || !["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(type)) {
+    throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
+  }
+
+  // Asaas may omit pixAddressKey from a transfer representation. In that case,
+  // the transfer is still bound to the request by transfer ID, externalReference,
+  // amount, PIX operation and the authoritative DONE status checked above.
+  // Compare the key whenever Asaas supplies it; never accept a different key.
+  if (!actual?.trim()) return "NOT_RETURNED";
+
+  if (normalizePixKeyForComparison(expectedPlain, type as PixKeyType) !==
+      normalizePixKeyForComparison(actual, type as PixKeyType)) {
     throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
   }
+  return "MATCHED";
 }
 
 export async function POST(request: NextRequest) {
