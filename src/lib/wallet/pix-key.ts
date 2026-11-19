@@ -25,15 +25,15 @@ export function parsePixKeyInput(value: unknown): { pixKey: string; pixKeyType: 
   const pixKey = body.pixKey.trim();
   const pixKeyType = body.pixKeyType;
   if (pixKey.length < 3 || pixKey.length > 200) return null;
-  const digits = pixKey.replace(/\\D/g, "");
+  const digits = pixKey.replace(/\D/g, "");
   const valid = pixKeyType === "CPF"
-    ? /^[0-9.\\/-]+$/.test(pixKey) && digits.length === 11
+    ? /^[0-9.\/-]+$/.test(pixKey) && digits.length === 11
     : pixKeyType === "CNPJ"
-      ? /^[0-9.\\/-]+$/.test(pixKey) && digits.length === 14
+      ? /^[0-9.\/-]+$/.test(pixKey) && digits.length === 14
       : pixKeyType === "EMAIL"
-        ? /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(pixKey)
+        ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pixKey)
         : pixKeyType === "PHONE"
-          ? /^\\+?[0-9() .-]+$/.test(pixKey) && digits.length >= 10 && digits.length <= 13
+          ? /^\+?[0-9() .-]+$/.test(pixKey) && digits.length >= 10 && digits.length <= 13
           : pixKeyType === "EVP"
             ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(pixKey)
             : false;
@@ -43,9 +43,9 @@ export function parsePixKeyInput(value: unknown): { pixKey: string; pixKeyType: 
 /** Comparison only. Keep the original key for storage and the Asaas request. */
 export function normalizePixKeyForComparison(value: string, type: PixKeyType) {
   if (type === "PHONE") {
-    const digits = value.replace(/\\D/g, "");
+    const digits = value.replace(/\D/g, "");
     return digits.startsWith("55") && (digits.length === 12 || digits.length === 13) ? digits.slice(2) : digits;
   }
-  if (type === "CPF" || type === "CNPJ") return value.replace(/\\D/g, "");
+  if (type === "CPF" || type === "CNPJ") return value.replace(/\D/g, "");
   return value.trim().toLowerCase();
 }
