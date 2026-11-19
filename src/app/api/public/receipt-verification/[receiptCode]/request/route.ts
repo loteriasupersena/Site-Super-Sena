@@ -68,11 +68,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true,
         participation: { select: { round: { select: { resultNumber: true } } } },
-        prizePaymentRequest: { select: { id: true, status: true, batchId: true } },
+        prizePaymentRequest: { select: { id: true, status: true, batchId: true, batch: { select: { status: true } } } },
       }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
       if (!candidates.length || !candidates.some(line => line.id === selected.id)) throw new Error("PRIZE_NOT_AVAILABLE");
-      if (candidates.some(line => line.prizePaymentRequest &&
-        (line.prizePaymentRequest.status !== "REJECTED" || line.prizePaymentRequest.batchId))) throw new Error("REQUEST_ALREADY_EXISTS");
+      if (candidates.some(line => {
+        const previous = line.prizePaymentRequest;
+        if (!previous) return false;
+        const released = previous.status === "REJECTED" && previous.batchId === null;
+        const terminalLegacyFailure = ["FAILED", "CANCELLED"].includes(previous.status) &&
+          ["FAILED", "CANCELLED"].includes(previous.batch?.status ?? "");
+        return !released && !terminalLegacyFailure;
+      })) throw new Error("REQUEST_ALREADY_EXISTS");
 
       const feeLines = candidates.map(line => {
         const grossCents = line.prizeCents ?? 0;
@@ -119,6 +125,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
           requestedAt: now, reviewedAt: null, reviewerId: null,
           paymentReference: externalReference,
+          // Reusing a released receipt request starts a new transfer attempt.
+          // Clear the previous provider identifiers so failure recovery can match this attempt only.
+          asaasTransferId: null,
+          asaasTransferStatus: null,
+          asaasTransferReceiptUrl: null,
+          asaasTransferFailureReason: null,
           transferRequestedAt: now,
         };
         if (line.oldRequestId) {
@@ -222,7 +234,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
             if (batchFailed.count !== 1) throw new Error("PRIZE_BATCH_REJECTION_STATE_CONFLICT");
             const requestsFailed = await tx.prizePaymentRequest.updateMany({
               where: { batchId: batch.id, status: "PROCESSING", asaasTransferId: null },
-              data: { status: "FAILED", asaasTransferStatus: "REJECTED",
+              data: { status: "REJECTED", batchId: null, asaasTransferStatus: "REJECTED",
                 asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta por referência confirmou que ela não foi criada." },
             });
             if (requestsFailed.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_REJECTION_COUNT_MISMATCH");
