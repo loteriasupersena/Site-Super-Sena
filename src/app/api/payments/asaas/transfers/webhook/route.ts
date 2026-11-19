@@ -35,15 +35,6 @@ function response(body: unknown, status: number) {
   return NextResponse.json(body, { status, headers });
 }
 
-/** Asaas' authoritative DONE transfer is bound by transfer ID, external reference,
- * amount and PIX operation. pixAddressKey is not a reliable completion gate:
- * the provider may omit or represent it differently after a successful transfer.
- * The key was supplied when creating the transfer; never turn a confirmed DONE
- * transfer into a false beneficiary-mismatch failure.
- */
-function recordBeneficiaryKeyPresence(actual: string | null | undefined) {
-  return Boolean(actual?.trim());
-}
 
 export async function POST(request: NextRequest) {
   const token = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
