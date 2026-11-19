@@ -91,11 +91,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
     <strong style={{ color: "#111827" }}>{batch ? "Todos os prêmios deste recibo" : numberValue} · Prêmio bruto: {money(displayedGross)}</strong>
     <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa: {money(adminFee)}<br />Taxa de transação bancária: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
     {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação anterior encerrada. Você pode enviar uma nova solicitação.</p>}
-    {paymentRequest?.status === "PENDING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação registrada. Aguardando processamento automático do Pix.</p>
-      : paymentRequest?.status === "PROCESSING" ? <p style={{ color: "#92400e", fontWeight: 700 }}>Transferência Pix em processamento pela Asaas. Aguarde a confirmação.</p>
-      : paymentRequest?.status === "PAID" ? <p style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago via Pix.</p>
-
-      : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED" ? <p style={{ color: "#991b1b", fontWeight: 700 }}>A transferência não foi concluída. Entre em contato com o suporte para conferência; não envie outra solicitação enquanto o status não for reconciliado.</p>
+    {paymentRequest?.status === "PENDING" || paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida. Estamos processando o pagamento do prêmio.</p>
+      : paymentRequest?.status === "PAID" ? <p role="status" style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago com sucesso via Pix.</p>
+      : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED" ? <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>O pagamento não foi concluído. O prêmio continua registrado e será necessário falar com o suporte para nova conferência.</p>
       : <form onSubmit={(event) => { event.preventDefault(); setShowReview(true); setConfirmed(false); }}>
         <div style={{ padding: 12, marginBottom: 12, border: "2px solid #b45309", borderRadius: 8, background: "#fffbeb", color: "#78350f" }}><strong>ATENÇÃO: DADOS DO TITULAR DO PIX</strong><p style={{ margin: "6px 0 0", fontWeight: 700 }}>Informe o nome COMPLETO exatamente como aparece no cadastro do CPF e na conta Pix. Não abrevie, não omita sobrenomes e não use dados de outra pessoa. O CPF e a chave Pix devem pertencer ao mesmo titular.</p></div>
         <label style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Nome completo do titular (igual ao CPF e ao Pix)</label><input value={holderName} onChange={e => {setHolderName(e.target.value);setShowReview(false);setHolderConfirmed(false);}} maxLength={160} autoComplete="name" required placeholder="Nome completo, sem abreviações" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
@@ -124,6 +122,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
 export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const [data, setData] = useState<VerifiedReceipt | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasProcessingPrize = Boolean(data?.rounds?.some(round =>
+    round.numbers.some(number => number.paymentRequest?.status === "PENDING" || number.paymentRequest?.status === "PROCESSING")
+  ));
 
   useEffect(() => {
     let active = true;
@@ -152,7 +153,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
     void verify();
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void verify();
-    }, 30_000);
+    }, hasProcessingPrize ? 15_000 : 30_000);
     const refreshOnFocus = () => {
       if (document.visibilityState === "visible") void verify();
     };
@@ -166,7 +167,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
       document.removeEventListener("visibilitychange", refreshOnFocus);
       window.removeEventListener("focus", refreshOnFocus);
     };
-  }, [receiptCode]);
+  }, [receiptCode, hasProcessingPrize]);
 
   if (loading) return <p role="status" style={{ color: "#111827", fontWeight: 700 }}>Consultando recibo…</p>;
   if (!data) return <p role="alert" style={{ color: "#b91c1c", fontWeight: 700 }}>Não foi possível consultar o recibo.</p>;
