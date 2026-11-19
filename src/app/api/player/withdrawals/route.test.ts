@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), transaction: vi.fn(),
-  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(), createTransfer: vi.fn(), findTransfers: vi.fn(), reconcileTransfer: vi.fn(),
+  queryRaw: vi.fn(), withdrawalCreate: vi.fn(), withdrawalTxUpdateMany: vi.fn(), ledgerCreate: vi.fn(), historyCreate: vi.fn(), auditCreate: vi.fn(), userFindFirst: vi.fn(), withdrawalUpdateMany: vi.fn(), createTransfer: vi.fn(), findTransfers: vi.fn(), reconcileTransfer: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
@@ -24,7 +24,7 @@ function tx() {
   return {
     $queryRawUnsafe: mocks.queryRaw,
     ledgerEntry: { aggregate: mocks.aggregate, create: mocks.ledgerCreate },
-    withdrawal: { create: mocks.withdrawalCreate },
+    withdrawal: { create: mocks.withdrawalCreate, updateMany: mocks.withdrawalTxUpdateMany },
     user: { findFirst: mocks.userFindFirst },
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
@@ -40,6 +40,7 @@ describe("player withdrawals API", () => {
     mocks.withdrawalCreate.mockResolvedValue({ id: "withdrawal-1", amountCents: 5000, status: "PROCESSING", createdAt: new Date("2026-01-01T00:00:00Z") });
     mocks.userFindFirst.mockResolvedValue({ id: "admin-1" });
     mocks.withdrawalUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.withdrawalTxUpdateMany.mockResolvedValue({ count: 1 });
     mocks.createTransfer.mockResolvedValue({ id: "transfer-1", status: "PENDING" });
     mocks.findTransfers.mockResolvedValue([]);
     mocks.reconcileTransfer.mockResolvedValue("WITHDRAWAL_PROCESSING");
@@ -77,21 +78,30 @@ describe("player withdrawals API", () => {
     }) });
   });
 
-  it("keeps the reservation pending when Asaas rejects the POST but no transfer can be confirmed", async () => {
-    mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("Asaas rejected"), { status: 400 }));
+  it("releases the wallet balance with a friendly message after a definitive Asaas rejection and exact lookup confirms no transfer", async () => {
+    mocks.createTransfer.mockRejectedValueOnce(Object.assign(new Error("Insufficient Asaas balance"), { status: 400 }));
     mocks.findTransfers.mockResolvedValueOnce([]);
     const response = await POST(request("/api/player/withdrawals", {
       pixKey: "52998224725", pixKeyType: "CPF",
     }));
-    expect(response.status).toBe(202);
-    expect(await response.json()).toMatchObject({ success: true, status: "PROCESSING" });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      success: false, status: "FAILED", availableCents: 5000,
+      error: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde.",
+    });
     expect(mocks.findTransfers).toHaveBeenCalledWith(expect.objectContaining({
       externalReference: expect.stringMatching(/^wallet_withdrawal_wdr_[a-f0-9]{32}$/),
       requestedAt: expect.any(Date),
     }));
-    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.withdrawalTxUpdateMany).toHaveBeenCalledWith({
+      where: { id: "withdrawal-1", status: "PROCESSING", paymentReference: expect.stringMatching(/^wallet_withdrawal_wdr_[a-f0-9]{32}$/), asaasTransferId: null },
+      data: expect.objectContaining({ status: "FAILED", asaasTransferStatus: "REJECTED" }),
+    });
     expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       type: "WITHDRAWAL_RESERVE", amountCents: -5000,
+    }) });
+    expect(mocks.ledgerCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      type: "WITHDRAWAL_RELEASE", amountCents: 5000, idempotencyKey: "withdrawal-release:withdrawal-1",
     }) });
   });
 
