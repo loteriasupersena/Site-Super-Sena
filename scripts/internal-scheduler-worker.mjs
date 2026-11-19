@@ -5,8 +5,7 @@ const retryMs = 15_000;
 const maxFetchAttempts = 3;
 
 const jobs = [
-  { name: "asaas-payment-reconciliation", path: "/api/internal/asaas/payments/reconcile", token: process.env.ASAAS_RECONCILIATION_TOKEN?.trim() },
-  { name: "asaas-transfer-reconciliation", path: "/api/internal/asaas/transfers/reconcile", token: process.env.ASAAS_RECONCILIATION_TOKEN?.trim() },
+  { name: "mercadopago-payment-reconciliation", path: "/api/internal/mercadopago/payments/reconcile", token: process.env.MERCADOPAGO_RECONCILIATION_TOKEN?.trim() },
   { name: "round-scheduler", path: "/api/internal/round-scheduler", token: process.env.ROUND_SCHEDULER_SECRET?.trim() },
 ];
 
