@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(), webhookFindUnique: vi.fn(), webhookUpsert: vi.fn(),
   withdrawalFindUnique: vi.fn(), withdrawalUpdateMany: vi.fn(), ledgerCreate: vi.fn(),
   historyCreate: vi.fn(), auditCreate: vi.fn(), queryRaw: vi.fn(), withdrawalUpdate: vi.fn(), asaasFetch: vi.fn(),
-  batchFindUnique: vi.fn(), batchUpdate: vi.fn(), batchUpdateOne: vi.fn(), prizeRequestUpdateMany: vi.fn(), registerPayout: vi.fn(),
+  batchFindUnique: vi.fn(), batchUpdate: vi.fn(), batchUpdateOne: vi.fn(), prizeRequestUpdateMany: vi.fn(), prizeRequestFindUnique: vi.fn(), prizeRequestUpdate: vi.fn(), registerPayout: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
   authPrisma: { $transaction: mocks.transaction },
@@ -23,7 +23,7 @@ function tx() {
     withdrawalStatusHistory: { create: mocks.historyCreate },
     auditEvent: { create: mocks.auditCreate },
     prizePaymentBatch: { findUnique: mocks.batchFindUnique, updateMany: mocks.batchUpdate, update: mocks.batchUpdateOne },
-    prizePaymentRequest: { updateMany: mocks.prizeRequestUpdateMany },
+    prizePaymentRequest: { findUnique: mocks.prizeRequestFindUnique, update: mocks.prizeRequestUpdate, updateMany: mocks.prizeRequestUpdateMany },
     $queryRaw: mocks.queryRaw,
   };
 }
@@ -75,6 +75,8 @@ describe("Asaas wallet transfer webhook", () => {
     mocks.batchUpdate.mockResolvedValue({ count: 1 });
     mocks.batchUpdateOne.mockResolvedValue({});
     mocks.prizeRequestUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.prizeRequestUpdate.mockResolvedValue({});
+    mocks.prizeRequestFindUnique.mockResolvedValue(null);
     mocks.registerPayout.mockResolvedValue({});
     mocks.transaction.mockImplementation(async (callback) => callback(tx()));
   });
@@ -157,6 +159,38 @@ describe("Asaas wallet transfer webhook", () => {
     });
   });
 
+
+  it("releases a legacy individual receipt request after Asaas confirms a terminal Pix failure", async () => {
+    const externalReference = "prize_request_ppr_12345678";
+    mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+      id: "trf-prize-1", status: "FAILED", externalReference,
+      value: 25, operationType: "PIX", failReason: "bank rejected transfer",
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    mocks.prizeRequestFindUnique.mockResolvedValue({
+      id: "ppr_12345678", status: "PROCESSING", asaasTransferId: "trf-prize-1",
+      paymentReference: externalReference, participationLineId: "line-1", netCents: 2500,
+    });
+    const failedRequest = new NextRequest("https://example.test/api/payments/asaas/transfers/webhook", {
+      method: "POST",
+      headers: { "asaas-access-token": "a".repeat(40), "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "evt-prize-failed", event: "TRANSFER_FAILED",
+        transfer: { id: "trf-prize-1", status: "FAILED", externalReference, value: 25, operationType: "PIX" },
+      }),
+    });
+
+    const response = await POST(failedRequest);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, outcome: "FAILED" });
+    expect(mocks.prizeRequestUpdate).toHaveBeenCalledWith({
+      where: { id: "ppr_12345678" },
+      data: expect.objectContaining({
+        status: "REJECTED", batchId: null, asaasTransferId: "trf-prize-1",
+        asaasTransferFailureReason: "bank rejected transfer",
+      }),
+    });
+  });
 
   it("rolls back settlement when not every request row is linked", async () => {
     mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
