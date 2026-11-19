@@ -67,7 +67,7 @@ export function PlayerWalletWithdrawals() {
   return <section className="player-wallet-withdrawals-content">
     <p className="wallet-balance">{loading ? "Consultando saldo…" : money(availableCents)} <small>disponível</small></p>
     <form className="admin-round-create" onSubmit={reviewWithdrawal}>
-      <label>Tipo da chave Pix<select value={pixKeyType} onChange={(event) => setPixKeyType(event.target.value)}><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="EMAIL">E-mail</option><option value="PHONE">Telefone</option><option value="EVP">Chave aleatória</option></select></label>
+      <label className="wallet-pix-type-field">Tipo da chave Pix<select className="wallet-pix-type-select" value={pixKeyType} onChange={(event) => setPixKeyType(event.target.value)}><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="EMAIL">E-mail</option><option value="PHONE">Telefone</option><option value="EVP">Chave aleatória</option></select></label>
       <label>Chave Pix<input value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required /></label>
       <p><small>Saques abaixo de R$ 1.000,00 são enviados automaticamente à Asaas. A partir de R$ 1.000,00, dependem de aprovação administrativa. O pagamento só é confirmado após o retorno bancário.</small></p>
       <button type="submit" disabled={loading || busy || availableCents <= 0}>{busy ? "Solicitando…" : "Solicitar saque"}</button>
