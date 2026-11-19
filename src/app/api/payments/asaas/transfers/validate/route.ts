@@ -25,7 +25,14 @@ function tokenMatches(received: string | null, expected: string) {
 }
 
 function normalizePix(value: string, type: string) {
-  return ["CPF", "CNPJ", "PHONE"].includes(type)
+  if (type === "PHONE") {
+    const digits = value.replace(/\D/g, "");
+    // Accept the same Brazilian phone Pix key with or without country code 55.
+    return digits.startsWith("55") && (digits.length === 12 || digits.length === 13)
+      ? digits.slice(2)
+      : digits;
+  }
+  return ["CPF", "CNPJ"].includes(type)
     ? value.replace(/\D/g, "")
     : value.trim().toLowerCase();
 }
@@ -60,8 +67,6 @@ export async function POST(request: NextRequest) {
   const transferId = transfer.id!.trim();
   const valueCents = Math.round((transfer.value ?? 0) * 100);
   const actualPix = transfer.bankAccount?.pixAddressKey?.trim() || null;
-  // Temporary homologation switch: relax only beneficiary/admin checks for an already registered wallet withdrawal.
-  const withdrawalTestMode = process.env.ASAAS_WITHDRAWAL_VALIDATION_TEST_MODE === "true";
   if (!Number.isSafeInteger(valueCents) || valueCents <= 0) {
     return refuse("Não foi possível validar o valor da transferência.");
   }
@@ -130,20 +135,18 @@ export async function POST(request: NextRequest) {
       if (withdrawal) {
         const storedPixKey = withdrawal.pixKey;
         const storedPixKeyType = withdrawal.pixKeyType;
-        const valid = withdrawal.status === "PROCESSING" &&
-          (withdrawalTestMode || !!withdrawal.reviewedById) &&
+        const valid = withdrawal.status === "PROCESSING" && !!withdrawal.reviewedById &&
           (!externalReference || withdrawal.paymentReference === externalReference) &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
-          withdrawal.amountCents === valueCents &&
-          (withdrawalTestMode || (!!storedPixKey && !!storedPixKeyType &&
-            (!actualPix || normalizePix(storedPixKey, storedPixKeyType) === normalizePix(actualPix, storedPixKeyType))));
+          withdrawal.amountCents === valueCents && !!storedPixKey && !!storedPixKeyType &&
+          (!actualPix || normalizePix(storedPixKey, storedPixKeyType) === normalizePix(actualPix, storedPixKeyType));
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         const linked = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
           data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
         });
         if (linked.count !== 1) return { approved: false, entityType: "Saque", entityId: withdrawal.id, reason: "Registro alterado durante a validação." };
-        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, externalReference, valueCents, beneficiaryKeyComparedFromPayload: Boolean(actualPix), beneficiaryValidatedAgainstStoredRequest: !withdrawalTestMode, homologationTestMode: withdrawalTestMode } } });
+        await tx.auditEvent.create({ data: { action: "ASAAS_TRANSFER_VALIDATION_APPROVED", entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, externalReference, valueCents, beneficiaryKeyComparedFromPayload: Boolean(actualPix), beneficiaryValidatedAgainstStoredRequest: true } } });
         return { approved: true, entityType: "Withdrawal", entityId: withdrawal.id };
       }
 
