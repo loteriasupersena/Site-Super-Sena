@@ -301,10 +301,16 @@ export async function POST(request: NextRequest) {
       }
       const status = event === "TRANSFER_FAILED" ? "FAILED"
         : event === "TRANSFER_CANCELLED" ? "CANCELLED" : "PROCESSING";
+      // Legacy single-request transfers also release the receipt after a provider-confirmed
+      // terminal failure. Keep the transfer identifiers/reason for audit, but detach the
+      // request from any prior payment attempt so the receipt endpoint can create a new batch.
+      const requestStatus = status === "FAILED" || status === "CANCELLED" ? "REJECTED" : status;
       await tx.prizePaymentRequest.update({
         where: { id: requestId },
         data: {
-          status, asaasTransferId: transferId,
+          status: requestStatus,
+          ...(requestStatus === "REJECTED" ? { batchId: null } : {}),
+          asaasTransferId: transferId,
           asaasTransferStatus: transfer?.status ?? event.replace("TRANSFER_", ""),
           asaasTransferFailureReason: status === "FAILED" || status === "CANCELLED" ? transfer?.failReason ?? event : null,
         },
