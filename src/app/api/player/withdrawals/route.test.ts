@@ -9,7 +9,7 @@ vi.mock("@/lib/auth/session", () => ({
   authPrisma: { ledgerEntry: { aggregate: mocks.aggregate }, withdrawal: { findMany: mocks.findMany, updateMany: mocks.withdrawalUpdateMany }, $transaction: mocks.transaction },
   getSessionUser: mocks.getSessionUser, SESSION_COOKIE: "superquina_session",
 }));
-vi.mock("@/lib/wallet/pix-key", () => ({ isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000") }));
+vi.mock("@/lib/wallet/pix-key", () => ({ isPlausiblePixKey: vi.fn(() => true), maskPixKey: vi.fn(() => "••••4000"), parsePixKeyInput: vi.fn((value: { pixKey: string; pixKeyType: string }) => value) }));
 vi.mock("@/modules/payments/asaas", () => ({ createAsaasPixTransfer: mocks.createTransfer, findAsaasTransfersByExternalReference: mocks.findTransfers }));
 vi.mock("@/modules/payments/reconcile-asaas-transfer", () => ({ reconcileAsaasTransferFromPlatform: mocks.reconcileTransfer }));
 import { GET, POST } from "./route";

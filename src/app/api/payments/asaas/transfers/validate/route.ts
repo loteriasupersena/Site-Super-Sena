@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { normalizePixKeyForComparison, type PixKeyType } from "@/lib/wallet/pix-key";
 import { getAsaasTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
@@ -24,18 +25,7 @@ function tokenMatches(received: string | null, expected: string) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function normalizePix(value: string, type: string) {
-  if (type === "PHONE") {
-    const digits = value.replace(/\D/g, "");
-    // Accept the same Brazilian phone Pix key with or without country code 55.
-    return digits.startsWith("55") && (digits.length === 12 || digits.length === 13)
-      ? digits.slice(2)
-      : digits;
-  }
-  return ["CPF", "CNPJ"].includes(type)
-    ? value.replace(/\D/g, "")
-    : value.trim().toLowerCase();
-}
+
 
 function validTransfer(payload: ValidationPayload) {
   const transfer = payload.transfer;
@@ -97,7 +87,7 @@ export async function POST(request: NextRequest) {
           (!externalReference || batch.paymentReference === externalReference) &&
           (!batch.asaasTransferId || batch.asaasTransferId === transferId) &&
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
-          (!actualPix || normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType));
+          (!actualPix || normalizePixKeyForComparison(batch.pixKey, batch.pixKeyType as PixKeyType) === normalizePixKeyForComparison(actualPix, batch.pixKeyType as PixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
@@ -117,7 +107,7 @@ export async function POST(request: NextRequest) {
           (!externalReference || prizeRequest.paymentReference === externalReference) &&
           (!prizeRequest.asaasTransferId || prizeRequest.asaasTransferId === transferId) &&
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
-          (!actualPix || normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType));
+          (!actualPix || normalizePixKeyForComparison(prizeRequest.pixKey, prizeRequest.pixKeyType as PixKeyType) === normalizePixKeyForComparison(actualPix, prizeRequest.pixKeyType as PixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentRequest.updateMany({
           where: { id: prizeRequest.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
@@ -139,7 +129,7 @@ export async function POST(request: NextRequest) {
           (!externalReference || withdrawal.paymentReference === externalReference) &&
           (!withdrawal.asaasTransferId || withdrawal.asaasTransferId === transferId) &&
           withdrawal.amountCents === valueCents && !!storedPixKey && !!storedPixKeyType &&
-          (!actualPix || normalizePix(storedPixKey, storedPixKeyType) === normalizePix(actualPix, storedPixKeyType));
+          (!actualPix || normalizePixKeyForComparison(storedPixKey, storedPixKeyType as PixKeyType) === normalizePixKeyForComparison(actualPix, storedPixKeyType as PixKeyType));
         if (!valid) return { approved: false, entityType: "Withdrawal", entityId: withdrawal.id, reason: "Saque não corresponde à transferência registrada." };
         const linked = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },

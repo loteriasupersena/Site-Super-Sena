@@ -3523,3 +3523,32 @@ body:has(.home-page-compact) {
 .wallet-withdrawal-confirm-actions button:disabled {
   opacity: .6;
 }
+
+
+/* Seletor de tipo de chave Pix: área de toque maior e contraste adequado no celular. */
+.player-wallet-withdrawals-content .wallet-pix-type-select {
+  display: block;
+  width: 100%;
+  min-height: 62px;
+  margin-top: 2px;
+  padding: 14px 48px 14px 16px;
+  border: 2px solid #4b7894;
+  border-radius: 13px;
+  background-color: #101b2b;
+  color: #f4f6fb;
+  font: inherit;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.player-wallet-withdrawals-content .wallet-pix-type-select:focus-visible {
+  outline: 3px solid #59d5f2;
+  outline-offset: 3px;
+  border-color: #59d5f2;
+}
+.player-wallet-withdrawals-content .wallet-pix-type-select option {
+  background: #101b2b;
+  color: #f4f6fb;
+}

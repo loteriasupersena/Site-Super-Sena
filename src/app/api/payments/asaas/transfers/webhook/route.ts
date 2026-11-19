@@ -19,7 +19,6 @@ type TransferWebhook = {
     failReason?: string | null;
     value?: number;
     operationType?: string;
-    bankAccount?: { pixAddressKey?: string | null } | null;
   };
 };
 
@@ -34,18 +33,6 @@ function response(body: unknown, status: number) {
   return NextResponse.json(body, { status, headers });
 }
 
-function normalizePix(value: string, type: string) {
-  return ["CPF", "CNPJ", "PHONE"].includes(type)
-    ? value.replace(/\D/g, "")
-    : value.trim().toLowerCase();
-}
-
-function verifyPixBeneficiary(expectedPlain: string | null, type: string | null, actual: string | null | undefined) {
-  if (!expectedPlain || !type || !actual) throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
-  if (normalizePix(expectedPlain, type) !== normalizePix(actual, type)) {
-    throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
-  }
-}
 
 export async function POST(request: NextRequest) {
   const token = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
@@ -113,7 +100,7 @@ export async function POST(request: NextRequest) {
           where: { id: batchId },
           select: {
             id: true, status: true, paymentReference: true, asaasTransferId: true,
-            netCents: true, pixKey: true, pixKeyType: true,
+            netCents: true,
             requests: { select: { id: true, participationLineId: true, status: true } },
           },
         });
@@ -123,9 +110,6 @@ export async function POST(request: NextRequest) {
           (!Number.isFinite(transfer?.value) ||
            Math.round((transfer?.value ?? 0) * 100) !== batch.netCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-        if (event === "TRANSFER_DONE") {
-          verifyPixBeneficiary(batch.pixKey, batch.pixKeyType, transfer?.bankAccount?.pixAddressKey);
-        }
 
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -189,14 +173,16 @@ export async function POST(request: NextRequest) {
           where: { batchId: batch.id },
           data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
         });
-        await tx.auditEvent.create({
-          data: {
-            action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
-              : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
-            entityType: "PrizePaymentBatch", entityId: batch.id,
-            metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
-          },
-        });
+        if (batch.status !== status) {
+          await tx.auditEvent.create({
+            data: {
+              action: status === "FAILED" ? "PRIZE_ASAAS_BATCH_TRANSFER_FAILED"
+                : status === "CANCELLED" ? "PRIZE_ASAAS_BATCH_TRANSFER_CANCELLED" : "PRIZE_ASAAS_BATCH_TRANSFER_UPDATED",
+              entityType: "PrizePaymentBatch", entityId: batch.id,
+              metadata: { event, notificationEvent, transferId, transferStatus, failReason: failure },
+            },
+          });
+        }
         return status;
       }
 
@@ -205,15 +191,12 @@ export async function POST(request: NextRequest) {
         if (!/^[A-Za-z0-9_-]{8,100}$/.test(withdrawalId)) throw new Error("WITHDRAWAL_REFERENCE_INVALID");
         await tx.$queryRaw`SELECT "id" FROM "Withdrawal" WHERE "id" = ${withdrawalId} FOR UPDATE`;
         const withdrawal = await tx.withdrawal.findUnique({ where: { id: withdrawalId },
-          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true, pixKey: true, pixKeyType: true } });
+          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true } });
         if (!withdrawal || withdrawal.paymentReference !== externalReference) throw new Error("WITHDRAWAL_NOT_FOUND");
         if (withdrawal.asaasTransferId && withdrawal.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
         if (event === "TRANSFER_DONE" &&
           (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== withdrawal.amountCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-        if (event === "TRANSFER_DONE") {
-          verifyPixBeneficiary(withdrawal.pixKey, withdrawal.pixKeyType, transfer?.bankAccount?.pixAddressKey);
-        }
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
           create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
@@ -240,6 +223,7 @@ export async function POST(request: NextRequest) {
           return "WITHDRAWAL_PAID";
         }
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
+        const statusChanged = withdrawal.status !== status;
         const changed = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: externalReference },
           data: {
@@ -247,7 +231,7 @@ export async function POST(request: NextRequest) {
             asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
           },
         });
-        if (changed.count === 1) {
+        if (changed.count === 1 && statusChanged) {
           if (status === "FAILED") {
             await tx.ledgerEntry.create({ data: {
               userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
@@ -258,11 +242,11 @@ export async function POST(request: NextRequest) {
           }
           await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
             toStatus: status, note: status === "FAILED"
-              ? "Transferência Asaas confirmada como não concluída; saldo reservado devolvido à carteira. " + (transfer?.failReason ?? event)
-              : "Atualização da transferência Asaas: " + event } });
+              ? "Transferência não concluída; saldo reservado devolvido à carteira."
+              : "Solicitação recebida. Transferência em análise." } });
+          await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
+            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent } } });
         }
-        await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
-          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
       }
 
@@ -271,7 +255,7 @@ export async function POST(request: NextRequest) {
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true, pixKey: true, pixKeyType: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
@@ -279,9 +263,6 @@ export async function POST(request: NextRequest) {
         (!Number.isFinite(transfer?.value) ||
          Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents ||
          transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-      if (event === "TRANSFER_DONE") {
-        verifyPixBeneficiary(requestRow.pixKey, requestRow.pixKeyType, transfer?.bankAccount?.pixAddressKey);
-      }
 
       await tx.webhookEvent.upsert({
         where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -336,7 +317,6 @@ export async function POST(request: NextRequest) {
     if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
-    if (code === "TRANSFER_BENEFICIARY_MISMATCH" || code === "TRANSFER_BENEFICIARY_UNVERIFIABLE") return response({ error: "A chave Pix de destino não pôde ser confirmada contra o cadastro do beneficiário." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
   }
 }

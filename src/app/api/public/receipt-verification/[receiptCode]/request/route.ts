@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
+import { maskPixKey, parsePixKeyInput } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
@@ -12,31 +12,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
 
-function validCpf(value: string) {
-  const cpf = value.replace(/\D/g, "");
-  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
-  const digit = (length: number) => {
-    const sum = cpf.slice(0, length).split("").reduce((total, n, i) => total + Number(n) * (length + 1 - i), 0);
-    const result = (sum * 10) % 11;
-    return result === 10 ? 0 : result;
-  };
-  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
-}
 function parsePayload(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
-  if (typeof body.participationLineId !== "string" || !body.participationLineId ||
-      typeof body.pixKey !== "string" || typeof body.pixKeyConfirmation !== "string" ||
-      typeof body.holderName !== "string" || typeof body.holderCpf !== "string" ||
-      typeof body.pixKeyType !== "string" || body.pixKeyConfirmed !== true || body.holderConfirmed !== true) return null;
-  const pixKey = body.pixKey.trim();
-  const holderName = body.holderName.trim().replace(/\s+/g, " ");
-  const holderCpf = body.holderCpf.replace(/\D/g, "");
-  if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
-      holderName.length < 5 || holderName.length > 160 || !validCpf(holderCpf) ||
-      pixKey.length < 3 || pixKey.length > 200 || pixKey !== body.pixKeyConfirmation.trim() ||
-      !isPlausiblePixKey(pixKey) || (body.pixKeyType === "CPF" && pixKey.replace(/\D/g, "") !== holderCpf)) return null;
-  return { participationLineId: body.participationLineId, pixKey, pixKeyType: body.pixKeyType, holderName, holderCpf };
+  if (typeof body.participationLineId !== "string" || !body.participationLineId) return null;
+  const pix = parsePixKeyInput(body);
+  return pix ? { participationLineId: body.participationLineId, ...pix } : null;
 }
 function validOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -54,7 +35,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const input = parsePayload(body);
-  if (!input) return NextResponse.json({ error: "Informe os dados válidos do titular e confirme a chave Pix." }, { status: 400, headers });
+  if (!input) return NextResponse.json({ error: "Informe o tipo e uma chave Pix válida." }, { status: 400, headers });
 
   try {
     const batch = await authPrisma.$transaction(async tx => {
@@ -116,8 +97,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       await tx.prizePaymentBatch.create({ data: {
         id: batchId, purchaseId: purchase.id,
         pixKey: input.pixKey, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-        holderName: input.holderName,
-        holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+        holderName: null,
+        holderCpfMasked: "Não informado",
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
         feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING",
@@ -132,7 +113,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           purchaseId: purchase.id, batchId,
           pixKey: null, pixKeyEncrypted: null, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
           holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
-          holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+          holderCpfMasked: "Não informado",
           grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
           transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
           feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
@@ -154,7 +135,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         metadata: { receiptCode, lineCount: feeLines.length, grossCents: fees.grossCents,
           administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
           netCents: fees.netCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-          holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2) },
+        },
       } });
       return { id: batchId, externalReference, grossCents: fees.grossCents,
         administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
