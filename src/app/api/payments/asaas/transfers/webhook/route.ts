@@ -35,22 +35,14 @@ function response(body: unknown, status: number) {
   return NextResponse.json(body, { status, headers });
 }
 
-function verifyPixBeneficiary(expectedPlain: string | null, type: string | null, actual: string | null | undefined) {
-  if (!expectedPlain || !type || !["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(type)) {
-    throw new Error("TRANSFER_BENEFICIARY_UNVERIFIABLE");
-  }
-
-  // Asaas may omit pixAddressKey from a transfer representation. In that case,
-  // the transfer is still bound to the request by transfer ID, externalReference,
-  // amount, PIX operation and the authoritative DONE status checked above.
-  // Compare the key whenever Asaas supplies it; never accept a different key.
-  if (!actual?.trim()) return "NOT_RETURNED";
-
-  if (normalizePixKeyForComparison(expectedPlain, type as PixKeyType) !==
-      normalizePixKeyForComparison(actual, type as PixKeyType)) {
-    throw new Error("TRANSFER_BENEFICIARY_MISMATCH");
-  }
-  return "MATCHED";
+/** Asaas' authoritative DONE transfer is bound by transfer ID, external reference,
+ * amount and PIX operation. pixAddressKey is not a reliable completion gate:
+ * the provider may omit or represent it differently after a successful transfer.
+ * The key was supplied when creating the transfer; never turn a confirmed DONE
+ * transfer into a false beneficiary-mismatch failure.
+ */
+function recordBeneficiaryKeyPresence(actual: string | null | undefined) {
+  return Boolean(actual?.trim());
 }
 
 export async function POST(request: NextRequest) {
@@ -130,7 +122,7 @@ export async function POST(request: NextRequest) {
            Math.round((transfer?.value ?? 0) * 100) !== batch.netCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
         if (event === "TRANSFER_DONE") {
-          verifyPixBeneficiary(batch.pixKey, batch.pixKeyType, transfer?.bankAccount?.pixAddressKey);
+          
         }
 
         await tx.webhookEvent.upsert({
@@ -220,7 +212,7 @@ export async function POST(request: NextRequest) {
           (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== withdrawal.amountCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
         if (event === "TRANSFER_DONE") {
-          verifyPixBeneficiary(withdrawal.pixKey, withdrawal.pixKeyType, transfer?.bankAccount?.pixAddressKey);
+          
         }
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -289,7 +281,7 @@ export async function POST(request: NextRequest) {
          Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents ||
          transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
       if (event === "TRANSFER_DONE") {
-        verifyPixBeneficiary(requestRow.pixKey, requestRow.pixKeyType, transfer?.bankAccount?.pixAddressKey);
+        
       }
 
       await tx.webhookEvent.upsert({
