@@ -167,9 +167,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
             data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
           });
           if (batchLink.count !== 1) throw new Error("PRIZE_BATCH_TRANSFER_LINK_FAILED");
+          // A batch owns one provider transfer ID. Child requests must not store
+          // that same ID because PrizePaymentRequest.asaasTransferId is unique.
           const requestLinks = await tx.prizePaymentRequest.updateMany({
             where: { batchId: batch.id, status: "PROCESSING" },
-            data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
+            data: { asaasTransferStatus: transfer.status ?? "PENDING", transferRequestedAt: new Date() },
           });
           if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_TRANSFER_LINK_FAILED");
         });
@@ -201,9 +203,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
               });
               if (result.count !== 1) return false;
               const requestLinks = await tx.prizePaymentRequest.updateMany({
-                where: { batchId: batch.id, status: "PROCESSING",
-                  OR: [{ asaasTransferId: null }, { asaasTransferId: recoveredTransferId }] },
-                data: { asaasTransferId: recoveredTransferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
+                where: { batchId: batch.id, status: "PROCESSING" },
+                data: { asaasTransferStatus: matches[0].status ?? "PENDING" },
               });
               if (requestLinks.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_RECOVERY_LINK_FAILED");
               return true;
