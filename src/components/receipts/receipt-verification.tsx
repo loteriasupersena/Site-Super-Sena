@@ -91,7 +91,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest,
           <option value="" disabled>Informe o tipo de chave Pix</option><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="EMAIL">E-mail</option><option value="PHONE">Telefone</option><option value="EVP">Chave aleatória</option>
         </select>
         <label htmlFor={`prize-pix-key-${participationLineId}`} style={{ display: "block", margin: "12px 0 5px", color: "#111827", fontWeight: 700 }}>Chave Pix</label>
-        <input id={`prize-pix-key-${participationLineId}`} value={pixKey} onChange={event => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required placeholder="Informe sua chave Pix" style={{ boxSizing: "border-box", width: "100%", padding: 12, border: "1px solid #9ca3af", borderRadius: 7, fontSize: 16 }} />
+        <input id={`prize-pix-key-${participationLineId}`} value={pixKey} onChange={event => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required placeholder="Informe sua chave Pix" style={{ boxSizing: "border-box", width: "100%", minHeight: 54, padding: 12, border: "2px solid #64748b", borderRadius: 8, fontSize: 16, fontWeight: 700, background: "#fff", color: "#111827", colorScheme: "light" }} />
         <button type="submit" disabled={pixKey.trim().length < 3 || requesting} style={{ display: "block", width: "100%", marginTop: 12, padding: 14, border: 0, borderRadius: 8, background: "#166534", color: "#fff", fontWeight: 800 }}>{requesting ? "Enviando…" : "Solicitar recebimento do prêmio"}</button>
       </form>
       </>}
