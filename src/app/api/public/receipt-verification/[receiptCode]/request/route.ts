@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
+import { maskPixKey, parsePixKeyInput } from "@/lib/wallet/pix-key";
 import { getNumericPrizeReview } from "@/domain/numeric-prize-review";
 import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
@@ -15,13 +15,9 @@ const headers = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Option
 function parsePayload(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
-  if (typeof body.participationLineId !== "string" || !body.participationLineId ||
-      typeof body.pixKey !== "string" || typeof body.pixKeyType !== "string" ||
-      body.pixKeyConfirmed !== true) return null;
-  const pixKey = body.pixKey.trim();
-  if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
-      pixKey.length < 3 || pixKey.length > 200 || !isPlausiblePixKey(pixKey)) return null;
-  return { participationLineId: body.participationLineId, pixKey, pixKeyType: body.pixKeyType };
+  if (typeof body.participationLineId !== "string" || !body.participationLineId) return null;
+  const pix = parsePixKeyInput(body);
+  return pix ? { participationLineId: body.participationLineId, ...pix } : null;
 }
 function validOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
