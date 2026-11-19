@@ -1,7 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
-import { normalizePixKeyForComparison, type PixKeyType } from "@/lib/wallet/pix-key";
 import { registerNumericPrizePayout } from "@/modules/rounds/register-numeric-prize-payout";
 import { getAsaasTransfer } from "@/modules/payments/asaas";
 
@@ -111,9 +110,6 @@ export async function POST(request: NextRequest) {
           (!Number.isFinite(transfer?.value) ||
            Math.round((transfer?.value ?? 0) * 100) !== batch.netCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-        if (event === "TRANSFER_DONE") {
-          
-        }
 
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
@@ -201,9 +197,6 @@ export async function POST(request: NextRequest) {
         if (event === "TRANSFER_DONE" &&
           (!Number.isFinite(transfer?.value) || Math.round((transfer?.value ?? 0) * 100) !== withdrawal.amountCents ||
            transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-        if (event === "TRANSFER_DONE") {
-          
-        }
         await tx.webhookEvent.upsert({
           where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
           create: { provider: "ASAAS_TRANSFER", providerEventId: eventId, eventType: event, payloadDigest: digest, processedAt: new Date() },
@@ -270,9 +263,6 @@ export async function POST(request: NextRequest) {
         (!Number.isFinite(transfer?.value) ||
          Math.round((transfer?.value ?? 0) * 100) !== requestRow.netCents ||
          transfer?.operationType !== "PIX")) throw new Error("TRANSFER_VALUE_MISMATCH");
-      if (event === "TRANSFER_DONE") {
-        
-      }
 
       await tx.webhookEvent.upsert({
         where: { provider_providerEventId: { provider: "ASAAS_TRANSFER", providerEventId: eventId } },
