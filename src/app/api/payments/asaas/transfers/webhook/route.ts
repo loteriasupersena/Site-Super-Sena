@@ -240,6 +240,7 @@ export async function POST(request: NextRequest) {
           return "WITHDRAWAL_PAID";
         }
         const status = event === "TRANSFER_FAILED" || event === "TRANSFER_CANCELLED" ? "FAILED" : "PROCESSING";
+        const statusChanged = withdrawal.status !== status;
         const changed = await tx.withdrawal.updateMany({
           where: { id: withdrawal.id, status: { in: ["PROCESSING", "APPROVED"] }, paymentReference: externalReference },
           data: {
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
             asaasTransferFailureReason: status === "FAILED" ? transfer?.failReason ?? event : null,
           },
         });
-        if (changed.count === 1) {
+        if (changed.count === 1 && statusChanged) {
           if (status === "FAILED") {
             await tx.ledgerEntry.create({ data: {
               userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
@@ -258,11 +259,11 @@ export async function POST(request: NextRequest) {
           }
           await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
             toStatus: status, note: status === "FAILED"
-              ? "Transferência Asaas confirmada como não concluída; saldo reservado devolvido à carteira. " + (transfer?.failReason ?? event)
-              : "Atualização da transferência Asaas: " + event } });
+              ? "Transferência não concluída. Saldo devolvido à carteira."
+              : "Solicitação recebida. Transferência em análise." } });
+          await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
+            entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent } } });
         }
-        await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
-          entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent, failReason: transfer?.failReason ?? null } } });
         return status === "FAILED" ? "WITHDRAWAL_FAILED" : "WITHDRAWAL_PROCESSING";
       }
 
