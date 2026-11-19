@@ -125,6 +125,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
           requestedAt: now, reviewedAt: null, reviewerId: null,
           paymentReference: externalReference,
+          // Reusing a released receipt request starts a new transfer attempt.
+          // Clear the previous provider identifiers so failure recovery can match this attempt only.
+          asaasTransferId: null,
+          asaasTransferStatus: null,
+          asaasTransferReceiptUrl: null,
+          asaasTransferFailureReason: null,
           transferRequestedAt: now,
         };
         if (line.oldRequestId) {
