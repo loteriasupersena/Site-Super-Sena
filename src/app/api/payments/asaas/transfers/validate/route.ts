@@ -25,7 +25,15 @@ function tokenMatches(received: string | null, expected: string) {
 }
 
 function normalizePix(value: string, type: string) {
-  return ["CPF", "CNPJ", "PHONE"].includes(type)
+  if (type === "PHONE") {
+    const digits = value.replace(/\D/g, "");
+    // Brazilian phone Pix keys may arrive from Asaas in E.164 (+55).
+    // Compare the national number consistently without changing the stored key.
+    return digits.startsWith("55") && (digits.length === 12 || digits.length === 13)
+      ? digits.slice(2)
+      : digits;
+  }
+  return ["CPF", "CNPJ"].includes(type)
     ? value.replace(/\D/g, "")
     : value.trim().toLowerCase();
 }
