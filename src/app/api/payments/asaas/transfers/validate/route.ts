@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           (!externalReference || batch.paymentReference === externalReference) &&
           (!batch.asaasTransferId || batch.asaasTransferId === transferId) &&
           batch.netCents === valueCents && !!batch.pixKey && !!batch.pixKeyType &&
-          (!actualPix || normalizePix(batch.pixKey, batch.pixKeyType) === normalizePix(actualPix, batch.pixKeyType));
+          (!actualPix || normalizePixKeyForComparison(batch.pixKey, batch.pixKeyType as PixKeyType) === normalizePixKeyForComparison(actualPix, batch.pixKeyType as PixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentBatch", entityId: batch.id, reason: "Lote não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
           (!externalReference || prizeRequest.paymentReference === externalReference) &&
           (!prizeRequest.asaasTransferId || prizeRequest.asaasTransferId === transferId) &&
           prizeRequest.netCents === valueCents && !!prizeRequest.pixKey && !!prizeRequest.pixKeyType &&
-          (!actualPix || normalizePix(prizeRequest.pixKey, prizeRequest.pixKeyType) === normalizePix(actualPix, prizeRequest.pixKeyType));
+          (!actualPix || normalizePixKeyForComparison(prizeRequest.pixKey, prizeRequest.pixKeyType as PixKeyType) === normalizePixKeyForComparison(actualPix, prizeRequest.pixKeyType as PixKeyType));
         if (!valid) return { approved: false, entityType: "PrizePaymentRequest", entityId: prizeRequest.id, reason: "Solicitação não corresponde à transferência registrada." };
         const linked = await tx.prizePaymentRequest.updateMany({
           where: { id: prizeRequest.id, status: "PROCESSING", ...(externalReference ? { paymentReference: externalReference } : { asaasTransferId: transferId }), OR: [{ asaasTransferId: null }, { asaasTransferId: transferId }] },
