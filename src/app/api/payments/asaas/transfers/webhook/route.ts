@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
           }
           await tx.withdrawalStatusHistory.create({ data: { withdrawalId: withdrawal.id, fromStatus: withdrawal.status,
             toStatus: status, note: status === "FAILED"
-              ? "Transferência não concluída. Saldo devolvido à carteira."
+              ? "Transferência não concluída; saldo reservado devolvido à carteira."
               : "Solicitação recebida. Transferência em análise." } });
           await tx.auditEvent.create({ data: { actorId: withdrawal.reviewedById, action: status === "FAILED" ? "WITHDRAWAL_ASAAS_TRANSFER_FAILED" : "WITHDRAWAL_ASAAS_TRANSFER_UPDATED",
             entityType: "Withdrawal", entityId: withdrawal.id, metadata: { transferId, event, notificationEvent } } });
