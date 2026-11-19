@@ -20,7 +20,6 @@ type TransferWebhook = {
     failReason?: string | null;
     value?: number;
     operationType?: string;
-    bankAccount?: { pixAddressKey?: string | null } | null;
   };
 };
 
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
           where: { id: batchId },
           select: {
             id: true, status: true, paymentReference: true, asaasTransferId: true,
-            netCents: true, pixKey: true, pixKeyType: true,
+            netCents: true,
             requests: { select: { id: true, participationLineId: true, status: true } },
           },
         });
@@ -328,7 +327,6 @@ export async function POST(request: NextRequest) {
     if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
-    if (code === "TRANSFER_BENEFICIARY_MISMATCH" || code === "TRANSFER_BENEFICIARY_UNVERIFIABLE") return response({ error: "A chave Pix de destino não pôde ser confirmada contra o cadastro do beneficiário." }, 409);
     return response({ error: "Falha ao processar evento; o Asaas poderá reenviar." }, 503);
   }
 }
