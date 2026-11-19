@@ -126,7 +126,7 @@ object ReceiptBitmapGenerator {
 
             val roundCode = item.optString("roundCode")
             if (displayedRounds.add(roundCode)) {
-                infoLines += TextLine("Repetição ${item.optInt("repetition")} · Jogo Super Sena", 20f, false, 1f)
+                infoLines += TextLine("Repetição ${item.optInt("repetition")}", 20f, false, 1f)
                 infoLines += TextLine("Sorteio: ${item.optString("drawAtLabel")}", 20f, false, 1f)
                 infoLines += TextLine("Rodada $roundCode", 20f, false, 4f)
             }
