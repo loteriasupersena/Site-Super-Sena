@@ -144,6 +144,14 @@ describe("Asaas withdrawal validation endpoint", () => {
     expect(mocks.batchUpdate).not.toHaveBeenCalled();
   });
 
+  it("approves the same Brazilian phone Pix key when Asaas returns it with country code 55", async () => {
+    const response = await POST(makeRequest({
+      bankAccount: { pixAddressKey: "+55 (77) 99831-5360" },
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+  });
+
   it("refuses a mismatched Pix beneficiary", async () => {
     const response = await POST(makeRequest({ bankAccount: { pixAddressKey: "11988887777" } }));
     expect(await response.json()).toMatchObject({ status: "REFUSED" });
