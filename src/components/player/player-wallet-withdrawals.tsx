@@ -9,7 +9,7 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Transferência Pix em processamento", PAID: "Pix confirmado e pago", REJECTED: "Valor devolvido à carteira", FAILED: "Transferência não concluída — em análise" };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — em análise", APPROVED: "Solicitação em análise", PROCESSING: "Saque em processamento", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Transferência não concluída — saldo devolvido à carteira" };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
@@ -34,7 +34,16 @@ export function PlayerWalletWithdrawals() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
+  const hasProcessingWithdrawal = withdrawals.some((item) => item.status === "PROCESSING" || item.status === "APPROVED");
+
+  useEffect(() => {
+    const initial = window.setTimeout(() => { void load(); }, 0);
+    const interval = hasProcessingWithdrawal ? window.setInterval(() => { void load(); }, 15_000) : null;
+    return () => {
+      window.clearTimeout(initial);
+      if (interval !== null) window.clearInterval(interval);
+    };
+  }, [load, hasProcessingWithdrawal]);
 
   function reviewWithdrawal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,8 +92,8 @@ export function PlayerWalletWithdrawals() {
       {withdrawals.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
-        {item.status === "PAID" && <p>Pago e baixado em {dateTime(item.updatedAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>}
-        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.toStatus === "REJECTED" ? "Motivo da liberação: " : ""}{event.note ?? labels[event.toStatus as Withdrawal["status"]]}</small></p>)}
+        {item.status === "PAID" && <p>Pagamento confirmado em {dateTime(item.updatedAt)}</p>}
+        {(item.status === "FAILED" || item.status === "REJECTED") && <p>O valor foi devolvido ao saldo disponível da carteira.</p>}
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy} onClick={() => void load()}>Atualizar carteira</button>
