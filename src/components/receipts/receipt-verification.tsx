@@ -69,7 +69,10 @@ function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest,
       setPixKey("");
       await onSubmitted();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao enviar solicitação.");
+      setError(reason instanceof Error ? reason.message : "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde.");
+      // Refresh the QR receipt after a rejected Pix attempt so the released prize
+      // and the retry form are visible immediately instead of leaving stale PROCESSING UI.
+      try { await onSubmitted(); } catch { /* The next automatic receipt refresh can recover the view. */ }
     } finally {
       setRequesting(false);
     }
