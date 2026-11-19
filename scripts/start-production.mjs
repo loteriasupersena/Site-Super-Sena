@@ -51,7 +51,6 @@ async function waitForNextReady(child) {
 }
 
 const nextServer = spawnChild(npm, ["run", "start:next"]);
-let workerStarted = false;
 
 function shutdown(code = 0) {
   if (stopping) return;
@@ -85,7 +84,6 @@ try {
   await waitForNextReady(nextServer);
   if (stopping) process.exit(1);
   const worker = spawnChild(node, ["scripts/internal-scheduler-worker.mjs"]);
-  workerStarted = true;
   worker.once("error", (error) => {
     console.error("[start-production] worker interno falhou", error);
     shutdown(1);
