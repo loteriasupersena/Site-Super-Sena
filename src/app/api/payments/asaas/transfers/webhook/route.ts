@@ -79,7 +79,13 @@ export async function POST(request: NextRequest) {
       : currentStatus === "CANCELLED" ? "TRANSFER_CANCELLED"
       : "TRANSFER_PENDING";
     transfer = { ...transfer, ...current, externalReference: current.externalReference ?? undefined };
-  } catch {
+  } catch (error) {
+    console.error("[asaas-transfer-webhook] falha ao consultar transferência na Asaas", {
+      eventId,
+      notificationEvent,
+      transferId,
+      error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : String(error),
+    });
     // Do not process the webhook snapshot when the authoritative lookup fails.
     return response({ error: "Não foi possível confirmar o estado atual da transferência no Asaas." }, 503);
   }
@@ -329,6 +335,16 @@ export async function POST(request: NextRequest) {
     return response({ received: true, outcome }, 200);
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
+    console.error("[asaas-transfer-webhook] falha ao processar confirmação", {
+      eventId,
+      notificationEvent,
+      resolvedEvent: event,
+      transferId,
+      referenceType: externalReference.startsWith("prize_batch_") ? "prize_batch"
+        : externalReference.startsWith("prize_request_") ? "prize_request"
+        : externalReference.startsWith("wallet_withdrawal_") ? "wallet_withdrawal" : "unknown",
+      error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : String(error),
+    });
     if (code === "REQUEST_NOT_FOUND" || code === "BATCH_NOT_FOUND" || code === "WITHDRAWAL_NOT_FOUND") return response({ error: "Solicitação ou lote não localizado." }, 404);
     if (code === "TRANSFER_MISMATCH") return response({ error: "ID da transferência não corresponde à solicitação." }, 409);
     if (code === "TRANSFER_VALUE_MISMATCH") return response({ error: "Valor ou modalidade da transferência não corresponde ao registro." }, 409);
