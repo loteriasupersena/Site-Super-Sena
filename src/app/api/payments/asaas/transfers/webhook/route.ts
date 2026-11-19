@@ -169,9 +169,18 @@ export async function POST(request: NextRequest) {
           where: { id: batch.id },
           data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
         });
+        // A terminal provider failure releases the physical prize request for a new attempt.
+        // The batch keeps its FAILED/CANCELLED audit state; the individual request is detached.
+        const requestStatus = status === "FAILED" || status === "CANCELLED" ? "REJECTED" : status;
         await tx.prizePaymentRequest.updateMany({
           where: { batchId: batch.id },
-          data: { status, asaasTransferId: transferId, asaasTransferStatus: transferStatus, asaasTransferFailureReason: failure },
+          data: {
+            status: requestStatus,
+            ...(requestStatus === "REJECTED" ? { batchId: null } : {}),
+            asaasTransferId: transferId,
+            asaasTransferStatus: transferStatus,
+            asaasTransferFailureReason: failure,
+          },
         });
         if (batch.status !== status) {
           await tx.auditEvent.create({
