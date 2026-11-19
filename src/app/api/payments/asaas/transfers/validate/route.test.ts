@@ -44,6 +44,7 @@ describe("Asaas withdrawal validation endpoint", () => {
     vi.clearAllMocks();
     process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN = "v".repeat(40);
     delete process.env.ASAAS_WEBHOOK_TOKEN;
+    delete process.env.ASAAS_WITHDRAWAL_VALIDATION_TEST_MODE;
     mocks.batchFind.mockResolvedValue({
       id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
       asaasTransferId: null, netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
@@ -148,6 +149,44 @@ describe("Asaas withdrawal validation endpoint", () => {
     const response = await POST(makeRequest({ bankAccount: { pixAddressKey: "11988887777" } }));
     expect(await response.json()).toMatchObject({ status: "REFUSED" });
     expect(mocks.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("relaxes only wallet withdrawal beneficiary/admin checks in explicit homologation mode", async () => {
+    process.env.ASAAS_WITHDRAWAL_VALIDATION_TEST_MODE = "true";
+    mocks.batchFind.mockResolvedValue(null);
+    mocks.withdrawalFind.mockResolvedValue({
+      id: "wdr_12345678", status: "PROCESSING",
+      paymentReference: "prize_batch_ppb_12345678", asaasTransferId: null,
+      amountCents: 100, pixKey: null, pixKeyType: null, reviewedById: null,
+    });
+
+    const response = await POST(makeRequest({ bankAccount: { pixAddressKey: "+5577998315360" } }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+    expect(mocks.withdrawalUpdate).toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        metadata: expect.objectContaining({ homologationTestMode: true }),
+      }),
+    }));
+  });
+
+  it("still refuses an unknown transfer and mismatched amount in homologation mode", async () => {
+    process.env.ASAAS_WITHDRAWAL_VALIDATION_TEST_MODE = "true";
+    mocks.batchFind.mockResolvedValue(null);
+    mocks.withdrawalFind.mockResolvedValue(null);
+    const unknown = await POST(makeRequest());
+    expect(await unknown.json()).toMatchObject({ status: "REFUSED" });
+
+    mocks.withdrawalFind.mockResolvedValue({
+      id: "wdr_12345678", status: "PROCESSING",
+      paymentReference: "prize_batch_ppb_12345678", asaasTransferId: null,
+      amountCents: 200, pixKey: null, pixKeyType: null, reviewedById: null,
+    });
+    const wrongAmount = await POST(makeRequest());
+    expect(await wrongAmount.json()).toMatchObject({ status: "REFUSED" });
+    expect(mocks.withdrawalUpdate).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid authentication token", async () => {
