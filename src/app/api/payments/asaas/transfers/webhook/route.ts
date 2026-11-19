@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           const requestsSettled = await tx.prizePaymentRequest.updateMany({
             where: { batchId: batch.id, status: "PAID" },
             data: {
-              asaasTransferId: transferId,
+              // The batch is the sole owner of the single Asaas transfer ID.
               asaasTransferStatus: transfer?.status ?? "DONE",
               asaasTransferReceiptUrl: transfer?.transactionReceiptUrl ?? null,
               asaasTransferFailureReason: null,
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: requestStatus,
             ...(requestStatus === "REJECTED" ? { batchId: null } : {}),
-            asaasTransferId: transferId,
+            // Child rows share the batch reference, not its unique provider transfer ID.
             asaasTransferStatus: transferStatus,
             asaasTransferFailureReason: failure,
           },
