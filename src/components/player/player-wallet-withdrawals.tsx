@@ -9,7 +9,7 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — em análise", APPROVED: "Solicitação em análise", PROCESSING: "Saque em processamento", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Transferência não concluída — saldo devolvido à carteira" };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — em análise", APPROVED: "Solicitação em análise", PROCESSING: "Saque em processamento", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde." };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
@@ -93,7 +93,7 @@ export function PlayerWalletWithdrawals() {
         <div><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         {item.status === "PAID" && <p>Pagamento confirmado em {dateTime(item.updatedAt)}</p>}
-        {(item.status === "FAILED" || item.status === "REJECTED") && <p>O valor foi devolvido ao saldo disponível da carteira.</p>}
+        {item.status === "REJECTED" && <p>O valor foi devolvido ao saldo disponível da carteira.</p>}
       </article>)}
     </div>}
     <button type="button" className="secondary-button" disabled={loading || busy} onClick={() => void load()}>Atualizar carteira</button>
