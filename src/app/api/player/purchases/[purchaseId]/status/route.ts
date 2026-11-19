@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // the same idempotent confirmation transaction.
   if (purchase.status === "PENDING_PAYMENT"
     && purchase.payment?.status === "PENDING"
-    && (purchase.payment.provider === "ASAAS" && Boolean(purchase.payment.providerQrCodeId))
+    && (purchase.payment.provider === "MERCADO_PAGO" && Boolean(purchase.payment.providerPaymentId))
     && Date.now() - purchase.payment.updatedAt.getTime() >= 10_000) {
     const checkClaim = await authPrisma.payment.updateMany({
       where: {
@@ -83,9 +83,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     reconciliationRequired,
     paymentTerminal,
     message: reconciliationRequired
-      ? "O Asaas confirmou o Pix. O sistema está vinculando a compra às próximas rodadas válidas. Não faça outro pagamento."
+      ? "O Mercado Pago confirmou o Pix. O sistema está vinculando a compra às próximas rodadas válidas. Não faça outro pagamento."
       : paymentTerminal
-        ? "Pagamento não aceito ou não concluído pelo Asaas. Este jogo não foi realizado e nenhuma aposta foi alocada. Se houve débito na sua conta, confira o extrato e entre em contato com o suporte antes de tentar novamente."
+        ? "Pagamento não aceito ou não concluído pelo Mercado Pago. Este jogo não foi realizado e nenhuma aposta foi alocada. Se houve débito na sua conta, confira o extrato e entre em contato com o suporte antes de tentar novamente."
         : null,
     providerStatus: purchase.payment?.providerStatus ?? null,
     providerStatusDetail: purchase.payment?.providerStatusDetail ?? null,
