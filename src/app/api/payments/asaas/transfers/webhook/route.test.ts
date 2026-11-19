@@ -117,8 +117,12 @@ describe("Asaas wallet transfer webhook", () => {
     });
     expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledWith({
       where: { batchId: "ppb_12345678", status: "PAID" },
-      data: expect.objectContaining({ asaasTransferId: "trf-batch-1", pixKey: null }),
+      data: expect.objectContaining({ pixKey: null }),
     });
+    expect(mocks.prizeRequestUpdateMany.mock.calls[0][0].data).not.toHaveProperty("asaasTransferId");
+    expect(mocks.prizeRequestUpdateMany.mock.calls[0][0].data).toHaveProperty("asaasTransferReceiptUrl");
+    /*
+    */
   });
 
 
@@ -153,10 +157,11 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledWith({
       where: { batchId: "ppb_12345678" },
       data: expect.objectContaining({
-        status: "REJECTED", batchId: null, asaasTransferId: "trf-batch-1",
+        status: "REJECTED", batchId: null,
         asaasTransferFailureReason: "bank rejected transfer",
       }),
     });
+    expect(mocks.prizeRequestUpdateMany.mock.calls[0][0].data).not.toHaveProperty("asaasTransferId");
   });
 
 
