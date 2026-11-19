@@ -145,6 +145,18 @@ describe("Asaas withdrawal validation endpoint", () => {
     expect(mocks.batchUpdate).not.toHaveBeenCalled();
   });
 
+  it("approves a Brazilian phone Pix key when Asaas returns the +55 country prefix", async () => {
+    mocks.batchFind.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
+      asaasTransferId: null, netCents: 100, pixKey: "77998315360", pixKeyType: "PHONE",
+    });
+    const response = await POST(makeRequest({
+      bankAccount: { pixAddressKey: "+5577998315360" },
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+  });
+
   it("refuses a mismatched Pix beneficiary", async () => {
     const response = await POST(makeRequest({ bankAccount: { pixAddressKey: "11988887777" } }));
     expect(await response.json()).toMatchObject({ status: "REFUSED" });
