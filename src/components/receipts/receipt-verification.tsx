@@ -44,24 +44,16 @@ function formatDate(value: string) {
 type PrizePixRequestFormProps = {
   receiptCode: string;
   participationLineId: string;
-  numberValue: string;
-  grossCents: number;
   paymentRequest?: VerifiedNumber["paymentRequest"];
   onSubmitted: () => Promise<void>;
 };
 
-function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, grossCents, paymentRequest, onSubmitted }: PrizePixRequestFormProps) {
+function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest, onSubmitted }: PrizePixRequestFormProps) {
   const [pixKeyType, setPixKeyType] = useState("CPF");
   const [pixKey, setPixKey] = useState("");
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState("");
-  const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-  const batch = paymentRequest?.batch ?? null;
-  const displayedGross = batch?.grossCents ?? grossCents;
-  const adminFee = batch?.administrativeFeeCents ?? 0;
-  const bankFee = batch?.transactionFeeCents ?? 0;
-  const displayedNet = batch?.netCents ?? (displayedGross - adminFee - bankFee);
-
+ 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setRequesting(true);
@@ -83,9 +75,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, numberValue, gr
     }
   }
 
-  return <div style={{ padding: 12, margin: "10px 0", borderRadius: 8, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
-    <strong style={{ color: "#111827" }}>{batch ? "Todos os prêmios deste recibo" : numberValue} · Prêmio bruto: {money(displayedGross)}</strong>
-    <p style={{ margin: "5px 0", color: "#374151", fontSize: 13 }}>Taxa administrativa: {money(adminFee)}<br />Taxa de transação bancária: {money(bankFee)}<br /><strong>Líquido a receber: {money(displayedNet)}</strong></p>
+  return <div style={{ margin: "8px 0" }}>
     {paymentRequest?.status === "REJECTED" && <p style={{ color: "#92400e", fontWeight: 700 }}>Solicitação anterior encerrada. Você pode enviar uma nova solicitação.</p>}
     {paymentRequest?.status === "PENDING" || paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida. Estamos processando o pagamento do prêmio.</p>
       : paymentRequest?.status === "PAID" ? <p role="status" style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago com sucesso via Pix.</p>
@@ -216,19 +206,14 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
         </>
       )}
       {hasAvailablePrize && <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #d1d5db" }}>
-        <h3 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18 }}>Solicitar recebimento do prêmio</h3>
-        <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}>O recibo gera uma única solicitação Pix com todos os prêmios elegíveis somados. As taxas são calculadas sobre o total do recibo.</p>
         {(() => {
           const eligible = rounds.flatMap(round => round.numbers.filter(number => number.resultStatus === "PREMIADA" && !number.prizePaid));
           const first = eligible[0];
-          const batchRequest = eligible.map(number => number.paymentRequest).find(item => item?.batch)?.batch ?? null;
           if (!first) return null;
           return <PrizePixRequestForm
             key={first.participationLineId}
             receiptCode={receiptCode}
             participationLineId={first.participationLineId}
-            numberValue={eligible.length + " prêmio(s) agrupado(s)"}
-            grossCents={batchRequest?.grossCents ?? eligible.reduce((sum, number) => sum + (number.prizeCents ?? 0), 0)}
             paymentRequest={first.paymentRequest}
             onSubmitted={async () => {
               const refresh = await fetch(`/api/public/receipt-verification/${encodeURIComponent(receiptCode.toUpperCase())}`, { cache: "no-store" });
