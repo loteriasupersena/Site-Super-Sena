@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       await tx.prizePaymentBatch.create({ data: {
         id: batchId, purchaseId: purchase.id,
         pixKey: input.pixKey, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-        holderName: input.holderName,
+        holderName: null,
         holderCpfMasked: "Não informado",
         grossCents: fees.grossCents, administrativeFeeCents: fees.administrativeFeeCents,
         transactionFeeCents: fees.transactionFeeCents, netCents: fees.netCents,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           purchaseId: purchase.id, batchId,
           pixKey: null, pixKeyEncrypted: null, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
           holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
-          holderCpfMasked: "***.***.***-" + input.holderCpf.slice(-2),
+          holderCpfMasked: "Não informado",
           grossCents: allocation.grossCents, administrativeFeeCents: allocation.administrativeFeeCents,
           transactionFeeCents: allocation.transactionFeeCents, netCents: allocation.netCents,
           feeRuleVersion: "physical-prize-fees-v2", status: "PROCESSING" as const,
