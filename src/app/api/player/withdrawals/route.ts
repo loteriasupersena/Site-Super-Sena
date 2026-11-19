@@ -109,11 +109,15 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         // A POST failure is not proof that Asaas did not create the transfer.
         // Search by the exact idempotent reference before changing the reserved balance.
+        let lookupCompleted = false;
+        let matchingTransfers = 0;
         try {
           const matches = await findAsaasTransfersByExternalReference({
             externalReference: result.externalReference,
             requestedAt: result.transferRequestedAt ?? new Date(),
           });
+          lookupCompleted = true;
+          matchingTransfers = matches.length;
           if (matches.length === 1 && matches[0]?.id) {
             const transferId = matches[0].id;
             const linked = await authPrisma.withdrawal.updateMany({
@@ -140,6 +144,48 @@ export async function POST(request: NextRequest) {
         } catch {
           // An unavailable or incomplete lookup must never release the reservation.
         }
+
+        const failureStatus = typeof error === "object" && error !== null && "status" in error
+          ? Number(error.status) : 0;
+        const definitiveRejection = failureStatus >= 400 && failureStatus < 500 &&
+          failureStatus !== 408 && failureStatus !== 429;
+        if (definitiveRejection && lookupCompleted && matchingTransfers === 0) {
+          const released = await authPrisma.$transaction(async tx => {
+            await tx.$queryRawUnsafe('SELECT "id" FROM "Withdrawal" WHERE "id" = $1 FOR UPDATE', result.id);
+            const changed = await tx.withdrawal.updateMany({
+              where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference, asaasTransferId: null },
+              data: {
+                status: "FAILED",
+                asaasTransferStatus: "REJECTED",
+                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta pela referência confirmou que ela não foi criada.",
+              },
+            });
+            if (changed.count !== 1) return false;
+            await tx.ledgerEntry.create({ data: {
+              userId: user.id, withdrawalId: result.id, type: "WITHDRAWAL_RELEASE",
+              amountCents: result.amountCents, currency: "BRL",
+              idempotencyKey: "withdrawal-release:" + result.id,
+              description: "Liberação do saldo após recusa definitiva da transferência Pix Asaas.",
+            } });
+            await tx.withdrawalStatusHistory.create({ data: {
+              withdrawalId: result.id, fromStatus: "PROCESSING", toStatus: "FAILED",
+              actorId: user.id, note: "A transferência foi recusada e a consulta confirmou que não foi criada. O saldo reservado voltou à carteira.",
+            } });
+            await tx.auditEvent.create({ data: {
+              actorId: user.id, action: "WITHDRAWAL_ASAAS_TRANSFER_FAILED",
+              entityType: "Withdrawal", entityId: result.id,
+              metadata: { amountCents: result.amountCents, externalReference: result.externalReference, reason: "DEFINITIVE_PROVIDER_REJECTION" },
+            } });
+            return true;
+          }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+          if (released) {
+            return NextResponse.json({
+              success: false, status: "FAILED", availableCents: result.amountCents,
+              error: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde.",
+            }, { status: 502, headers });
+          }
+        }
+
         return NextResponse.json({
           success: true, status: "PROCESSING",
           message: "Não foi possível confirmar se a Asaas criou a transferência. O saldo permanece reservado e o saque bloqueado contra duplicidade para conciliação.",
