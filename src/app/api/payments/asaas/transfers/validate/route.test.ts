@@ -6,7 +6,15 @@ const mocks = vi.hoisted(() => ({
   requestFind: vi.fn(), requestUpdate: vi.fn(), withdrawalFind: vi.fn(),
   withdrawalUpdate: vi.fn(), auditCreate: vi.fn(),
 }));
-vi.mock("@/lib/auth/session", () => ({ authPrisma: { $transaction: mocks.transaction } }));
+vi.mock("@/lib/auth/session", () => ({
+  authPrisma: { $transaction: mocks.transaction, auditEvent: { create: mocks.auditCreate } },
+}));
+vi.mock("@/modules/payments/asaas", () => ({
+  getAsaasTransfer: vi.fn().mockResolvedValue({
+    id: "trf_12345678", externalReference: "prize_batch_ppb_12345678",
+    value: 1, operationType: "PIX",
+  }),
+}));
 import { POST } from "./route";
 
 function makeRequest(overrides: Record<string, unknown> = {}, token = "v".repeat(40)) {
@@ -59,6 +67,24 @@ describe("Asaas withdrawal validation endpoint", () => {
     }));
   });
 
+  it("recovers externalReference from Asaas when callback arrives before transfer ID is linked", async () => {
+    mocks.batchFind.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
+      asaasTransferId: null, netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
+    });
+
+    const response = await POST(makeRequest({ externalReference: undefined }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
+    expect(mocks.batchFind).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ OR: expect.arrayContaining([
+        { paymentReference: "prize_batch_ppb_12345678" },
+        { asaasTransferId: "trf_12345678" },
+      ]) }),
+    }));
+  });
+
   it("approves a registered transfer by ID when Asaas omits externalReference", async () => {
     mocks.batchFind.mockResolvedValue({
       id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
@@ -69,7 +95,13 @@ describe("Asaas withdrawal validation endpoint", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "APPROVED" });
-    expect(mocks.batchFind).toHaveBeenCalledWith({ where: { asaasTransferId: "trf_12345678" }, select: expect.any(Object) });
+    expect(mocks.batchFind).toHaveBeenCalledWith(expect.objectContaining({
+      where: { OR: [
+        { paymentReference: "prize_batch_ppb_12345678" },
+        { asaasTransferId: "trf_12345678" },
+      ] },
+      select: expect.any(Object),
+    }));
   });
 
   it("approves a registered transfer when Asaas sends pixAddressKey as null", async () => {

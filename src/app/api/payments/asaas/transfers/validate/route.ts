@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
+import { getAsaasTransfer } from "@/modules/payments/asaas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,10 +58,6 @@ export async function POST(request: NextRequest) {
 
   const transfer = payload.transfer!;
   const transferId = transfer.id!.trim();
-  const externalReference = transfer.externalReference?.trim() || null;
-  const transferLookup = externalReference
-    ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
-    : { asaasTransferId: transferId };
   const valueCents = Math.round((transfer.value ?? 0) * 100);
   const actualPix = transfer.bankAccount?.pixAddressKey?.trim() || null;
   if (!Number.isSafeInteger(valueCents) || valueCents <= 0) {
@@ -68,6 +65,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    let externalReference = transfer.externalReference?.trim() || null;
+    // Asaas' validation payload may omit externalReference. Recover it from
+    // the provider when the callback races our post-creation database update.
+    if (!externalReference) {
+      const providerTransfer = await getAsaasTransfer(transferId);
+      if (providerTransfer.id !== transferId ||
+          providerTransfer.value !== transfer.value ||
+          providerTransfer.operationType !== "PIX") {
+        return refuse("Os dados recuperados da transferência não correspondem à solicitação.");
+      }
+      externalReference = providerTransfer.externalReference?.trim() || null;
+    }
+    const transferLookup = externalReference
+      ? { OR: [{ paymentReference: externalReference }, { asaasTransferId: transferId }] }
+      : { asaasTransferId: transferId };
     const decision = await authPrisma.$transaction(async tx => {
       const batch = await tx.prizePaymentBatch.findFirst({
         where: transferLookup,
@@ -134,7 +146,27 @@ export async function POST(request: NextRequest) {
       return { approved: false, entityType: "Unknown", entityId: null, reason: "Transferência não encontrada no banco de dados." };
     }, { isolationLevel: "Serializable" });
 
-    if (!decision.approved) return refuse("reason" in decision && typeof decision.reason === "string" ? decision.reason : "Transferência não autorizada.");
+    if (!decision.approved) {
+      const reason = "reason" in decision && typeof decision.reason === "string"
+        ? decision.reason
+        : "Transferência não autorizada.";
+      await authPrisma.auditEvent.create({
+        data: {
+          action: "ASAAS_TRANSFER_VALIDATION_REFUSED",
+          entityType: decision.entityType === "Unknown" ? "AsaasTransferValidation" : decision.entityType,
+          entityId: decision.entityId ?? transferId,
+          metadata: {
+            transferId,
+            externalReference,
+            valueCents,
+            reason,
+            entityFound: decision.entityType !== "Unknown",
+            beneficiaryKeyComparedFromPayload: Boolean(actualPix),
+          },
+        },
+      });
+      return refuse(reason);
+    }
     return NextResponse.json({ status: "APPROVED" }, { status: 200, headers: { "Cache-Control": "no-store" } });
   } catch {
     // A transient database failure must trigger Asaas retry, not a false decision.
