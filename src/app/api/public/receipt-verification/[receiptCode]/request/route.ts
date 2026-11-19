@@ -139,7 +139,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         metadata: { receiptCode, lineCount: feeLines.length, grossCents: fees.grossCents,
           administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
           netCents: fees.netCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType,
-          
+        },
       } });
       return { id: batchId, externalReference, grossCents: fees.grossCents,
         administrativeFeeCents: fees.administrativeFeeCents, transactionFeeCents: fees.transactionFeeCents,
