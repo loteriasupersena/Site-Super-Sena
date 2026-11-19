@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
         if (!/^[A-Za-z0-9_-]{8,100}$/.test(withdrawalId)) throw new Error("WITHDRAWAL_REFERENCE_INVALID");
         await tx.$queryRaw`SELECT "id" FROM "Withdrawal" WHERE "id" = ${withdrawalId} FOR UPDATE`;
         const withdrawal = await tx.withdrawal.findUnique({ where: { id: withdrawalId },
-          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true, pixKey: true, pixKeyType: true } });
+          select: { id: true, status: true, amountCents: true, paymentReference: true, asaasTransferId: true, reviewedById: true, userId: true } });
         if (!withdrawal || withdrawal.paymentReference !== externalReference) throw new Error("WITHDRAWAL_NOT_FOUND");
         if (withdrawal.asaasTransferId && withdrawal.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
         if (event === "TRANSFER_DONE" &&
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("REQUEST_REFERENCE_INVALID");
       const requestRow = await tx.prizePaymentRequest.findUnique({
         where: { id: requestId },
-        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true, pixKey: true, pixKeyType: true },
+        select: { id: true, status: true, asaasTransferId: true, paymentReference: true, participationLineId: true, netCents: true },
       });
       if (!requestRow || requestRow.paymentReference !== externalReference) throw new Error("REQUEST_NOT_FOUND");
       if (requestRow.asaasTransferId && requestRow.asaasTransferId !== transferId) throw new Error("TRANSFER_MISMATCH");
