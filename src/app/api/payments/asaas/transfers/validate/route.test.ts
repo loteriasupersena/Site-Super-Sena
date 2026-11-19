@@ -44,7 +44,6 @@ describe("Asaas withdrawal validation endpoint", () => {
     vi.clearAllMocks();
     process.env.ASAAS_WITHDRAWAL_VALIDATION_TOKEN = "v".repeat(40);
     delete process.env.ASAAS_WEBHOOK_TOKEN;
-    delete process.env.ASAAS_WITHDRAWAL_VALIDATION_TEST_MODE;
     mocks.batchFind.mockResolvedValue({
       id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
       asaasTransferId: null, netCents: 100, pixKey: "11999999999", pixKeyType: "PHONE",
@@ -143,6 +142,18 @@ describe("Asaas withdrawal validation endpoint", () => {
     const response = await POST(makeRequest());
     expect(await response.json()).toMatchObject({ status: "REFUSED" });
     expect(mocks.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("approves a Brazilian phone Pix key when Asaas returns it with the +55 country prefix", async () => {
+    mocks.batchFind.mockResolvedValue({
+      id: "ppb_12345678", status: "PROCESSING", paymentReference: "prize_batch_ppb_12345678",
+      asaasTransferId: null, netCents: 100, pixKey: "77998315360", pixKeyType: "PHONE",
+    });
+    const response = await POST(makeRequest({
+      bankAccount: { pixAddressKey: "+5577998315360" },
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "APPROVED" });
   });
 
   it("refuses a mismatched Pix beneficiary", async () => {
