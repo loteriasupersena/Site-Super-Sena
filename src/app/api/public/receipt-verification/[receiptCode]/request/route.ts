@@ -227,7 +227,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
             });
             if (requestsFailed.count !== batch.lineCount) throw new Error("PRIZE_REQUEST_REJECTION_COUNT_MISMATCH");
           });
-          return NextResponse.json({ error: "A Asaas recusou a transferência. A consulta confirmou que nenhum Pix foi criado; o pagamento ficou bloqueado para conferência." }, { status: 502, headers });
+          return NextResponse.json({ error: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde." }, { status: 502, headers });
         }
 
         return NextResponse.json({ success: true, status: "PROCESSING",
