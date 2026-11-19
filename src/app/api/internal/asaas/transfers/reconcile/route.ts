@@ -38,9 +38,11 @@ async function attachRecoveredTransfer(item: Candidate, transferId: string) {
       data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
     });
     if (result.count !== 1) return false;
+    // The batch owns the single Asaas transfer ID. Keep it off child requests,
+    // whose asaasTransferId column is individually unique.
     await authPrisma.prizePaymentRequest.updateMany({
       where: { batchId: item.id, status: "PROCESSING", paymentReference: item.externalReference },
-      data: { asaasTransferId: transferId, asaasTransferStatus: "PENDING" },
+      data: { asaasTransferStatus: "PENDING" },
     });
     return true;
   }
