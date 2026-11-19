@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { isPlausiblePixKey, maskPixKey } from "@/lib/wallet/pix-key";
+import { maskPixKey, parsePixKeyInput } from "@/lib/wallet/pix-key";
 import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
 import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 import { WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
@@ -19,14 +19,7 @@ function validOrigin(request: NextRequest) {
   catch { return false; }
 }
 function parseInput(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const body = value as Record<string, unknown>;
-  if (typeof body.pixKey !== "string" || typeof body.pixKeyType !== "string") return null;
-  const pixKey = body.pixKey.trim();
-  if (!["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"].includes(body.pixKeyType) ||
-      pixKey.length < 3 || pixKey.length > 200 ||
-      !isPlausiblePixKey(pixKey)) return null;
-  return { pixKey, pixKeyType: body.pixKeyType };
+  return parsePixKeyInput(value);
 }
 
 export async function GET(request: NextRequest) {
