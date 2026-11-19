@@ -143,7 +143,7 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.prizeRequestUpdateMany).toHaveBeenCalledOnce();
   });
 
-  it("does not settle a prize batch when the confirmed Pix beneficiary differs", async () => {
+  it("settles a prize batch from the confirmed Asaas result without revalidating the Pix key", async () => {
     mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
       id: "trf-batch-1", status: "DONE", externalReference: "prize_batch_ppb_12345678",
       value: 50, operationType: "PIX", bankAccount: { pixAddressKey: "11111111111" },
@@ -157,12 +157,13 @@ describe("Asaas wallet transfer webhook", () => {
 
     const response = await POST(batchRequest());
 
-    expect(response.status).toBe(409);
-    expect(mocks.registerPayout).not.toHaveBeenCalled();
-    expect(mocks.batchUpdate).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, outcome: "BATCH_PAID" });
+    expect(mocks.registerPayout).toHaveBeenCalledOnce();
+    expect(mocks.batchUpdate).toHaveBeenCalledOnce();
   });
 
-  it("marks a wallet withdrawal paid only after a matching PIX transfer confirmation", async () => {
+  it("marks a wallet withdrawal paid only after a confirmed PIX transfer result", async () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ received: true, outcome: "WITHDRAWAL_PAID" });
@@ -214,7 +215,7 @@ describe("Asaas wallet transfer webhook", () => {
     expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("rejects a transfer sent to a different Pix beneficiary", async () => {
+  it("marks a withdrawal paid from the confirmed Asaas result without revalidating the Pix key", async () => {
     mocks.asaasFetch.mockResolvedValueOnce(new Response(JSON.stringify({
       id: "trf-1", status: "DONE", externalReference: "wallet_withdrawal_wdr_12345678",
       value: 50, operationType: "PIX", bankAccount: { pixAddressKey: "11111111111" },
@@ -227,9 +228,10 @@ describe("Asaas wallet transfer webhook", () => {
       body: body.replace('"pixAddressKey":"52998224725"', '"pixAddressKey":"11111111111"'),
     });
     const response = await POST(changed);
-    expect(response.status).toBe(409);
-    expect(mocks.withdrawalUpdateMany).not.toHaveBeenCalled();
-    expect(mocks.ledgerCreate).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, outcome: "WITHDRAWAL_PAID" });
+    expect(mocks.withdrawalUpdateMany).toHaveBeenCalledOnce();
+    expect(mocks.ledgerCreate).toHaveBeenCalledOnce();
   });
 
   it("rejects a transfer with a mismatched amount", async () => {
