@@ -100,13 +100,18 @@ describe("Asaas wallet transfer webhook", () => {
       id: "ppb_12345678", status: "PROCESSING",
       paymentReference: "prize_batch_ppb_12345678", asaasTransferId: "trf-batch-1",
       netCents: 5000, pixKey: "11999999999", pixKeyType: "PHONE",
-      requests: [{ id: "ppr_12345678", participationLineId: "line-1", status: "PROCESSING" }],
+      requests: [
+        { id: "ppr_12345678", participationLineId: "line-1", status: "PROCESSING" },
+        { id: "ppr_87654321", participationLineId: "line-2", status: "PROCESSING" },
+      ],
     });
+    mocks.prizeRequestUpdateMany.mockResolvedValueOnce({ count: 2 });
 
     const response = await POST(batchRequest());
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ received: true, outcome: "BATCH_PAID" });
+    expect(mocks.registerPayout).toHaveBeenCalledTimes(2);
     expect(mocks.registerPayout).toHaveBeenCalledWith(expect.anything(), {
       lineId: "line-1", actorId: null, channel: "PLATFORM_PIX",
       reference: "prize_batch_ppb_12345678", expectedRequestStatus: "PROCESSING",
@@ -121,8 +126,6 @@ describe("Asaas wallet transfer webhook", () => {
     });
     expect(mocks.prizeRequestUpdateMany.mock.calls[0][0].data).not.toHaveProperty("asaasTransferId");
     expect(mocks.prizeRequestUpdateMany.mock.calls[0][0].data).toHaveProperty("asaasTransferReceiptUrl");
-    /*
-    */
   });
 
 
