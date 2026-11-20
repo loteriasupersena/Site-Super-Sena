@@ -94,7 +94,7 @@ export async function registerNumericPrizePayout(
     if (remaining === 0) {
       await tx.prizePaymentBatch.updateMany({
         where: { id: line.prizePaymentRequest.batchId, status: { in: ["PENDING", "PROCESSING"] } },
-        data: { status: "PAID", pixKey: null, pixKeyEncrypted: null, reviewedAt: paidAt, paymentReference: input.reference?.trim() || null },
+        data: { status: "PAID", pixKey: null, pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
       });
     }
   }
