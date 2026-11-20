@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
           is: {
             status: "CONFIRMED",
             round: { is: { status: "COMPLETED" } },
-            purchase: { is: { status: "CONFIRMED" } },
+            purchase: { is: { status: "CONFIRMED", cashierId: { not: null }, playerId: null } },
           },
         },
       },
@@ -72,7 +72,6 @@ export async function GET(request: NextRequest) {
             ?? line.participation.purchase.player?.username
             ?? line.participation.purchase.customer?.name
             ?? "Cliente sem nome cadastrado",
-          physicalReceiptEligible: Boolean(line.participation.purchase.cashierId && !line.participation.purchase.playerId),
           paid: false,
           paymentRequest: line.prizePaymentRequest ? {
             status: line.prizePaymentRequest.status,
