@@ -72,10 +72,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (candidates.some(line => {
         const previous = line.prizePaymentRequest;
         if (!previous) return false;
+        // A failed legacy provider transfer must first be explicitly released
+        // by an administrator. That guarded action records the old provider
+        // reference in the audit trail before a fresh request can reuse this row.
         const released = previous.status === "REJECTED" && previous.batchId === null;
-        const terminalLegacyFailure = ["FAILED", "CANCELLED"].includes(previous.status) &&
-          ["FAILED", "CANCELLED"].includes(previous.batch?.status ?? "");
-        return !released && !terminalLegacyFailure;
+        return !released;
       })) throw new Error("REQUEST_ALREADY_EXISTS");
 
       const feeLines = candidates.map(line => {
