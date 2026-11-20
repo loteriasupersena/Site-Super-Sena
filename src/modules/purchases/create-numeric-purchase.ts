@@ -13,7 +13,7 @@ export type NumericPurchaseInput = {
   cashierId?: string;
   customerId?: string;
   paymentMethod?: "PIX" | "WALLET" | "CASH";
-  paymentProvider?: "ASAAS";
+  paymentProvider?: "MERCADO_PAGO";
   roundIds?: string[];
   roundCount?: number;
   numbers: string[];
