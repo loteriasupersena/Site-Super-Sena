@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       pixCheckout, paymentActionRequired: true,
       message: pixCheckout
         ? "Pix preparado. A compra e o recibo continuam pendentes até a confirmação autêntica do Mercado Pago."
-        : "Compra registrada como pendente. Nenhum recibo foi emitido porque o pagamento ainda não foi confirmado. Configure MERCADOPAGO_ACCESS_TOKEN para gerar a cobrança Pix.",
+        : "Compra registrada como pendente. Nenhum recibo foi emitido porque o pagamento ainda não foi confirmado. A cobrança Pix ainda não foi criada: configure MERCADOPAGO_ACCESS_TOKEN no ambiente de produção.",
     }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof PurchaseServiceError) {
