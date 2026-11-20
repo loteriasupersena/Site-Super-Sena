@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      count: lines.length,
+      count: breakdown.reduce((total, item) => total + item.count, 0),
       totalGrossCents,
       totalDueCents,
       unrequestedCount,
