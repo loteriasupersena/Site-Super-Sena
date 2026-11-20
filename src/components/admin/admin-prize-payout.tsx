@@ -45,6 +45,7 @@ export function AdminPrizePayout() {
   const [busy, setBusy] = useState("");
   const [references, setReferences] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
+  const [copiedPixKey, setCopiedPixKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -64,6 +65,13 @@ export function AdminPrizePayout() {
     const poll = window.setInterval(() => { void load(); }, 10_000);
     return () => { window.clearTimeout(timer); window.clearInterval(poll); };
   }, [load]);
+
+  async function copyPixKey(winner: Winner) {
+    const key = winner.paymentRequest?.pixKey;
+    if (!key) return;
+    try { await navigator.clipboard.writeText(key); setCopiedPixKey(winner.id); setNotice("Chave Pix do prêmio de " + winner.playerName + " copiada."); }
+    catch { setError("Não foi possível copiar a chave Pix. Copie manualmente o texto exibido."); }
+  }
 
   async function confirmPaid(winner: Winner) {
     if (!winner.paymentRequest || !window.confirm(
@@ -114,8 +122,8 @@ export function AdminPrizePayout() {
   const reviewTotalCents = reviewPending.reduce((total, winner) => total + winner.prizeCents, 0);
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
-    <span className="feature-label">Central de pagamentos</span>
-    <h2 id="admin-prize-payout-heading">Ganhadores</h2>
+    <span className="feature-label">PAGAMENTO DE PRÊMIO</span>
+    <h2 id="admin-prize-payout-heading">Solicitações de pagamento de prêmio</h2>
     <p>Acompanhe as solicitações feitas pelo QR Code do recibo. O pagamento é realizado pelo administrador fora do sistema e só é registrado como pago após a conferência da transferência.</p>
 
     {tab === "pending" && <div className="admin-prize-total-panel" style={{
@@ -146,7 +154,7 @@ export function AdminPrizePayout() {
       </div>}
     </div>}
 
-    <details className="admin-accordion admin-prize-history">
+    <details open className="admin-accordion admin-prize-history">
       <summary>
         <span>Histórico de premiações ({winners.length})</span>
         <span aria-hidden="true" className="admin-prize-history-count">{pending.length} a pagar · {paid.length} pagos</span>
@@ -179,8 +187,9 @@ export function AdminPrizePayout() {
               <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
 
               {winner.paymentRequest && <div className="admin-prize-request-details">
-                <p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO PAGAMENTO" : winner.paymentRequest.status}</strong></p>
+                <p><strong>PAGAMENTO DE PRÊMIO · {winner.paymentRequest.status === "PENDING" ? "SOLICITAÇÃO EM ANÁLISE" : winner.paymentRequest.status}</strong></p>
                 <p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong>{winner.paymentRequest.pixKeyType ? " · " + winner.paymentRequest.pixKeyType : ""}</p>
+                <button type="button" className="secondary-button" disabled={!winner.paymentRequest.pixKey} onClick={() => void copyPixKey(winner)}>{copiedPixKey === winner.id ? "Chave Pix copiada" : "Copiar chave Pix"}</button>
                 <p>Bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p>
               </div>}
               {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
@@ -194,7 +203,7 @@ export function AdminPrizePayout() {
                       <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="Identificador da transação Pix" />
                     </label>
                     <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
-                      {busy === winner.id ? "Registrando…" : "Confirmar Pix pago"}
+                      {busy === winner.id ? "Registrando…" : "Dar baixa geral — pagamento concluído"}
                     </button>
                     {["FAILED", "CANCELLED", "REJECTED"].includes(winner.paymentRequest?.providerTransferStatus ?? "") && <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>
                       {busy === winner.id ? "Liberando…" : "Liberar para nova solicitação"}
