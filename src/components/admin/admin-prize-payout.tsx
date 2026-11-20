@@ -88,8 +88,8 @@ export function AdminPrizePayout() {
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
-  const asaasProcessing = pending.filter((winner) => winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING");
-  const totalToPayCents = asaasProcessing.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
+  const manualPending = pending.filter((winner) => winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING");
+  const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
   const allPhysicalPending = pending.filter((winner) => winner.physicalReceiptEligible);
   const totalPhysicalGrossCents = allPhysicalPending.reduce((total, winner) => total + winner.prizeCents, 0);
   const reviewPending = pending.filter((winner) => !winner.physicalReceiptEligible);
@@ -98,7 +98,7 @@ export function AdminPrizePayout() {
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
     <span className="feature-label">Central de pagamentos</span>
     <h2 id="admin-prize-payout-heading">Ganhadores</h2>
-    <p>Acompanhe os prêmios e o status dos pagamentos automáticos enviados à Asaas após a solicitação do ganhador pelo QR Code do recibo. O prêmio só é marcado como pago após a confirmação bancária.</p>
+    <p>Acompanhe as solicitações feitas pelo QR Code do recibo. O pagamento é realizado pelo administrador fora do sistema e só é registrado como pago após a conferência da transferência.</p>
 
     {tab === "pending" && <div className="admin-prize-total-panel" style={{
       margin: "1rem 0", padding: "1rem 1.1rem", borderRadius: "16px",
@@ -107,13 +107,13 @@ export function AdminPrizePayout() {
       boxShadow: "0 8px 24px rgba(0, 0, 0, .18)",
     }}>
       <span style={{ display: "block", fontSize: ".8rem", fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#62d8f4" }}>
-        Pix físicos em processamento na Asaas
+        Pix aguardando pagamento manual
       </span>
       <strong style={{ display: "block", marginTop: ".2rem", fontSize: "clamp(1.7rem, 6vw, 2.2rem)", lineHeight: 1.1, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
         {money(totalToPayCents)}
       </strong>
       <span style={{ display: "block", marginTop: ".35rem", color: "#c5d2e4", fontSize: ".85rem" }}>
-        {asaasProcessing.length} {asaasProcessing.length === 1 ? "solicitação em processamento" : "solicitações em processamento"}
+        {manualPending.length} {manualPending.length === 1 ? "solicitação aguardando pagamento" : "solicitações aguardando pagamento"}
       </span>
       <div style={{ marginTop: ".8rem", paddingTop: ".8rem", borderTop: "1px solid rgba(255,255,255,.16)" }}>
         <span style={{ display: "block", color: "#c5d2e4", fontSize: ".8rem" }}>Total bruto de prêmios físicos ainda não pagos</span>
