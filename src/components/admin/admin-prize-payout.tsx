@@ -27,7 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
-  paymentRequest: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; netCents: number; pixKey: string | null; pixKeyMasked: string; pixKeyType: string | null; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number } | null;
+  paymentRequest: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; providerTransferStatus: string | null; netCents: number; pixKey: string | null; pixKeyMasked: string; pixKeyType: string | null; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -196,6 +196,9 @@ export function AdminPrizePayout() {
                     <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
                       {busy === winner.id ? "Registrando…" : "Confirmar Pix pago"}
                     </button>
+                    {["FAILED", "CANCELLED", "REJECTED"].includes(winner.paymentRequest?.providerTransferStatus ?? "") && <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>
+                      {busy === winner.id ? "Liberando…" : "Liberar para nova solicitação"}
+                    </button>}
                   </> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <>
                     <p role="alert">Solicitação com falha ou cancelamento. Confira se não houve transferência bancária antes de liberar uma nova solicitação.</p>
                     <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>
