@@ -9,7 +9,14 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — aguardando pagamento da administração", APPROVED: "Solicitação em análise", PROCESSING: "Pagamento em conferência administrativa", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Pagamento pendente de revisão administrativa" };
+const labels: Record<Withdrawal["status"], string> = {
+  PENDING: "Solicitação em análise",
+  APPROVED: "Solicitação em análise",
+  PROCESSING: "Solicitação em análise",
+  PAID: "Pagamento concluído com sucesso",
+  REJECTED: "Saque recusado — saldo devolvido à carteira",
+  FAILED: "Pagamento pendente de revisão administrativa",
+};
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);

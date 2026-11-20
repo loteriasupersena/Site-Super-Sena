@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       withdrawal: { id: result.id, amountCents: result.amountCents, status: "PENDING", availableCents: 0 },
-      message: "Solicitação de saque recebida. O pagamento Pix será realizado e confirmado pela administração.",
+      message: "Solicitação em análise.",
     }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return NextResponse.json({ error: "A carteira foi atualizada simultaneamente. Atualize o saldo e tente novamente." }, { status: 409, headers });
