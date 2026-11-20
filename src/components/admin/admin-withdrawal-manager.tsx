@@ -100,15 +100,19 @@ export function AdminWithdrawalManager() {
         </div>
       </article>)}
     </div>}
-    <h3>Histórico de saques</h3>
-    {loading ? <p>Carregando histórico…</p> : history.length === 0 ? <p>Nenhum saque encerrado.</p> : <div className="admin-round-list">
-      {history.map((item) => <article className="round-option" key={item.id}>
-        <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
-        <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
-        <p>Revisado por: {item.reviewedBy ?? "—"}</p>
-        {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.actor} · {event.note ?? labels[event.toStatus as Item["status"]]}</small></p>)}
-      </article>)}
-    </div>}
-    <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar saques</button>
+    <details className="admin-accordion">
+      <summary>Histórico de saques ({history.length})</summary>
+      <div className="admin-accordion-content">
+        {loading ? <p>Carregando histórico…</p> : history.length === 0 ? <p>Nenhum saque encerrado.</p> : <div className="admin-round-list">
+          {history.map((item) => <article className="round-option" key={item.id}>
+            <div><strong>{item.username}</strong> · {money(item.amountCents)} · SAQUE DE CARTEIRA · {labels[item.status]}</div>
+            <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
+            <p>Revisado por: {item.reviewedBy ?? "—"}</p>
+            {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.actor} · {event.note ?? labels[event.toStatus as Item["status"]]}</small></p>)}
+          </article>)}
+        </div>}
+        <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar histórico</button>
+      </div>
+    </details>
   </section>;
 }
