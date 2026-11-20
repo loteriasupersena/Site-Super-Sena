@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true, batch: { select: { id: true, pixKey: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } },
+        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, providerTransferStatus: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true, batch: { select: { id: true, pixKey: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } },
         participation: {
           select: {
             totalCents: true,
@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
           reference: line.prizePayout?.reference ?? null,
           paymentRequest: line.prizePaymentRequest ? {
             id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
+            providerTransferStatus: line.prizePaymentRequest.providerTransferStatus,
             pixKey: line.prizePaymentRequest.pixKey ?? line.prizePaymentRequest.batch?.pixKey ?? null,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
             pixKeyType: line.prizePaymentRequest.pixKeyType,
