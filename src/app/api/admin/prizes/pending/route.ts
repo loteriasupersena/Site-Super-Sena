@@ -95,7 +95,6 @@ export async function GET(request: NextRequest) {
             holderName: null,
             holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
             holderCpf: null,
-            pixKey: null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
