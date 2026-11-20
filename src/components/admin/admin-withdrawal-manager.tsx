@@ -22,6 +22,7 @@ export function AdminWithdrawalManager() {
   const loadController = useRef<AbortController | null>(null);
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [references, setReferences] = useState<Record<string, string>>({});
+  const [copiedPixKey, setCopiedPixKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     loadController.current?.abort();
@@ -40,6 +41,17 @@ export function AdminWithdrawalManager() {
     }
   }, []);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); const poll = window.setInterval(() => { void load(); }, 10_000); return () => { window.clearTimeout(timer); window.clearInterval(poll); loadController.current?.abort(); }; }, [load]);
+
+  async function copyPixKey(item: Item) {
+    if (!item.pixKey) return;
+    try {
+      await navigator.clipboard.writeText(item.pixKey);
+      setCopiedPixKey(item.id);
+      setNotice("Chave Pix de " + item.username + " copiada.");
+    } catch {
+      setError("Não foi possível copiar automaticamente. Selecione e copie a chave Pix manualmente.");
+    }
+  }
 
   async function act(item: Item, action: "confirm-paid" | "reject") {
     if (action === "confirm-paid" && !window.confirm("Confirma que o Pix de " + money(item.amountCents) + " já foi transferido e conferido no banco?")) return;
@@ -66,10 +78,11 @@ export function AdminWithdrawalManager() {
 
   const pending = items.filter((item) => item.status === "PENDING" || item.status === "APPROVED" || item.status === "FAILED" || item.status === "PROCESSING");
   const history = items.filter((item) => item.status !== "PENDING" && item.status !== "APPROVED" && item.status !== "FAILED" && item.status !== "PROCESSING");
+  const pendingCountLabel = pending.length > 0 ? "(" + pending.length + " pendente" + (pending.length === 1 ? "" : "s") + ")" : "(nenhuma pendente)";
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
-    <h2 id="admin-withdrawals-heading">Saques das carteiras digitais</h2>
+    <h2 id="admin-withdrawals-heading">Solicitações de saque {pendingCountLabel}</h2>
     <p>Confira a chave Pix informada. Realize a transferência fora do sistema e use a confirmação somente depois de verificar que o valor foi efetivamente enviado.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
@@ -78,10 +91,11 @@ export function AdminWithdrawalManager() {
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · Tipo: " + item.pixKeyType : ""}</p>
+        <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>{copiedPixKey === item.id ? "Chave Pix copiada" : "Copiar chave Pix"}</button>
         <label>Referência do comprovante (opcional)<input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="Identificador da transação Pix" /></label>
         <label>Motivo para devolver o saldo (obrigatório ao liberar)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
-          <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Confirmar Pix pago"}</button>
+          <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Dar baixa geral — pagamento concluído"}</button>
           <button type="button" className="secondary-button" disabled={busy !== null || (item.status === "PROCESSING" || item.status === "APPROVED") || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
         </div>
       </article>)}
