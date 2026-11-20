@@ -37,7 +37,7 @@ export async function registerNumericPrizePayout(
         },
       },
       prizePayout: { select: { id: true } },
-      prizePaymentRequest: { select: { id: true, batchId: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true } },
+      prizePaymentRequest: { select: { id: true, batchId: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true, providerTransferId: true, providerTransferStatus: true, batch: { select: { paymentReference: true, providerTransferId: true, providerTransferStatus: true } } } },
     },
   });
   if (!line) throw new NumericPrizePayoutError("LINE_NOT_FOUND");
@@ -145,6 +145,12 @@ export async function registerNumericPrizePayout(
         netCents: payout.amountCents,
         amountCents: payout.amountCents,
         reference: payout.reference,
+        previousRequestPaymentReference: line.prizePaymentRequest?.paymentReference ?? null,
+        previousRequestTransferId: line.prizePaymentRequest?.providerTransferId ?? null,
+        previousRequestTransferStatus: line.prizePaymentRequest?.providerTransferStatus ?? null,
+        previousBatchPaymentReference: line.prizePaymentRequest?.batch?.paymentReference ?? null,
+        previousBatchTransferId: line.prizePaymentRequest?.batch?.providerTransferId ?? null,
+        previousBatchTransferStatus: line.prizePaymentRequest?.batch?.providerTransferStatus ?? null,
         paidAt: payout.paidAt.toISOString(),
       },
     },
