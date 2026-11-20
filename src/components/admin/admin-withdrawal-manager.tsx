@@ -102,10 +102,10 @@ export function AdminWithdrawalManager() {
           <p className="admin-payment-pix">Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
           <div className="admin-payment-actions">
             <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>
-              {copied === item.id ? "Copiado" : "Copiar Pix"}
+              {copied === item.id ? "Copiado" : "Copiar"}
             </button>
             <button type="button" disabled={busy !== null} onClick={() => void confirmPaid(item)}>
-              {busy === item.id ? "Salvando…" : "Confirmar pago"}
+              {busy === item.id ? "Salvando…" : "Confirmar"}
             </button>
           </div>
         </article>)}
