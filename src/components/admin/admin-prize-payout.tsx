@@ -100,7 +100,7 @@ export function AdminPrizePayout() {
             <strong>{winner.playerName}</strong>
             <strong>{money(winner.paymentRequest!.netCents)}</strong>
           </div>
-          <p><span className="admin-payment-status">{winner.paymentRequest!.status === "PROCESSING" ? "EM PROCESSAMENTO" : "AGUARDANDO PIX"}</span> · Prêmio do recibo · {winner.prizeCategoryLabel ?? "Prêmio"} · {winner.receiptCode ?? winner.roundCode}</p>
+          <p><span className="admin-payment-status">{winner.paymentRequest!.status === "PROCESSING" ? "EM PROCESSAMENTO" : "AGUARDANDO PIX"}</span></p>
           <p className="admin-payment-pix">Pix: <strong>{winner.paymentRequest!.pixKey ?? winner.paymentRequest!.pixKeyMasked}</strong></p>
           {!winner.calculationConsistent && <p role="alert">Conferência necessária. Pagamento bloqueado.</p>}
           <div className="admin-payment-actions">
