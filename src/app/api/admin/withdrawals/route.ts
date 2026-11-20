@@ -3,7 +3,6 @@ import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { maskPixKey } from "@/lib/wallet/pix-key";
 import { z } from "zod";
-import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,35 +31,16 @@ export async function GET(request: NextRequest) {
       reviewedBy: { select: { username: true } },
       statusHistory: { select: { fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { username: true } } }, orderBy: { createdAt: "asc" as const } },
     };
-    const staleTransfers = await authPrisma.withdrawal.findMany({
-      where: { status: "PROCESSING", asaasTransferId: { not: null }, updatedAt: { lt: new Date(Date.now() - 10_000) } },
-      select: { id: true, asaasTransferId: true, paymentReference: true },
-      take: 50, orderBy: { updatedAt: "asc" },
-    });
-    await Promise.all(staleTransfers.map(async (item) => {
-      if (!item.asaasTransferId || !item.paymentReference) return;
-      const claim = await authPrisma.withdrawal.updateMany({
-        where: { id: item.id, status: "PROCESSING", updatedAt: { lt: new Date(Date.now() - 10_000) } },
-        data: { updatedAt: new Date() },
-      });
-      if (claim.count !== 1) return;
-      try { await reconcileAsaasTransferFromPlatform({ transferId: item.asaasTransferId, externalReference: item.paymentReference }); }
-      catch { /* preserve pending state; the next poll or webhook retries */ }
-    }));
-
     const [pendingWithdrawals, historicalWithdrawals] = await Promise.all([
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include, orderBy: { createdAt: "asc" } }),
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["APPROVED", "PROCESSING", "PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
+      authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "FAILED", "PROCESSING"] } }, include, orderBy: { createdAt: "asc" } }),
+      authPrisma.withdrawal.findMany({ where: { status: { in: ["APPROVED", "PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
     ]);
     const withdrawals = [...pendingWithdrawals, ...historicalWithdrawals];
     const items = withdrawals.map(item => {
-      const canShowPix = ["PENDING", "APPROVED", "PROCESSING"].includes(item.status) ||
-        (item.status === "FAILED" && !item.asaasTransferId);
+      const canShowPix = ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status);
       return {
         id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
-        asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus,
-        asaasTransferFailureReason: item.asaasTransferFailureReason,
-        pixKey: canShowPix ? item.pixKey : null,
+                pixKey: canShowPix ? item.pixKey : null,
         pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
         providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(), reviewedBy: item.reviewedBy?.username ?? null,
@@ -94,7 +74,7 @@ export async function POST(request: NextRequest) {
       if (!rows.length) throw new Error("NOT_FOUND");
       const withdrawal = await tx.withdrawal.findUnique({ where: { id: parsed.data.withdrawalId }, include: { user: { select: { username: true } } } });
       if (!withdrawal) throw new Error("NOT_FOUND");
-      if (!["PENDING", "FAILED"].includes(withdrawal.status) || (withdrawal.asaasTransferId && withdrawal.status !== "FAILED")) throw new Error("INVALID_STATE");
+      if (!["PENDING", "FAILED"].includes(withdrawal.status)) throw new Error("INVALID_STATE");
       await tx.withdrawal.update({ where: { id: withdrawal.id }, data: { status: "REJECTED", reviewedById: auth.user.id } });
       await tx.ledgerEntry.create({ data: {
         userId: withdrawal.userId, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RELEASE",
