@@ -170,15 +170,15 @@ export function AdminPrizePayout() {
               {winner.paid
                 ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
                 : <>
-                  {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <>
-                    <p><strong>Solicitação recebida. Realize o Pix fora do sistema e confirme somente após conferir o comprovante.</strong></p>
+                  {winner.physicalReceiptEligible && ["PENDING", "PROCESSING"].includes(winner.paymentRequest?.status ?? "") ? <>
+                    <p><strong>Realize o Pix fora do sistema. Confirme somente depois de verificar no banco que a transferência foi concluída.</strong></p>
                     <label>Referência do comprovante (opcional)
                       <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="Identificador da transação Pix" />
                     </label>
                     <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
                       {busy === winner.id ? "Registrando…" : "Confirmar Pix pago"}
                     </button>
-                  </> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento em processamento. Verifique antes de qualquer novo Pix.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação administrativa necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
+                  </> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação administrativa necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
                 </>}
             </article>)}
           </div>}
