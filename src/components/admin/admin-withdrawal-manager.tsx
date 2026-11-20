@@ -81,8 +81,8 @@ export function AdminWithdrawalManager() {
   const pendingCountLabel = pending.length > 0 ? "(" + pending.length + " pendente" + (pending.length === 1 ? "" : "s") + ")" : "(nenhuma pendente)";
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
-    <span className="feature-label">Financeiro</span>
-    <h2 id="admin-withdrawals-heading">Solicitações de saque {pendingCountLabel}</h2>
+    <span className="feature-label">SAQUE DE CARTEIRA DIGITAL</span>
+    <h2 id="admin-withdrawals-heading">Solicitações de saque da carteira digital {pendingCountLabel}</h2>
     <p>Confira a chave Pix informada. Realize a transferência fora do sistema e use a confirmação somente depois de verificar que o valor foi efetivamente enviado.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
