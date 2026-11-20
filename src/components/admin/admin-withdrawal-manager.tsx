@@ -88,7 +88,7 @@ export function AdminWithdrawalManager() {
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
       {pending.map((item) => <article className="round-option" key={item.id}>
-        <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
+        <div><strong>{item.username}</strong> · {money(item.amountCents)} · SAQUE DE CARTEIRA DIGITAL · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · Tipo: " + item.pixKeyType : ""}</p>
         <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>{copiedPixKey === item.id ? "Chave Pix copiada" : "Copiar chave Pix"}</button>
