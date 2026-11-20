@@ -87,7 +87,7 @@ export function AdminWithdrawalManager() {
   }
 
   return <section className="feature-card admin-withdrawal-manager" aria-labelledby="admin-withdrawals-heading">
-    <span className="feature-label">CARTEIRA DIGITAL</span>
+    <span className="feature-label">PRÊMIOS</span>
     <h2 id="admin-withdrawals-heading">Saques ({items.length})</h2>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {loading ? <p>Carregando…</p> : items.length === 0
