@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ wi
         id: true, userId: true, amountCents: true, status: true, providerRef: true,
       } });
       if (!item) throw new Error("NOT_FOUND");
-      if (![ "PENDING", "PROCESSING", "FAILED" ].includes(item.status)) throw new Error("INVALID_STATE");
+      if (![ "PENDING", "APPROVED", "PROCESSING", "FAILED" ].includes(item.status)) throw new Error("INVALID_STATE");
       const paidAt = new Date();
       const changed = await tx.withdrawal.updateMany({
         where: { id: item.id, status: item.status },
