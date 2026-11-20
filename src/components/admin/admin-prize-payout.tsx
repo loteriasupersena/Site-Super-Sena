@@ -88,7 +88,7 @@ export function AdminPrizePayout() {
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
-  const manualPending = pending.filter((winner) => winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING");
+  const manualPending = pending.filter((winner) => winner.physicalReceiptEligible && ["PENDING", "PROCESSING"].includes(winner.paymentRequest?.status ?? ""));
   const totalToPayCents = manualPending.reduce((total, winner) => total + (winner.paymentRequest?.netCents ?? 0), 0);
   const allPhysicalPending = pending.filter((winner) => winner.physicalReceiptEligible);
   const totalPhysicalGrossCents = allPhysicalPending.reduce((total, winner) => total + winner.prizeCents, 0);
