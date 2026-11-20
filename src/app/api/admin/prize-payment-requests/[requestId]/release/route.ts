@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         const batchChanged = await tx.prizePaymentBatch.updateMany({
           where: { id: batch.id, status: batch.status, providerTransferId: batch.providerTransferId },
           data: {
-            status: "REJECTED", pixKey: null, providerTransferId: null, providerTransferStatus: null,
+            status: "REJECTED", pixKey: null, pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null, providerTransferId: null, providerTransferStatus: null,
             providerTransferReceiptUrl: null, providerTransferFailureReason: null,
             transferRequestedAt: null, paymentReference: null, reviewedAt, reviewerId: user.id,
           },
