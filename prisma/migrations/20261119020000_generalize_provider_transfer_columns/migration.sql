@@ -1,33 +1,30 @@
--- The platform is still in pre-production. Do not carry legacy Asaas transfer data
--- into the Mercado Pago/manual-payout flow. Keep only provider-neutral empty columns
--- required by the current application.
-DROP INDEX IF EXISTS "Withdrawal_asaasTransferId_key";
-ALTER TABLE "Withdrawal" DROP COLUMN IF EXISTS "asaasTransferId";
-ALTER TABLE "Withdrawal" DROP COLUMN IF EXISTS "asaasTransferStatus";
-ALTER TABLE "Withdrawal" DROP COLUMN IF EXISTS "asaasTransferFailureReason";
-ALTER TABLE "Withdrawal" ADD COLUMN "providerTransferId" TEXT;
-ALTER TABLE "Withdrawal" ADD COLUMN "providerTransferStatus" TEXT;
-ALTER TABLE "Withdrawal" ADD COLUMN "providerTransferFailureReason" TEXT;
-CREATE UNIQUE INDEX "Withdrawal_providerTransferId_key" ON "Withdrawal"("providerTransferId");
+-- Generalize transfer metadata without discarding historical provider data.
+-- Renaming preserves existing transfer IDs, statuses, receipts and failure details.
 
-DROP INDEX IF EXISTS "PrizePaymentRequest_asaasTransferId_key";
-ALTER TABLE "PrizePaymentRequest" DROP COLUMN IF EXISTS "asaasTransferId";
-ALTER TABLE "PrizePaymentRequest" DROP COLUMN IF EXISTS "asaasTransferStatus";
-ALTER TABLE "PrizePaymentRequest" DROP COLUMN IF EXISTS "asaasTransferReceiptUrl";
-ALTER TABLE "PrizePaymentRequest" DROP COLUMN IF EXISTS "asaasTransferFailureReason";
-ALTER TABLE "PrizePaymentRequest" ADD COLUMN "providerTransferId" TEXT;
-ALTER TABLE "PrizePaymentRequest" ADD COLUMN "providerTransferStatus" TEXT;
-ALTER TABLE "PrizePaymentRequest" ADD COLUMN "providerTransferReceiptUrl" TEXT;
-ALTER TABLE "PrizePaymentRequest" ADD COLUMN "providerTransferFailureReason" TEXT;
-CREATE UNIQUE INDEX "PrizePaymentRequest_providerTransferId_key" ON "PrizePaymentRequest"("providerTransferId");
+ALTER INDEX "Withdrawal_asaasTransferId_key" RENAME TO "Withdrawal_providerTransferId_key";
+ALTER TABLE "Withdrawal"
+  RENAME COLUMN "asaasTransferId" TO "providerTransferId";
+ALTER TABLE "Withdrawal"
+  RENAME COLUMN "asaasTransferStatus" TO "providerTransferStatus";
+ALTER TABLE "Withdrawal"
+  RENAME COLUMN "asaasTransferFailureReason" TO "providerTransferFailureReason";
 
-DROP INDEX IF EXISTS "PrizePaymentBatch_asaasTransferId_key";
-ALTER TABLE "PrizePaymentBatch" DROP COLUMN IF EXISTS "asaasTransferId";
-ALTER TABLE "PrizePaymentBatch" DROP COLUMN IF EXISTS "asaasTransferStatus";
-ALTER TABLE "PrizePaymentBatch" DROP COLUMN IF EXISTS "asaasTransferReceiptUrl";
-ALTER TABLE "PrizePaymentBatch" DROP COLUMN IF EXISTS "asaasTransferFailureReason";
-ALTER TABLE "PrizePaymentBatch" ADD COLUMN "providerTransferId" TEXT;
-ALTER TABLE "PrizePaymentBatch" ADD COLUMN "providerTransferStatus" TEXT;
-ALTER TABLE "PrizePaymentBatch" ADD COLUMN "providerTransferReceiptUrl" TEXT;
-ALTER TABLE "PrizePaymentBatch" ADD COLUMN "providerTransferFailureReason" TEXT;
-CREATE UNIQUE INDEX "PrizePaymentBatch_providerTransferId_key" ON "PrizePaymentBatch"("providerTransferId");
+ALTER INDEX "PrizePaymentRequest_asaasTransferId_key" RENAME TO "PrizePaymentRequest_providerTransferId_key";
+ALTER TABLE "PrizePaymentRequest"
+  RENAME COLUMN "asaasTransferId" TO "providerTransferId";
+ALTER TABLE "PrizePaymentRequest"
+  RENAME COLUMN "asaasTransferStatus" TO "providerTransferStatus";
+ALTER TABLE "PrizePaymentRequest"
+  RENAME COLUMN "asaasTransferReceiptUrl" TO "providerTransferReceiptUrl";
+ALTER TABLE "PrizePaymentRequest"
+  RENAME COLUMN "asaasTransferFailureReason" TO "providerTransferFailureReason";
+
+ALTER INDEX "PrizePaymentBatch_asaasTransferId_key" RENAME TO "PrizePaymentBatch_providerTransferId_key";
+ALTER TABLE "PrizePaymentBatch"
+  RENAME COLUMN "asaasTransferId" TO "providerTransferId";
+ALTER TABLE "PrizePaymentBatch"
+  RENAME COLUMN "asaasTransferStatus" TO "providerTransferStatus";
+ALTER TABLE "PrizePaymentBatch"
+  RENAME COLUMN "asaasTransferReceiptUrl" TO "providerTransferReceiptUrl";
+ALTER TABLE "PrizePaymentBatch"
+  RENAME COLUMN "asaasTransferFailureReason" TO "providerTransferFailureReason";
