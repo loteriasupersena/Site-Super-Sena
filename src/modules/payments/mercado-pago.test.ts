@@ -53,6 +53,7 @@ describe("Mercado Pago order parsing", () => {
       transactions: {
         payments: [{
           amount: "12.50",
+          paid_amount: "12.50",
           status: "approved",
           payment_method: {
             id: "pix",
@@ -77,6 +78,19 @@ describe("Mercado Pago order parsing", () => {
       paymentMethodId: "pix",
       paymentMethodType: "bank_transfer",
     });
+  });
+
+  it("uses the amount actually paid instead of only the requested amount", () => {
+    const order = parseVerifiedPixOrder({
+      id: "order-partial",
+      status: "processed",
+      total_amount: "12.50",
+      total_paid_amount: "10.00",
+      currency: "BRL",
+      transactions: { payments: [{ amount: "12.50", paid_amount: "10.00", payment_method: { id: "pix", type: "bank_transfer" } }] },
+    });
+    expect(order.amountCents).toBe(1250);
+    expect(order.paymentAmountCents).toBe(1000);
   });
 
   it("uses a deterministic synthetic payer email without asking for a real address", () => {
