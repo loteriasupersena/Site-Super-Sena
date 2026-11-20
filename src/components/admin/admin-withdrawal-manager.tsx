@@ -11,7 +11,7 @@ type Item = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Item["status"], string> = { PENDING: "Aguardando pagamento", APPROVED: "Em análise", PROCESSING: "Aguardando conferência do pagamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Pagamento pendente de revisão" };
+const labels: Record<Item["status"], string> = { PENDING: "Aguardando pagamento", APPROVED: "Aprovado — aguardando pagamento Pix", PROCESSING: "Aguardando conferência do pagamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Pagamento pendente de revisão" };
 
 export function AdminWithdrawalManager() {
   const [items, setItems] = useState<Item[]>([]);
