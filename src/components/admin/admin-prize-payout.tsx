@@ -10,7 +10,6 @@ type Winner = {
   roundCode: string;
   receiptCode: string | null;
   playerName: string;
-  physicalReceiptEligible: boolean;
   paid: boolean;
   paymentRequest: {
     status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED";
@@ -85,7 +84,6 @@ export function AdminPrizePayout() {
 
   const pending = winners.filter((winner) =>
     !winner.paid &&
-    winner.physicalReceiptEligible &&
     winner.paymentRequest !== null &&
     ["PENDING", "PROCESSING"].includes(winner.paymentRequest.status)
   );
