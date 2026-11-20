@@ -405,9 +405,9 @@ model Withdrawal {
   holderCpfMasked     String?
   pixKeyMasked        String?
   paymentReference    String?                @unique
-  providerTransferId     String?                @unique @map("asaasTransferId")
-  providerTransferStatus String? @map("asaasTransferStatus")
-  providerTransferFailureReason String? @map("asaasTransferFailureReason")
+  providerTransferId     String?                @unique
+  providerTransferStatus String?
+  providerTransferFailureReason String?
   transferRequestedAt DateTime?
   status              WithdrawalStatus       @default(PENDING)
   idempotencyKey      String                 @unique
@@ -532,10 +532,10 @@ model PrizePaymentRequest {
   reviewedAt             DateTime?
   reviewerId             String?
   paymentReference       String?
-  providerTransferId        String? @unique @map("asaasTransferId")
-  providerTransferStatus    String? @map("asaasTransferStatus")
-  providerTransferReceiptUrl String? @map("asaasTransferReceiptUrl")
-  providerTransferFailureReason String? @map("asaasTransferFailureReason")
+  providerTransferId        String? @unique
+  providerTransferStatus    String?
+  providerTransferReceiptUrl String?
+  providerTransferFailureReason String?
   transferRequestedAt   DateTime?
   note                   String?
   participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
@@ -570,10 +570,10 @@ model PrizePaymentBatch {
   reviewedAt               DateTime?
   reviewerId               String?
   paymentReference         String?  @unique
-  providerTransferId          String?  @unique @map("asaasTransferId")
-  providerTransferStatus      String? @map("asaasTransferStatus")
-  providerTransferReceiptUrl  String? @map("asaasTransferReceiptUrl")
-  providerTransferFailureReason String? @map("asaasTransferFailureReason")
+  providerTransferId          String?  @unique
+  providerTransferStatus      String?
+  providerTransferReceiptUrl  String?
+  providerTransferFailureReason String?
   transferRequestedAt      DateTime?
   purchase                 Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
   reviewer                 User? @relation("PrizePaymentBatchReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
