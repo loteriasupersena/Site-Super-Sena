@@ -27,7 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
-  paymentRequest: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; netCents: number } | null;
+  paymentRequest: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; netCents: number } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -42,6 +42,9 @@ export function AdminPrizePayout() {
   const [tab, setTab] = useState<"pending" | "paid">("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState("");
+  const [references, setReferences] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -61,6 +64,26 @@ export function AdminPrizePayout() {
     const poll = window.setInterval(() => { void load(); }, 10_000);
     return () => { window.clearTimeout(timer); window.clearInterval(poll); };
   }, [load]);
+
+  async function confirmPaid(winner: Winner) {
+    if (!winner.paymentRequest || !window.confirm(
+      "Confirma que o Pix de " + money(winner.paymentRequest.netCents) +
+      " já foi realizado para " + winner.playerName + " e que o comprovante foi conferido?"
+    )) return;
+    setBusy(winner.id); setError(""); setNotice("");
+    try {
+      const response = await fetch("/api/admin/prizes/" + encodeURIComponent(winner.id) + "/payout", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reference: references[winner.id]?.trim() || undefined }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
+      setNotice("Pix confirmado e registrado no histórico de pagamentos.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Falha ao confirmar o pagamento.");
+    } finally { setBusy(""); }
+  }
 
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
@@ -124,6 +147,7 @@ export function AdminPrizePayout() {
         </div>
 
         {error && <p role="alert" className="note-inline">{error}</p>}
+        {notice && <p role="status" className="note-inline">{notice}</p>}
         {loading ? <p>Carregando ganhadores…</p> : visible.length === 0
           ? <p>{tab === "pending" ? "Nenhum pagamento pendente." : "Nenhum prêmio pago registrado ainda."}</p>
           : <div className="admin-round-list">
@@ -141,7 +165,15 @@ export function AdminPrizePayout() {
               {winner.paid
                 ? <p><strong>{winner.payoutChannel === "WALLET" ? "CRÉDITO NA CARTEIRA" : "PIX PAGO"}</strong>{winner.paidAt ? " · " + dateTime(winner.paidAt) : ""}{winner.reference ? " · Ref.: " + winner.reference : ""}</p>
                 : <>
-                  {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento automático em processamento.</strong></p> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <p><strong>Pagamento pendente.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação técnica necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
+                  {winner.physicalReceiptEligible && winner.paymentRequest?.status === "PENDING" ? <>
+                    <p><strong>Solicitação recebida. Realize o Pix fora do sistema e confirme somente após conferir o comprovante.</strong></p>
+                    <label>Referência do comprovante (opcional)
+                      <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="Identificador da transação Pix" />
+                    </label>
+                    <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
+                      {busy === winner.id ? "Registrando…" : "Confirmar Pix pago"}
+                    </button>
+                  </> : winner.physicalReceiptEligible && winner.paymentRequest?.status === "PROCESSING" ? <p><strong>Pagamento em processamento. Verifique antes de qualquer novo Pix.</strong></p> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação administrativa necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
                 </>}
             </article>)}
           </div>}
