@@ -61,6 +61,7 @@ async function runJob(job) {
           recovered: body.recovered ?? 0,
           confirmed: body.confirmed ?? body.pixConfirmed ?? 0,
           errors: body.errors ?? body.failures ?? 0,
+          errorDetails: Array.isArray(body.errorDetails) ? body.errorDetails : [],
         });
         return;
       }
