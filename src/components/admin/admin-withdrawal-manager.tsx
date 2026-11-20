@@ -77,42 +77,34 @@ export function AdminWithdrawalManager() {
   }
 
   const pending = items.filter((item) => item.status === "PENDING" || item.status === "APPROVED" || item.status === "FAILED" || item.status === "PROCESSING");
-  const history = items.filter((item) => item.status !== "PENDING" && item.status !== "APPROVED" && item.status !== "FAILED" && item.status !== "PROCESSING");
   const pendingCountLabel = pending.length > 0 ? "(" + pending.length + " pendente" + (pending.length === 1 ? "" : "s") + ")" : "(nenhuma pendente)";
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
-    <span className="feature-label">SAQUE DE CARTEIRA DIGITAL</span>
-    <h2 id="admin-withdrawals-heading">Solicitações de saque da carteira digital {pendingCountLabel}</h2>
-    <p>Confira a chave Pix informada. Realize a transferência fora do sistema e use a confirmação somente depois de verificar que o valor foi efetivamente enviado.</p>
+    <span className="feature-label">CARTEIRA DIGITAL</span>
+    <h2 id="admin-withdrawals-heading">Pedidos de saque ({pending.length})</h2>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
-    {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
+    {loading ? <p>Carregando…</p> : pending.length === 0 ? <p>Nenhum pedido de saque pendente.</p> : <div className="admin-round-list">
       {pending.map((item) => <article className="round-option" key={item.id}>
-        <div><strong>{item.username}</strong> · {money(item.amountCents)} · SAQUE DE CARTEIRA DIGITAL · {labels[item.status]}</div>
-        <p>Solicitado em {dateTime(item.createdAt)}</p>
-        <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · Tipo: " + item.pixKeyType : ""}</p>
-        <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>{copiedPixKey === item.id ? "Chave Pix copiada" : "Copiar chave Pix"}</button>
-        <label>Referência do comprovante (opcional)<input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="Identificador da transação Pix" /></label>
-        <label>Motivo para devolver o saldo (obrigatório ao liberar)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
+        <strong>{item.username}</strong>
+        <p><strong>{money(item.amountCents)}</strong> · {labels[item.status]}</p>
+        <p>Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · " + item.pixKeyType : ""}</p>
         <div className="round-options">
-          <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Dar baixa geral — pagamento concluído"}</button>
-          <button type="button" className="secondary-button" disabled={busy !== null || (item.status === "PROCESSING" || item.status === "APPROVED") || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
+          <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>{copiedPixKey === item.id ? "Chave copiada" : "Copiar chave Pix"}</button>
+          <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Confirmar pagamento"}</button>
         </div>
+        {item.status !== "PROCESSING" && item.status !== "APPROVED" && <details>
+          <summary>Devolver saldo</summary>
+          <label>Motivo
+            <textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Informe o motivo." />
+          </label>
+          <button type="button" className="secondary-button" disabled={busy !== null || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Devolver saldo</button>
+        </details>}
+        <label>Referência Pix (opcional)
+          <input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="ID da transação" />
+        </label>
       </article>)}
     </div>}
-    <details className="admin-accordion">
-      <summary>Histórico de saques ({history.length})</summary>
-      <div className="admin-accordion-content">
-        {loading ? <p>Carregando histórico…</p> : history.length === 0 ? <p>Nenhum saque encerrado.</p> : <div className="admin-round-list">
-          {history.map((item) => <article className="round-option" key={item.id}>
-            <div><strong>{item.username}</strong> · {money(item.amountCents)} · SAQUE DE CARTEIRA · {labels[item.status]}</div>
-            <p>Solicitado em {dateTime(item.createdAt)}{item.providerRef ? " · Referência: " + item.providerRef : ""}</p>
-            <p>Revisado por: {item.reviewedBy ?? "—"}</p>
-            {item.statusHistory.map((event, index) => <p key={item.id + event.createdAt + index}><small>{dateTime(event.createdAt)} · {event.actor} · {event.note ?? labels[event.toStatus as Item["status"]]}</small></p>)}
-          </article>)}
-        </div>}
-        <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar histórico</button>
-      </div>
-    </details>
+    <button type="button" className="secondary-button" disabled={loading || busy !== null} onClick={() => void load()}>Atualizar pedidos</button>
   </section>;
 }
