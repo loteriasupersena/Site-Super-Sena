@@ -110,60 +110,34 @@ export function AdminPrizePayout() {
     } finally { setBusy(""); }
   }
 
-  const pending = winners.filter((winner) => !winner.paid && winner.physicalReceiptEligible && winner.paymentRequest !== null);
-  const paid = winners.filter((winner) => winner.paid);
+  const pending = winners.filter((winner) => !winner.paid && winner.physicalReceiptEligible && winner.paymentRequest !== null && ["PENDING", "PROCESSING"].includes(winner.paymentRequest.status));
 
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
-    <span className="feature-label">PAGAMENTOS</span>
-    <h2 id="admin-prize-payout-heading">Solicitações pendentes</h2>
-    <p>Somente pedidos que precisam de ação aparecem nesta fila. Depois da confirmação, eles saem daqui e ficam disponíveis no histórico.</p>
-
+    <span className="feature-label">PRÊMIOS</span>
+    <h2 id="admin-prize-payout-heading">Pedidos de prêmio ({pending.length})</h2>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
-    <button type="button" className="secondary-button" disabled={loading} onClick={() => { setLoading(true); setError(""); void load(); }}>Atualizar solicitações</button>
-    {loading ? <p>Carregando solicitações…</p> : pending.length === 0
-      ? <p>Nenhuma solicitação de prêmio aguardando pagamento.</p>
+    {loading ? <p>Carregando…</p> : pending.length === 0
+      ? <p>Nenhum pedido de prêmio pendente.</p>
       : <div className="admin-round-list">
         {pending.map((winner) => <article className="round-option admin-prize-card" key={winner.id}>
           <strong>{winner.playerName}</strong>
-          <p><strong>PRÊMIO DO RECIBO</strong> · {money(winner.prizeCents)} · Acerto: {winner.prizeCategoryLabel ?? "Não identificado"}</p>
-          <p>Número apostado: <strong>{winner.numberValue}</strong> · Número sorteado: <strong>{winner.resultNumber ?? "Indisponível"}</strong></p>
-          <p>Rodada: {winner.roundCode} · Sorteio: {dateTime(winner.resultAt)}</p>
-          <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
-          {winner.paymentRequest && <div className="admin-prize-request-details">
-            <p><strong>STATUS · {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO PAGAMENTO" : winner.paymentRequest.status}</strong></p>
-            <p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong>{winner.paymentRequest.pixKeyType ? " · " + winner.paymentRequest.pixKeyType : ""}</p>
-            <button type="button" className="secondary-button" disabled={!winner.paymentRequest.pixKey} onClick={() => void copyPixKey(winner)}>{copiedPixKey === winner.id ? "Chave Pix copiada" : "Copiar chave Pix"}</button>
-            <p>Bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p>
-          </div>}
-          {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo. Não efetue o pagamento até investigar.</p>}
-          {winner.phone && <p>Telefone: {winner.phone}</p>}
-          <p><strong>Realize o Pix fora do sistema e confirme somente depois de verificar a transferência no banco.</strong></p>
-          <label>Referência do comprovante (opcional)
-            <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="Identificador da transação Pix" />
+          <p><strong>{money(winner.paymentRequest!.netCents)}</strong> · Prêmio: {money(winner.prizeCents)} · {winner.prizeCategoryLabel ?? "Prêmio"}</p>
+          <p>Recibo: {winner.receiptCode ?? "—"} · Rodada: {winner.roundCode}</p>
+          <p>Pix: <strong>{winner.paymentRequest!.pixKey ?? winner.paymentRequest!.pixKeyMasked}</strong>{winner.paymentRequest!.pixKeyType ? " · " + winner.paymentRequest!.pixKeyType : ""}</p>
+          <div className="round-options">
+            <button type="button" className="secondary-button" disabled={!winner.paymentRequest!.pixKey} onClick={() => void copyPixKey(winner)}>{copiedPixKey === winner.id ? "Chave copiada" : "Copiar chave Pix"}</button>
+            <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
+              {busy === winner.id ? "Registrando…" : "Confirmar pagamento"}
+            </button>
+          </div>
+          {!winner.calculationConsistent && <p role="alert">Conferência necessária. Pagamento bloqueado até corrigir a divergência.</p>}
+          <label>Referência Pix (opcional)
+            <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="ID da transação" />
           </label>
-          <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent || !["PENDING", "PROCESSING"].includes(winner.paymentRequest?.status ?? "")} onClick={() => void confirmPaid(winner)}>
-            {busy === winner.id ? "Registrando…" : "Confirmar pagamento"}
-          </button>
-          {["FAILED", "CANCELLED", "REJECTED"].includes(winner.paymentRequest?.providerTransferStatus ?? "") && <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>
-            {busy === winner.id ? "Liberando…" : "Liberar para nova solicitação"}
-          </button>}
         </article>)}
       </div>}
-
-    <details className="admin-accordion admin-prize-history">
-      <summary>Histórico de prêmios pagos ({paid.length})</summary>
-      <div className="admin-accordion-content">
-        {paid.length === 0 ? <p>Nenhum prêmio pago registrado.</p> : <div className="admin-round-list">
-          {paid.map((winner) => <article className="round-option" key={winner.id}>
-            <strong>{winner.playerName}</strong>
-            <p>PRÊMIO DO RECIBO · {money(winner.prizeCents)} · {winner.prizeCategoryLabel ?? "Prêmio"}</p>
-            <p>Recibo: {winner.receiptCode ?? "—"} · Rodada: {winner.roundCode}</p>
-            <p>Pago em: {winner.paidAt ? dateTime(winner.paidAt) : "Data não informada"} · {winner.payoutChannel === "WALLET" ? "Crédito na carteira" : "Pix pago"}{winner.reference ? " · Referência: " + winner.reference : ""}</p>
-          </article>)}
-        </div>}
-      </div>
-    </details>
+    <button type="button" className="secondary-button" disabled={loading} onClick={() => { setLoading(true); setError(""); void load(); }}>Atualizar pedidos</button>
   </section>;
 }
