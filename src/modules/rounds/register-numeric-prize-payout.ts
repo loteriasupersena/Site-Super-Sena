@@ -37,7 +37,7 @@ export async function registerNumericPrizePayout(
         },
       },
       prizePayout: { select: { id: true } },
-      prizePaymentRequest: { select: { id: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true } },
+      prizePaymentRequest: { select: { id: true, batchId: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true } },
     },
   });
   if (!line) throw new NumericPrizePayoutError("LINE_NOT_FOUND");
@@ -89,6 +89,17 @@ export async function registerNumericPrizePayout(
     data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+  if (line.prizePaymentRequest.batchId) {
+    const remaining = await tx.prizePaymentRequest.count({
+      where: { batchId: line.prizePaymentRequest.batchId, status: { not: "PAID" } },
+    });
+    if (remaining === 0) {
+      await tx.prizePaymentBatch.updateMany({
+        where: { id: line.prizePaymentRequest.batchId, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "PAID", reviewedAt: paidAt, paymentReference: input.reference?.trim() || null },
+      });
+    }
+  }
 
   const payout = await tx.numericPrizePayout.create({
     data: {
