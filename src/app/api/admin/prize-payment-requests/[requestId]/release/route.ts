@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         const batch = await tx.prizePaymentBatch.findUnique({
           where: { id: item.batchId },
           select: {
-            id: true, purchaseId: true, status: true, providerTransferId: true, providerTransferStatus: true, paymentReference: true, transferRequestedAt: true,
+            id: true, purchaseId: true, status: true, providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true,
             requests: { select: { id: true, status: true, providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true } },
           },
         });
