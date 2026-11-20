@@ -68,7 +68,7 @@ export async function reconcilePixPaymentFromProvider(
   if (normalizedStatus === "refunded") {
     const { recordUnexpectedExternalRefund } = await import("@/modules/payments/record-unexpected-refund");
     await recordUnexpectedExternalRefund(prisma, {
-      purchaseId: payment.purchaseId, paymentId: payment.id, providerStatus, source: "reconciliation",
+      purchaseId: payment.purchaseId, paymentId: payment.id, providerStatus, source: "status_fallback",
     });
     return "terminal";
   }
@@ -82,7 +82,7 @@ export async function reconcilePixPaymentFromProvider(
     const { cancelPendingPixPurchase } = await import("@/modules/payments/cancel-pending-pix-purchase");
     await cancelPendingPixPurchase(prisma, {
       paymentId: payment.id, purchaseId: payment.purchaseId, terminalStatus,
-      providerStatus, providerStatusDetail: canonical.statusDetail, source: "reconciliation",
+      providerStatus, providerStatusDetail: canonical.statusDetail, source: "status_fallback",
     });
     return "terminal";
   }
