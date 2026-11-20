@@ -1,5 +1,6 @@
 import { AreaShell } from "@/components/area-shell";
 import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
+import { AdminUnpaidPrizeDashboard } from "@/components/admin/admin-unpaid-prize-dashboard";
 import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
@@ -18,6 +19,7 @@ export default async function AdminPage() {
       <div className="admin-page-layout">
         <div className="admin-accordion-list">
           <AdminPrizePayout />
+          <AdminUnpaidPrizeDashboard />
           <AdminWithdrawalManager />
 
           <details className="admin-accordion">
