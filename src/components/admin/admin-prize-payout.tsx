@@ -85,6 +85,24 @@ export function AdminPrizePayout() {
     } finally { setBusy(""); }
   }
 
+  async function releaseFailed(winner: Winner) {
+    if (!winner.paymentRequest || !window.confirm(
+      "Liberar a solicitação deste recibo para que o ganhador possa enviar uma nova solicitação? Isso não confirma pagamento."
+    )) return;
+    setBusy(winner.id); setError(""); setNotice("");
+    try {
+      const response = await fetch("/api/admin/prize-payment-requests/" + encodeURIComponent(winner.paymentRequest.id) + "/release", {
+        method: "POST",
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível liberar a solicitação.");
+      setNotice("Solicitação liberada. O ganhador poderá pedir o pagamento novamente.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Falha ao liberar a solicitação.");
+    } finally { setBusy(""); }
+  }
+
   const pending = winners.filter((winner) => !winner.paid);
   const paid = winners.filter((winner) => winner.paid);
   const visible = tab === "pending" ? pending : paid;
@@ -178,7 +196,12 @@ export function AdminPrizePayout() {
                     <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
                       {busy === winner.id ? "Registrando…" : "Confirmar Pix pago"}
                     </button>
-                  </> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <p role="alert">Pagamento não confirmado. Verificação administrativa necessária.</p> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
+                  </> : winner.physicalReceiptEligible && ["FAILED", "CANCELLED"].includes(winner.paymentRequest?.status ?? "") ? <>
+                    <p role="alert">Solicitação com falha ou cancelamento. Confira se não houve transferência bancária antes de liberar uma nova solicitação.</p>
+                    <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>
+                      {busy === winner.id ? "Liberando…" : "Liberar para nova solicitação"}
+                    </button>
+                  </> : winner.physicalReceiptEligible ? <p>Aguardando solicitação do ganhador.</p> : <p role="alert">Crédito automático ainda não confirmado.</p>}
                 </>}
             </article>)}
           </div>}
