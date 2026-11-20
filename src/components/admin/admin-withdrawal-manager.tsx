@@ -78,7 +78,7 @@ export function AdminWithdrawalManager() {
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · Tipo: " + item.pixKeyType : ""}</p>
         <label>Referência do comprovante (opcional)<input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="Identificador da transação Pix" /></label>
-        <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
+        <label>Motivo para devolver o saldo (obrigatório ao liberar)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Confirmar Pix pago"}</button>
           <button type="button" className="secondary-button" disabled={busy !== null || item.status === "PROCESSING" || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
