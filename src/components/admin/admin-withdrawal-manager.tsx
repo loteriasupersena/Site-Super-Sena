@@ -42,6 +42,7 @@ export function AdminWithdrawalManager() {
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); const poll = window.setInterval(() => { void load(); }, 10_000); return () => { window.clearTimeout(timer); window.clearInterval(poll); loadController.current?.abort(); }; }, [load]);
 
   async function act(item: Item, action: "confirm-paid" | "reject") {
+    if (action === "confirm-paid" && !window.confirm("Confirma que o Pix de " + money(item.amountCents) + " já foi transferido e conferido no banco?")) return;
     const note = rejectionReasons[item.id]?.trim() ?? "";
     if (action === "reject" && note.length < 4) {
       setError("Informe o motivo da liberação para registrar na auditoria e mostrar ao jogador.");
