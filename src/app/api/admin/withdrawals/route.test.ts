@@ -56,25 +56,21 @@ describe("admin withdrawals API", () => {
     expect((await GET(request())).status).toBe(403);
   });
 
-  it("loads every pending withdrawal separately from the capped historical list", async () => {
+  it("loads pending withdrawals separately from the capped historical list", async () => {
     await GET(request());
-    expect(mocks.findMany).toHaveBeenCalledTimes(3);
+    expect(mocks.findMany).toHaveBeenCalledTimes(2);
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: "PROCESSING", asaasTransferId: { not: null }, updatedAt: { lt: expect.any(Date) } },
-      take: 50,
-    }));
-    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: { in: ["PENDING", "FAILED"] } },
+      where: { status: { in: ["PENDING", "FAILED", "PROCESSING"] } },
       orderBy: { createdAt: "asc" },
     }));
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: { in: ["APPROVED", "PROCESSING", "PAID", "REJECTED"] } },
+      where: { status: { in: ["APPROVED", "PAID", "REJECTED"] } },
       orderBy: { createdAt: "desc" },
       take: 200,
     }));
   });
 
-  it("rejects manual paid overrides; transfers must use Asaas", async () => {
+  it("requires the dedicated confirmation endpoint for paid withdrawals", async () => {
     const response = await POST(request({
       withdrawalId: "withdrawal-1", action: "mark-paid", note: "Pagamento Pix confirmado manualmente",
     }));
