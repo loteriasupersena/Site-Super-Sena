@@ -5,13 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyMasked: string; providerRef: string | null; asaasTransferId?: string | null; asaasTransferStatus?: string | null; asaasTransferFailureReason?: string | null;
+  pixKey: string | null; pixKeyMasked: string; providerRef: string | null;
   createdAt: string; updatedAt: string; reviewedBy: string | null;
   statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Pix em processamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Transferência recusada — pode ser reavaliada" };
+const labels: Record<Item["status"], string> = { PENDING: "Aguardando aprovação", APPROVED: "Em análise", PROCESSING: "Aguardando conferência do pagamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Pagamento pendente de revisão" };
 
 export function AdminWithdrawalManager() {
   const [items, setItems] = useState<Item[]>([]);
@@ -21,6 +21,7 @@ export function AdminWithdrawalManager() {
   const [notice, setNotice] = useState("");
   const loadController = useRef<AbortController | null>(null);
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
+  const [references, setReferences] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     loadController.current?.abort();
@@ -40,24 +41,22 @@ export function AdminWithdrawalManager() {
   }, []);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); const poll = window.setInterval(() => { void load(); }, 10_000); return () => { window.clearTimeout(timer); window.clearInterval(poll); loadController.current?.abort(); }; }, [load]);
 
-  async function act(item: Item, action: "send-asaas" | "reject") {
-    const note = action === "send-asaas"
-      ? "Administrador autorizou o envio Pix pela Asaas."
-      : rejectionReasons[item.id]?.trim() ?? "";
+  async function act(item: Item, action: "confirm-paid" | "reject") {
+    const note = rejectionReasons[item.id]?.trim() ?? "";
     if (action === "reject" && note.length < 4) {
       setError("Informe o motivo da liberação para registrar na auditoria e mostrar ao jogador.");
       return;
     }
     setBusy(item.id); setError(""); setNotice("");
     try {
-      const response = action === "send-asaas"
-        ? await fetch(`/api/admin/withdrawals/${encodeURIComponent(item.id)}/transfer`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })
+      const response = action === "confirm-paid"
+        ? await fetch(`/api/admin/withdrawals/${encodeURIComponent(item.id)}/transfer`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reference: references[item.id]?.trim() || undefined }) })
         : await fetch("/api/admin/withdrawals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ withdrawalId: item.id, action, note }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível atualizar o saque.");
       setRejectionReasons((current) => { const next = { ...current }; delete next[item.id]; return next; });
-      setNotice(action === "send-asaas"
-        ? `Transferência de ${money(item.amountCents)} enviada à Asaas. O saque aguarda confirmação bancária.`
+      setNotice(action === "confirm-paid"
+        ? `Pagamento Pix de ${money(item.amountCents)} confirmado e registrado.`
         : `Valor liberado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
       await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao atualizar o saque."); }
@@ -70,7 +69,7 @@ export function AdminWithdrawalManager() {
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
     <h2 id="admin-withdrawals-heading">Saques das carteiras digitais</h2>
-    <p>Confira a chave Pix informada. Saques de R$ 1.000,00 ou mais aguardam sua autorização; ao autorizar, a Asaas envia o Pix. O saque só é concluído após a confirmação bancária.</p>
+    <p>Confira a chave Pix informada. Realize a transferência fora do sistema e use a confirmação somente depois de verificar que o valor foi efetivamente enviado.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : pending.length === 0 ? <p>Não há saques pendentes.</p> : <div className="admin-round-list">
@@ -78,10 +77,10 @@ export function AdminWithdrawalManager() {
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
         <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
-        {item.asaasTransferFailureReason && <p role="alert">{item.asaasTransferFailureReason}</p>}
+        <label>Referência do comprovante (opcional)<input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="Identificador da transação Pix" /></label>
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
-          <button type="button" disabled={busy !== null || item.amountCents < 100000 || Boolean(item.asaasTransferId)} onClick={() => void act(item, "send-asaas")}>{busy === item.id ? "Enviando…" : "Autorizar Pix pela Asaas"}</button>
+          <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Confirmar Pix pago"}</button>
           <button type="button" className="secondary-button" disabled={busy !== null || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
         </div>
       </article>)}
