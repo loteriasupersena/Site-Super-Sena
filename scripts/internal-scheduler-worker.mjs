@@ -9,12 +9,19 @@ const jobs = [
   { name: "round-scheduler", path: "/api/internal/round-scheduler", token: process.env.ROUND_SCHEDULER_SECRET?.trim() },
 ];
 
-for (const job of jobs) {
-  if (!job.token || job.token.length < 32) {
-    console.error(`[internal-scheduler-worker] ${job.name}: segredo ausente ou menor que 32 caracteres.`);
+const enabledJobs = jobs.filter((job) => {
+  if (job.token && job.token.length >= 32) return true;
+  const message = `[internal-scheduler-worker] ${job.name}: segredo ausente ou menor que 32 caracteres.`;
+  // Do not take the whole site offline when the new Mercado Pago secret has
+  // not yet been configured during deployment. Round scheduling remains
+  // mandatory; payment reconciliation can be enabled as soon as its secret exists.
+  if (job.name === "round-scheduler") {
+    console.error(message);
     process.exit(1);
   }
-}
+  console.warn(message + " Rotina desativada até a configuração do segredo.");
+  return false;
+});
 
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { stopping = true; });
@@ -88,9 +95,9 @@ async function loop(job) {
 
 console.info("[internal-scheduler-worker] iniciado", {
   baseUrl,
-  jobs: jobs.map(({ name, path }) => ({ name, path })),
+  jobs: enabledJobs.map(({ name, path }) => ({ name, path })),
   intervalMs,
   maxFetchAttempts,
 });
-await Promise.all(jobs.map(loop));
+await Promise.all(enabledJobs.map(loop));
 console.info("[internal-scheduler-worker] encerrado");
