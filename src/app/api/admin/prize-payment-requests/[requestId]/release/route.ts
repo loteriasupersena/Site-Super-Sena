@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (!item) throw new Error("NOT_FOUND");
       const reviewedAt = new Date();
       const terminalTransfer = ["FAILED", "CANCELLED", "REJECTED"].includes(item.providerTransferStatus ?? "");
-      if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status) ||
+      if (!["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(item.status) ||
           (item.providerTransferId && !terminalTransfer) ||
           (!item.providerTransferId && (item.paymentReference || item.transferRequestedAt) && !["FAILED", "CANCELLED", "REJECTED"].includes(item.providerTransferStatus ?? ""))) throw new Error("NOT_PENDING");
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           },
         });
         if (!batch || !batch.requests.length) throw new Error("NOT_PENDING");
-        const terminalStatuses: ("PENDING" | "FAILED" | "CANCELLED")[] = ["PENDING", "FAILED", "CANCELLED"];
+        const terminalStatuses: ("PENDING" | "PROCESSING" | "FAILED" | "CANCELLED")[] = ["PENDING", "PROCESSING", "FAILED", "CANCELLED"];
         const safeTransfer = (id: string | null, status: string | null, reference: string | null, requestedAt: Date | null) =>
           id ? ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "") :
           !(reference || requestedAt) || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
