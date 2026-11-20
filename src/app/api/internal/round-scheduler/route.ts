@@ -164,8 +164,8 @@ export async function POST(request: NextRequest) {
     where: {
       status: "PENDING",
       updatedAt: { lt: new Date(now.getTime() - 10_000) },
-      provider: "ASAAS",
-      providerQrCodeId: { not: null },
+      provider: "MERCADO_PAGO",
+      providerPaymentId: { not: null },
     },
     select: { id: true },
     orderBy: [{ updatedAt: "asc" }, { createdAt: "asc" }],
