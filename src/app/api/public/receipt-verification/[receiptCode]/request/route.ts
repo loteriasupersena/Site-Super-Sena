@@ -145,7 +145,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     return NextResponse.json({ success: true, batch: {
       id: batch.id, grossCents: batch.grossCents, administrativeFeeCents: batch.administrativeFeeCents,
       transactionFeeCents: batch.transactionFeeCents, netCents: batch.netCents, lineCount: batch.lineCount,
-    }, status: "PENDING", message: "Solicitação recebida. O administrador fará o pagamento Pix e atualizará o status após confirmar a transferência." }, { status: 201, headers });
+    }, status: "PENDING", message: "Solicitação em análise." }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) {
       return NextResponse.json({ error: "Este recibo foi atualizado simultaneamente ou já possui uma solicitação. Atualize o recibo e tente novamente." }, { status: 409, headers });

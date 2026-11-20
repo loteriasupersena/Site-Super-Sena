@@ -80,8 +80,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest,
 
   return <div style={{ margin: "8px 0" }}>
     {paymentRequest?.status === "REJECTED" && <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A transferência anterior não foi concluída. Seu prêmio continua disponível. Informe sua chave Pix para solicitar novamente.</p>}
-    {paymentRequest?.status === "PENDING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida. O pagamento será realizado e confirmado pela administração.</p> : paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Pagamento em processamento. Aguarde a atualização do status antes de enviar outra solicitação.</p>
-      : paymentRequest?.status === "PAID" ? <p role="status" style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago com sucesso via Pix.</p>
+    {paymentRequest?.status === "PENDING" || paymentRequest?.status === "PROCESSING"
+      ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação em análise.</p>
+      : paymentRequest?.status === "PAID" ? null
       : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED"
         ? <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A solicitação anterior precisa ser conferida pela administração. Após a liberação, você poderá enviar uma nova solicitação.</p>
       : <>
@@ -155,7 +156,6 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
   const rounds = data.valid ? data.rounds ?? [] : [];
   const physicalReceipt = Boolean(data.physicalReceiptEligible);
   const hasAvailablePrize = physicalReceipt && rounds.some((round) => round.numbers.some((number) => number.resultStatus === "PREMIADA" && !number.prizePaid));
-  const hasPaidPrize = rounds.some((round) => round.numbers.some((number) => number.prizePaid));
   const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
   return (
     <section aria-live="polite" style={{ border: "2px solid #9ca3af", borderRadius: 10, padding: 16, background: "#ffffff", color: "#111827", fontSize: 16, lineHeight: 1.5 }}>
@@ -201,7 +201,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                       const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" ? "#991b1b" : "#1d4ed8";
                       return <div key={round.roundCode + number.numberValue + index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
                         <strong style={{ color: "#111827", fontSize: 18, letterSpacing: "0.1em" }}>{number.numberValue}</strong>
-                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.resultStatus === "PREMIADA" && number.prizeCents !== null && number.prizeCents > 0 && <span style={{ display: "block", marginTop: 2, color: "#166534", fontWeight: 800, fontSize: 14 }}>{money(number.prizeCents)}</span>}{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
+                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.resultStatus === "PREMIADA" && number.prizeCents !== null && number.prizeCents > 0 && <span style={{ display: "block", marginTop: 2, color: "#166534", fontWeight: 800, fontSize: 14 }}>{money(number.prizeCents)}</span>}</div>
                       </div>;
                     })}
                   </div>
@@ -228,17 +228,6 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
           />;
         })()}
       </div>}
-      {hasPaidPrize && <details style={{ marginTop: 14, textAlign: "center" }}>
-        <summary style={{ display: "inline-block", color: "#1d4ed8", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Saiba mais sobre pagamentos de prêmios</summary>
-        <div style={{ marginTop: 9, padding: 12, border: "1px solid #d1d5db", borderRadius: 7, background: "#f9fafb", color: "#374151", textAlign: "left", fontSize: 13, lineHeight: 1.5 }}>
-          <strong style={{ display: "block", marginBottom: 5, color: "#111827" }}>Sobre pagamentos de prêmios</strong>
-          Quando um prêmio é pago, a plataforma registra a conclusão do pagamento, incluindo a data, o horário e o responsável pela confirmação.
-          <br /><br />
-          Após a conclusão, o resgate daquele prêmio é encerrado e não será aceita uma nova solicitação de pagamento para o mesmo bilhete.
-          <br /><br />
-          Eventuais questionamentos serão tratados nos casos em que houver obrigação legal de análise ou determinação de autoridade competente.
-        </div>
-      </details>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
     </section>
   );
