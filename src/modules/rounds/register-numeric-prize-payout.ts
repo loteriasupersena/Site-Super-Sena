@@ -60,7 +60,7 @@ export async function registerNumericPrizePayout(
   // The administrator confirms only after completing the external Pix transfer.
   // Pending requests can be paid manually; automated provider transfer states remain
   // supported for historical records and reconciliation.
-  const expectedRequestStatus = input.expectedRequestStatus ?? "PENDING";
+  const expectedRequestStatus = input.expectedRequestStatus ?? (line.prizePaymentRequest?.status ?? "PENDING");
   if (input.channel === "PLATFORM_PIX" && (
     !["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(expectedRequestStatus)
     || !line.prizePaymentRequest
