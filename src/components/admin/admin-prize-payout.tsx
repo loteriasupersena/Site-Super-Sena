@@ -27,7 +27,7 @@ type Winner = {
   payoutChannel: "PLATFORM_PIX" | "CASHIER_CASH" | "WALLET" | null;
   paidAt: string | null;
   reference: string | null;
-  paymentRequest: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; netCents: number } | null;
+  paymentRequest: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; netCents: number; pixKey: string | null; pixKeyMasked: string; pixKeyType: string | null; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number } | null;
 };
 
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", {
@@ -160,6 +160,11 @@ export function AdminPrizePayout() {
               <p>Valor aplicado em {winner.prizeCategoryLabel ?? "modalidade"}: {winner.categoryStakeCents === null ? "Indisponível" : money(winner.categoryStakeCents)} · Multiplicador registrado: {winner.multiplier === null ? "Indisponível" : winner.multiplier + "x"}</p>
               <p>Recibo: {winner.receiptCode ?? "—"} {winner.cashierName ? " · Cambista: " + winner.cashierName : ""}</p>
 
+              {winner.paymentRequest && <div className="admin-prize-request-details">
+                <p><strong>Solicitação Pix: {winner.paymentRequest.status === "PENDING" ? "AGUARDANDO PAGAMENTO" : winner.paymentRequest.status}</strong></p>
+                <p>Chave Pix: <strong>{winner.paymentRequest.pixKey ?? winner.paymentRequest.pixKeyMasked}</strong>{winner.paymentRequest.pixKeyType ? " · " + winner.paymentRequest.pixKeyType : ""}</p>
+                <p>Bruto: {money(winner.paymentRequest.grossCents)} · Taxa administrativa: {money(winner.paymentRequest.administrativeFeeCents)} · Taxa bancária: {money(winner.paymentRequest.transactionFeeCents)} · Líquido: <strong>{money(winner.paymentRequest.netCents)}</strong></p>
+              </div>}
               {!winner.calculationConsistent && <p role="alert" style={{ color: "#ffb4a9", fontWeight: 700 }}>REVISÃO NECESSÁRIA: o prêmio registrado não confere com o recálculo usando o valor apostado e a regra salva. Não efetue o pagamento até investigar.</p>}
               {winner.phone && <p>Telefone: {winner.phone}</p>}
               {winner.paid
