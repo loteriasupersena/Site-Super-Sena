@@ -37,11 +37,13 @@ export async function GET(request: NextRequest) {
     const items = withdrawals.map(item => {
       const canShowPix = ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status);
       return {
-        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
-                pixKey: canShowPix ? item.pixKey : null, pixKeyType: canShowPix ? item.pixKeyType : null,
+        id: item.id,
+        username: item.user.username,
+        amountCents: item.amountCents,
+        status: item.status,
+        pixKey: canShowPix ? item.pixKey : null,
+        pixKeyType: canShowPix ? item.pixKeyType : null,
         pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
-        providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(), reviewedBy: null,
       };
     });
     return NextResponse.json({ items }, { headers });
