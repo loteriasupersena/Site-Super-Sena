@@ -97,18 +97,17 @@ export function AdminPrizePayout() {
       : <div className="admin-round-list">
         {pending.map((winner) => <article className="round-option admin-prize-card" key={winner.id}>
           <div className="admin-payment-card-heading">
-            <strong>{winner.playerName}</strong>
             <strong>{money(winner.paymentRequest!.netCents)}</strong>
           </div>
-          <p><span className="admin-payment-status">{winner.paymentRequest!.status === "PROCESSING" ? "EM PROCESSAMENTO" : "AGUARDANDO PIX"}</span></p>
+          <p><span className="admin-payment-status">{winner.paymentRequest!.status === "PROCESSING" ? "EM PROCESSAMENTO" : "AGUARDANDO"}</span>{winner.receiptCode && <> · {winner.receiptCode}</>}</p>
           <p className="admin-payment-pix">Pix: <strong>{winner.paymentRequest!.pixKey ?? winner.paymentRequest!.pixKeyMasked}</strong></p>
           {!winner.calculationConsistent && <p role="alert">Conferência necessária. Pagamento bloqueado.</p>}
           <div className="admin-payment-actions">
             <button type="button" className="secondary-button" disabled={!winner.paymentRequest!.pixKey} onClick={() => void copyPixKey(winner)}>
-              {copied === winner.id ? "Copiado" : "Copiar Pix"}
+              {copied === winner.id ? "Copiado" : "Copiar"}
             </button>
             <button type="button" disabled={busy !== null || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
-              {busy === winner.id ? "Salvando…" : "Confirmar pago"}
+              {busy === winner.id ? "Salvando…" : "Confirmar"}
             </button>
           </div>
         </article>)}
