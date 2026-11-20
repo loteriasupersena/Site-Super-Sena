@@ -60,11 +60,11 @@ describe("admin withdrawals API", () => {
     await GET(request());
     expect(mocks.findMany).toHaveBeenCalledTimes(2);
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: { in: ["PENDING", "FAILED", "PROCESSING"] } },
+      where: { status: { in: ["PENDING", "APPROVED", "FAILED", "PROCESSING"] } },
       orderBy: { createdAt: "asc" },
     }));
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { status: { in: ["APPROVED", "PAID", "REJECTED"] } },
+      where: { status: { in: ["PAID", "REJECTED"] } },
       orderBy: { createdAt: "desc" },
       take: 200,
     }));
