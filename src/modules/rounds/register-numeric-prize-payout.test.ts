@@ -59,7 +59,7 @@ describe("registerNumericPrizePayout", () => {
 
 
   it("does not settle a receipt that has no player Pix request", async () => {
-    const { tx, payoutCreate, auditCreate } = setup();
+    const { tx, payoutCreate, auditCreate } = setup(makeLine({ prizePaymentRequest: null }));
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
     })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
