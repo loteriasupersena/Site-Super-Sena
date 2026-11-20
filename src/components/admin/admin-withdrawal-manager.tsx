@@ -64,8 +64,8 @@ export function AdminWithdrawalManager() {
     finally { setBusy(null); }
   }
 
-  const pending = items.filter((item) => item.status === "PENDING" || item.status === "FAILED" || item.status === "PROCESSING");
-  const history = items.filter((item) => item.status !== "PENDING" && item.status !== "FAILED" && item.status !== "PROCESSING");
+  const pending = items.filter((item) => item.status === "PENDING" || item.status === "APPROVED" || item.status === "FAILED" || item.status === "PROCESSING");
+  const history = items.filter((item) => item.status !== "PENDING" && item.status !== "APPROVED" && item.status !== "FAILED" && item.status !== "PROCESSING");
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">Financeiro</span>
@@ -82,7 +82,7 @@ export function AdminWithdrawalManager() {
         <label>Motivo para devolver o saldo (obrigatório ao liberar)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
           <button type="button" disabled={busy !== null} onClick={() => void act(item, "confirm-paid")}>{busy === item.id ? "Registrando…" : "Confirmar Pix pago"}</button>
-          <button type="button" className="secondary-button" disabled={busy !== null || item.status === "PROCESSING" || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
+          <button type="button" className="secondary-button" disabled={busy !== null || (item.status === "PROCESSING" || item.status === "APPROVED") || (rejectionReasons[item.id]?.trim().length ?? 0) < 4} onClick={() => void act(item, "reject")}>Liberar valor e devolver saldo</button>
         </div>
       </article>)}
     </div>}
