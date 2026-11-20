@@ -57,15 +57,16 @@ export async function registerNumericPrizePayout(
   ) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
   if (input.channel === "CASHIER_CASH") throw new NumericPrizePayoutError("NOT_ELIGIBLE");
-  // A physical receipt is settled only by the Asaas transfer webhook after TRANSFER_DONE.
-  // Never allow an administrative approval or a pending request to create a paid record.
+  // The administrator confirms only after completing the external Pix transfer.
+  // Pending requests can be paid manually; automated provider transfer states remain
+  // supported for historical records and reconciliation.
+  const expectedRequestStatus = input.expectedRequestStatus ?? "PENDING";
   if (input.channel === "PLATFORM_PIX" && (
-    !["PROCESSING", "FAILED", "CANCELLED"].includes(input.expectedRequestStatus ?? "") ||
-    !input.reference?.trim() ||
-    !/^prize_(request|batch)_[A-Za-z0-9_-]{8,100}$/.test(input.reference.trim()) ||
-    !line.prizePaymentRequest ||
-    line.prizePaymentRequest.status !== input.expectedRequestStatus ||
-    line.prizePaymentRequest.paymentReference !== input.reference.trim()
+    !["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(expectedRequestStatus)
+    || !line.prizePaymentRequest
+    || line.prizePaymentRequest.status !== expectedRequestStatus
+    || (input.reference?.trim() && line.prizePaymentRequest.paymentReference
+      && input.reference.trim() !== line.prizePaymentRequest.paymentReference)
   )) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
@@ -84,7 +85,7 @@ export async function registerNumericPrizePayout(
   const paidAt = new Date();
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
-    where: { id: line.prizePaymentRequest.id, status: input.expectedRequestStatus ?? "PENDING" },
+    where: { id: line.prizePaymentRequest.id, status: expectedRequestStatus },
     data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
