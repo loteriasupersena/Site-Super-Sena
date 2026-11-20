@@ -9,7 +9,7 @@ type Withdrawal = {
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
-const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — em análise", APPROVED: "Solicitação em análise", PROCESSING: "Saque em processamento", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde." };
+const labels: Record<Withdrawal["status"], string> = { PENDING: "Solicitação recebida — aguardando pagamento da administração", APPROVED: "Solicitação em análise", PROCESSING: "Pagamento em conferência administrativa", PAID: "Saque realizado com sucesso", REJECTED: "Saque recusado — saldo devolvido à carteira", FAILED: "Pagamento pendente de revisão administrativa" };
 
 export function PlayerWalletWithdrawals() {
   const [availableCents, setAvailableCents] = useState(0);
@@ -34,7 +34,7 @@ export function PlayerWalletWithdrawals() {
     finally { setLoading(false); }
   }, []);
 
-  const hasProcessingWithdrawal = withdrawals.some((item) => item.status === "PROCESSING" || item.status === "APPROVED");
+  const hasProcessingWithdrawal = withdrawals.some((item) => item.status === "PENDING" || item.status === "PROCESSING" || item.status === "APPROVED");
 
   useEffect(() => {
     const initial = window.setTimeout(() => { void load(); }, 0);
@@ -70,7 +70,7 @@ export function PlayerWalletWithdrawals() {
     <form className="admin-round-create" onSubmit={reviewWithdrawal}>
       <label className="wallet-pix-type-field">Tipo da chave Pix<select className="wallet-pix-type-select" required value={pixKeyType} onChange={(event) => setPixKeyType(event.target.value)}><option value="" disabled>Informe o tipo de chave Pix</option><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="EMAIL">E-mail</option><option value="PHONE">Telefone</option><option value="EVP">Chave aleatória</option></select></label>
       <label>Chave Pix<input value={pixKey} onChange={(event) => setPixKey(event.target.value)} maxLength={200} autoComplete="off" required /></label>
-      <p><small>Saques abaixo de R$ 1.000,00 são enviados automaticamente à Asaas. A partir de R$ 1.000,00, dependem de aprovação administrativa. O pagamento só é confirmado após o retorno bancário.</small></p>
+      <p><small>O pagamento do saque é realizado pela administração via Pix. O status será atualizado assim que a transferência for confirmada.</small></p>
       <button type="submit" disabled={loading || busy || availableCents <= 0 || !pixKeyType}>{busy ? "Solicitando…" : "Solicitar saque"}</button>
     </form>
     {reviewOpen && <div role="presentation" className="wallet-withdrawal-confirm-backdrop">

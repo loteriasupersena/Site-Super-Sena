@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { getNumericPrizeReview, NUMERIC_PRIZE_CATEGORY_LABELS } from "@/domain/numeric-prize-review";
-import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +29,7 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
-        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, asaasTransferId: true, asaasTransferStatus: true, asaasTransferReceiptUrl: true, asaasTransferFailureReason: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true, batch: { select: { id: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } },
+        prizePaymentRequest: { select: { id: true, status: true, updatedAt: true, providerTransferStatus: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, holderName: true, holderCpfMasked: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, requestedAt: true, paymentReference: true, batch: { select: { id: true, pixKey: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } },
         participation: {
           select: {
             totalCents: true,
@@ -48,22 +47,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
-
-    const seenTransfers = new Set<string>();
-    await Promise.all(lines.map(async (line) => {
-      const request = line.prizePaymentRequest;
-      if (!request || request.status !== "PROCESSING" || !request.asaasTransferId || !request.paymentReference) return;
-      if (seenTransfers.has(request.asaasTransferId)) return;
-      seenTransfers.add(request.asaasTransferId);
-      if (Date.now() - request.updatedAt.getTime() < 10_000) return;
-      const claim = await authPrisma.prizePaymentRequest.updateMany({
-        where: { id: request.id, status: "PROCESSING", updatedAt: { lt: new Date(Date.now() - 10_000) } },
-        data: { updatedAt: new Date() },
-      });
-      if (claim.count !== 1) return;
-      try { await reconcileAsaasTransferFromPlatform({ transferId: request.asaasTransferId, externalReference: request.paymentReference }); }
-      catch { /* preserve pending state; the next poll or webhook retries */ }
-    }));
 
     return NextResponse.json({
       winners: lines.map((line) => {
@@ -106,16 +89,13 @@ export async function GET(request: NextRequest) {
           reference: line.prizePayout?.reference ?? null,
           paymentRequest: line.prizePaymentRequest ? {
             id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
+            providerTransferStatus: line.prizePaymentRequest.providerTransferStatus,
+            pixKey: line.prizePaymentRequest.pixKey ?? line.prizePaymentRequest.batch?.pixKey ?? null,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
             pixKeyType: line.prizePaymentRequest.pixKeyType,
-            asaasTransferId: line.prizePaymentRequest.asaasTransferId,
-            asaasTransferStatus: line.prizePaymentRequest.asaasTransferStatus,
-            asaasTransferReceiptUrl: line.prizePaymentRequest.asaasTransferReceiptUrl,
-            asaasTransferFailureReason: line.prizePaymentRequest.asaasTransferFailureReason,
             holderName: null,
             holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
             holderCpf: null,
-            pixKey: null,
             grossCents: line.prizePaymentRequest.grossCents,
             administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
             transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,

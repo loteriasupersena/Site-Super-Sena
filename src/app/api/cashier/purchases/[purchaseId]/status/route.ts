@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       paymentMethod: true,
       receiptCode: true,
       confirmedAt: true,
-      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
     },
   });
   if (!purchase) return NextResponse.json({ error: "Compra não encontrada." }, { status: 404, headers });
@@ -34,9 +34,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // The browser polls every few seconds. Throttle direct provider reconciliation
   // to one lookup per payment per 10 seconds. Webhook and fallback converge on
   // the same idempotent confirmation transaction.
-  const hasProviderReference = purchase.payment?.provider === "ASAAS"
-    ? Boolean(purchase.payment.providerQrCodeId)
-    : purchase.payment?.provider === "MERCADO_PAGO" && Boolean(purchase.payment.providerPaymentId);
+  const hasProviderReference = purchase.payment?.provider === "MERCADO_PAGO" && Boolean(purchase.payment.providerPaymentId);
   if (purchase.status === "PENDING_PAYMENT"
     && purchase.payment?.status === "PENDING"
     && hasProviderReference
@@ -64,7 +62,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         paymentMethod: true,
         receiptCode: true,
         confirmedAt: true,
-        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
       },
     });
   }
@@ -81,16 +79,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     && ((purchase.payment.provider === "MERCADO_PAGO"
       && purchase.payment.providerStatus === "processed"
       && purchase.payment.providerStatusDetail === "accredited")
-      || (purchase.payment.provider === "ASAAS"
-        && purchase.payment.providerStatus === "RECEIVED"
-        && purchase.payment.providerStatusDetail === "received"));
+);
 
   return NextResponse.json({
     purchaseStatus: purchase.status,
     paymentStatus: purchase.payment?.status ?? "PENDING",
     reconciliationRequired,
     message: reconciliationRequired
-      ? "O provedor confirmou o Pix. O sistema está vinculando a venda às próximas rodadas válidas. Não faça outro pagamento."
+      ? "O Mercado Pago confirmou o Pix. O sistema está vinculando a venda às próximas rodadas válidas. Não faça outro pagamento."
       : null,
     providerStatus: purchase.payment?.providerStatus ?? null,
     providerStatusDetail: purchase.payment?.providerStatusDetail ?? null,

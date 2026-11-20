@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function authorized(request: NextRequest) {
-  const expected = process.env.ASAAS_RECONCILIATION_TOKEN?.trim();
+  const expected = process.env.MERCADOPAGO_RECONCILIATION_TOKEN?.trim();
   const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!expected || expected.length < 32 || !received) return false;
   const a = Buffer.from(received);
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
 
   const candidates = await authPrisma.payment.findMany({
     where: {
-      provider: "ASAAS",
+      provider: "MERCADO_PAGO",
       status: "PENDING",
-      providerQrCodeId: { not: null },
+      providerPaymentId: { not: null },
       updatedAt: { lt: staleBefore },
       purchase: { is: { status: "PENDING_PAYMENT" } },
     },
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   for (const candidate of candidates) {
     const claim = await authPrisma.payment.updateMany({
-      where: { id: candidate.id, provider: "ASAAS", status: "PENDING", updatedAt: { lt: staleBefore } },
+      where: { id: candidate.id, provider: "MERCADO_PAGO", status: "PENDING", updatedAt: { lt: staleBefore } },
       data: { updatedAt: claimedAt },
     });
     if (claim.count !== 1) continue;

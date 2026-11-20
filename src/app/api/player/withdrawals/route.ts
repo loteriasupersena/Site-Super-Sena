@@ -3,9 +3,6 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { maskPixKey, parsePixKeyInput } from "@/lib/wallet/pix-key";
-import { createAsaasPixTransfer, findAsaasTransfersByExternalReference } from "@/modules/payments/asaas";
-import { reconcileAsaasTransferFromPlatform } from "@/modules/payments/reconcile-asaas-transfer";
-import { WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS } from "@/domain/payout-threshold";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
       authPrisma.ledgerEntry.aggregate({ where: { userId: user.id }, _sum: { amountCents: true } }),
       authPrisma.withdrawal.findMany({
         where: { userId: user.id },
-        select: { id: true, amountCents: true, status: true, providerRef: true, asaasTransferStatus: true, asaasTransferFailureReason: true, pixKeyMasked: true, createdAt: true, updatedAt: true, statusHistory: { select: { toStatus: true, note: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
+        select: { id: true, amountCents: true, status: true, providerRef: true, pixKeyMasked: true, createdAt: true, updatedAt: true, statusHistory: { select: { toStatus: true, note: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
         orderBy: { createdAt: "desc" }, take: 100,
       }),
     ]);
@@ -61,21 +58,12 @@ export async function POST(request: NextRequest) {
       const available = ledger._sum.amountCents ?? 0;
       if (available <= 0) throw new Error("INSUFFICIENT_BALANCE");
       const amountCents = available;
-      const admin = amountCents < WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS ? await tx.user.findFirst({
-        where: { role: "ADMIN", status: "ACTIVE", mustChangePassword: false },
-        select: { id: true }, orderBy: { createdAt: "asc" },
-      }) : null;
-      if (amountCents < WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS && !admin) throw new Error("AUTOMATIC_PAYOUT_ADMIN_MISSING");
       const id = "wdr_" + randomUUID().replace(/-/g, "");
-      const externalReference = "wallet_withdrawal_" + id;
-      const automatic = amountCents < WALLET_WITHDRAWAL_ADMIN_APPROVAL_THRESHOLD_CENTS;
-      const transferRequestedAt = automatic ? new Date() : null;
       const withdrawal = await tx.withdrawal.create({ data: {
         id, userId: user.id, amountCents, pixKey: input.pixKey, pixKeyType: input.pixKeyType,
-        pixKeyMasked: maskPixKey(input.pixKey), paymentReference: automatic ? externalReference : null,
-        status: automatic ? "PROCESSING" : "PENDING", reviewedById: admin?.id ?? null,
+        pixKeyMasked: maskPixKey(input.pixKey), paymentReference: null,
+        status: "PENDING", reviewedById: null,
         idempotencyKey: "withdrawal:" + randomUUID(),
-        ...(automatic ? { transferRequestedAt, asaasTransferStatus: "CREATING" } : {}),
       } });
       await tx.ledgerEntry.create({ data: {
         userId: user.id, withdrawalId: withdrawal.id, type: "WITHDRAWAL_RESERVE",
@@ -84,119 +72,24 @@ export async function POST(request: NextRequest) {
         description: "Reserva de saldo para solicitação de saque " + withdrawal.id,
       } });
       await tx.withdrawalStatusHistory.create({ data: {
-        withdrawalId: withdrawal.id, fromStatus: null, toStatus: automatic ? "PROCESSING" : "PENDING",
-        actorId: user.id, note: automatic ? "Saque abaixo de R$ 1.000,00 enviado automaticamente à Asaas; aguardando confirmação bancária." : "Saque de R$ 1.000,00 ou mais aguardando aprovação administrativa.",
+        withdrawalId: withdrawal.id, fromStatus: null, toStatus: "PENDING",
+        actorId: user.id, note: "Solicitação de saque recebida e aguardando pagamento manual pela administração.",
       } });
       await tx.auditEvent.create({ data: {
         actorId: user.id, action: "WITHDRAWAL_REQUESTED", entityType: "Withdrawal", entityId: withdrawal.id,
-        metadata: { amountCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType, status: withdrawal.status, automatic },
+        metadata: { amountCents, pixKeyMasked: maskPixKey(input.pixKey), pixKeyType: input.pixKeyType, status: withdrawal.status, payoutMode: "ADMIN_MANUAL" },
       } });
-      return { id: withdrawal.id, amountCents, status: withdrawal.status, automatic, externalReference, transferRequestedAt, availableCents: 0 };
+      return { id: withdrawal.id, amountCents, status: withdrawal.status, availableCents: 0 };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    if (result.automatic) {
-      try {
-        const transfer = await createAsaasPixTransfer({
-          amountCents: result.amountCents, pixKey: input.pixKey,
-          pixKeyType: input.pixKeyType as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
-          externalReference: result.externalReference,
-        });
-        await authPrisma.withdrawal.updateMany({
-          where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference },
-          data: { asaasTransferId: transfer.id, asaasTransferStatus: transfer.status ?? "PENDING" },
-        });
-        return NextResponse.json({ success: true, withdrawal: { id: result.id, amountCents: result.amountCents, status: "PROCESSING", availableCents: 0 }, message: "Transferência enviada à Asaas. O saque só será marcado como pago após a confirmação do webhook." }, { status: 202, headers });
-      } catch (error) {
-        // A POST failure is not proof that Asaas did not create the transfer.
-        // Search by the exact idempotent reference before changing the reserved balance.
-        let lookupCompleted = false;
-        let matchingTransfers = 0;
-        try {
-          const matches = await findAsaasTransfersByExternalReference({
-            externalReference: result.externalReference,
-            requestedAt: result.transferRequestedAt ?? new Date(),
-          });
-          lookupCompleted = true;
-          matchingTransfers = matches.length;
-          if (matches.length === 1 && matches[0]?.id) {
-            const transferId = matches[0].id;
-            const linked = await authPrisma.withdrawal.updateMany({
-              where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference, asaasTransferId: null },
-              data: { asaasTransferId: transferId, asaasTransferStatus: matches[0].status ?? "PENDING" },
-            });
-            if (linked.count !== 1) {
-              return NextResponse.json({
-                success: true, status: "PROCESSING",
-                message: "A transferência foi localizada, mas não foi possível vinculá-la com segurança. O saldo permanece reservado para conciliação.",
-              }, { status: 202, headers });
-            }
-            const outcome = await reconcileAsaasTransferFromPlatform({
-              transferId,
-              externalReference: result.externalReference,
-            });
-            return NextResponse.json({
-              success: true, status: outcome === "WITHDRAWAL_FAILED" ? "FAILED" : "PROCESSING",
-              message: outcome === "WITHDRAWAL_FAILED"
-                ? "A Asaas confirmou que a transferência falhou; o saldo foi devolvido à carteira."
-                : "A transferência foi localizada e está em conciliação. O saldo permanece reservado até confirmação.",
-            }, { status: 202, headers });
-          }
-        } catch {
-          // An unavailable or incomplete lookup must never release the reservation.
-        }
-
-        const failureStatus = typeof error === "object" && error !== null && "status" in error
-          ? Number(error.status) : 0;
-        const definitiveRejection = failureStatus >= 400 && failureStatus < 500 &&
-          failureStatus !== 408 && failureStatus !== 429;
-        if (definitiveRejection && lookupCompleted && matchingTransfers === 0) {
-          const released = await authPrisma.$transaction(async tx => {
-            await tx.$queryRawUnsafe('SELECT "id" FROM "Withdrawal" WHERE "id" = $1 FOR UPDATE', result.id);
-            const changed = await tx.withdrawal.updateMany({
-              where: { id: result.id, status: "PROCESSING", paymentReference: result.externalReference, asaasTransferId: null },
-              data: {
-                status: "FAILED",
-                asaasTransferStatus: "REJECTED",
-                asaasTransferFailureReason: "A Asaas recusou a transferência e a consulta pela referência confirmou que ela não foi criada.",
-              },
-            });
-            if (changed.count !== 1) return false;
-            await tx.ledgerEntry.create({ data: {
-              userId: user.id, withdrawalId: result.id, type: "WITHDRAWAL_RELEASE",
-              amountCents: result.amountCents, currency: "BRL",
-              idempotencyKey: "withdrawal-release:" + result.id,
-              description: "Liberação do saldo após recusa definitiva da transferência Pix Asaas.",
-            } });
-            await tx.withdrawalStatusHistory.create({ data: {
-              withdrawalId: result.id, fromStatus: "PROCESSING", toStatus: "FAILED",
-              actorId: user.id, note: "A transferência foi recusada e a consulta confirmou que não foi criada. O saldo reservado voltou à carteira.",
-            } });
-            await tx.auditEvent.create({ data: {
-              actorId: user.id, action: "WITHDRAWAL_ASAAS_TRANSFER_FAILED",
-              entityType: "Withdrawal", entityId: result.id,
-              metadata: { amountCents: result.amountCents, externalReference: result.externalReference, reason: "DEFINITIVE_PROVIDER_REJECTION" },
-            } });
-            return true;
-          }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-          if (released) {
-            return NextResponse.json({
-              success: false, status: "FAILED", availableCents: result.amountCents,
-              error: "Não foi possível realizar a transferência neste momento. Tente novamente mais tarde.",
-            }, { status: 502, headers });
-          }
-        }
-
-        return NextResponse.json({
-          success: true, status: "PROCESSING",
-          message: "Não foi possível confirmar se a Asaas criou a transferência. O saldo permanece reservado e o saque bloqueado contra duplicidade para conciliação.",
-        }, { status: 202, headers });
-      }
-    }
-    return NextResponse.json({ success: true, withdrawal: { id: result.id, amountCents: result.amountCents, status: "PENDING", availableCents: 0 }, message: "Saque de R$ 1.000,00 ou mais recebido e encaminhado para aprovação administrativa." }, { status: 201, headers });
+    return NextResponse.json({
+      success: true,
+      withdrawal: { id: result.id, amountCents: result.amountCents, status: "PENDING", availableCents: 0 },
+      message: "Solicitação de saque recebida. O pagamento Pix será realizado e confirmado pela administração.",
+    }, { status: 201, headers });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return NextResponse.json({ error: "A carteira foi atualizada simultaneamente. Atualize o saldo e tente novamente." }, { status: 409, headers });
     if (error instanceof Error && error.message === "INSUFFICIENT_BALANCE") return NextResponse.json({ error: "Não há saldo disponível para sacar." }, { status: 409, headers });
-    if (error instanceof Error && error.message === "AUTOMATIC_PAYOUT_ADMIN_MISSING") return NextResponse.json({ error: "Não foi possível preparar o registro interno do pagamento automático." }, { status: 503, headers });
     return NextResponse.json({ error: "Não foi possível solicitar o saque." }, { status: 500, headers });
   }
 }

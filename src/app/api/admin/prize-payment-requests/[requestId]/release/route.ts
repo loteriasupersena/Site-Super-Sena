@@ -33,39 +33,39 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           id: true, purchaseId: true, participationLineId: true, batchId: true, status: true,
           grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true,
           pixKeyMasked: true, pixKeyType: true, holderCpfMasked: true, requestedAt: true,
-          asaasTransferId: true, asaasTransferStatus: true, paymentReference: true, transferRequestedAt: true,
+          providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true,
         },
       });
       if (!item) throw new Error("NOT_FOUND");
       const reviewedAt = new Date();
-      const terminalTransfer = ["FAILED", "CANCELLED", "REJECTED"].includes(item.asaasTransferStatus ?? "");
-      if (!["PENDING", "FAILED", "CANCELLED"].includes(item.status) ||
-          (item.asaasTransferId && !terminalTransfer) ||
-          (!item.asaasTransferId && (item.paymentReference || item.transferRequestedAt) && !["FAILED", "CANCELLED", "REJECTED"].includes(item.asaasTransferStatus ?? ""))) throw new Error("NOT_PENDING");
+      const terminalTransfer = ["FAILED", "CANCELLED", "REJECTED"].includes(item.providerTransferStatus ?? "");
+      if (!["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(item.status) ||
+          (item.providerTransferId && !terminalTransfer) ||
+          (!item.providerTransferId && (item.paymentReference || item.transferRequestedAt) && !["FAILED", "CANCELLED", "REJECTED"].includes(item.providerTransferStatus ?? ""))) throw new Error("NOT_PENDING");
 
       if (item.batchId) {
         await tx.$queryRaw`SELECT "id" FROM "PrizePaymentBatch" WHERE "id" = ${item.batchId} FOR UPDATE`;
         const batch = await tx.prizePaymentBatch.findUnique({
           where: { id: item.batchId },
           select: {
-            id: true, purchaseId: true, status: true, asaasTransferId: true, asaasTransferStatus: true, paymentReference: true, transferRequestedAt: true,
-            requests: { select: { id: true, status: true, asaasTransferId: true, asaasTransferStatus: true, paymentReference: true, transferRequestedAt: true } },
+            id: true, purchaseId: true, status: true, providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true,
+            requests: { select: { id: true, status: true, providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true } },
           },
         });
         if (!batch || !batch.requests.length) throw new Error("NOT_PENDING");
-        const terminalStatuses: ("PENDING" | "FAILED" | "CANCELLED")[] = ["PENDING", "FAILED", "CANCELLED"];
+        const terminalStatuses: ("PENDING" | "PROCESSING" | "FAILED" | "CANCELLED")[] = ["PENDING", "PROCESSING", "FAILED", "CANCELLED"];
         const safeTransfer = (id: string | null, status: string | null, reference: string | null, requestedAt: Date | null) =>
           id ? ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "") :
           !(reference || requestedAt) || ["FAILED", "CANCELLED", "REJECTED"].includes(status ?? "");
-        if (!terminalStatuses.includes(batch.status as (typeof terminalStatuses)[number]) || !safeTransfer(batch.asaasTransferId, batch.asaasTransferStatus, batch.paymentReference, batch.transferRequestedAt) ||
-            batch.requests.some(row => !terminalStatuses.includes(row.status as (typeof terminalStatuses)[number]) || !safeTransfer(row.asaasTransferId, row.asaasTransferStatus, row.paymentReference, row.transferRequestedAt))) {
+        if (!terminalStatuses.includes(batch.status as (typeof terminalStatuses)[number]) || !safeTransfer(batch.providerTransferId, batch.providerTransferStatus, batch.paymentReference, batch.transferRequestedAt) ||
+            batch.requests.some(row => !terminalStatuses.includes(row.status as (typeof terminalStatuses)[number]) || !safeTransfer(row.providerTransferId, row.providerTransferStatus, row.paymentReference, row.transferRequestedAt))) {
           throw new Error("NOT_PENDING");
         }
         const batchChanged = await tx.prizePaymentBatch.updateMany({
-          where: { id: batch.id, status: batch.status, asaasTransferId: batch.asaasTransferId },
+          where: { id: batch.id, status: batch.status, providerTransferId: batch.providerTransferId },
           data: {
-            status: "REJECTED", pixKey: null, asaasTransferId: null, asaasTransferStatus: null,
-            asaasTransferReceiptUrl: null, asaasTransferFailureReason: null,
+            status: "REJECTED", pixKey: null, pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null, providerTransferId: null, providerTransferStatus: null,
+            providerTransferReceiptUrl: null, providerTransferFailureReason: null,
             transferRequestedAt: null, paymentReference: null, reviewedAt, reviewerId: user.id,
           },
         });
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           data: {
             status: "REJECTED", batchId: null, pixKey: null, pixKeyEncrypted: null, holderName: null,
             holderNameEncrypted: null, holderCpfEncrypted: null,
-            asaasTransferId: null, asaasTransferStatus: null, asaasTransferReceiptUrl: null,
-            asaasTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
+            providerTransferId: null, providerTransferStatus: null, providerTransferReceiptUrl: null,
+            providerTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
             reviewedAt, reviewerId: user.id,
             note: "Lote liberado pela administração. O ganhador poderá solicitar novamente.",
           },
@@ -87,18 +87,20 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           entityType: "PrizePaymentBatch", entityId: batch.id,
           metadata: { purchaseId: batch.purchaseId, requestCount: batch.requests.length,
             previousStatus: batch.status, status: "REJECTED", released: true,
+            previousTransfer: { id: batch.providerTransferId, status: batch.providerTransferStatus, receiptUrl: batch.providerTransferReceiptUrl, failureReason: batch.providerTransferFailureReason, paymentReference: batch.paymentReference, requestedAt: batch.transferRequestedAt?.toISOString() ?? null },
+            requests: batch.requests.map(row => ({ id: row.id, status: row.status, transferId: row.providerTransferId, transferStatus: row.providerTransferStatus, transferReceiptUrl: row.providerTransferReceiptUrl, transferFailureReason: row.providerTransferFailureReason, paymentReference: row.paymentReference, transferRequestedAt: row.transferRequestedAt?.toISOString() ?? null })),
             reviewedAt: reviewedAt.toISOString() },
         } });
         return { id: batch.id, status: "REJECTED" as const, releasedRequests: requestsChanged.count, reviewedAt };
       }
 
       const changed = await tx.prizePaymentRequest.updateMany({
-        where: { id: item.id, status: item.status, asaasTransferId: item.asaasTransferId },
+        where: { id: item.id, status: item.status, providerTransferId: item.providerTransferId },
         data: {
           status: "REJECTED", pixKey: null,
           pixKeyEncrypted: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null,
-          asaasTransferId: null, asaasTransferStatus: null, asaasTransferReceiptUrl: null,
-          asaasTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
+          providerTransferId: null, providerTransferStatus: null, providerTransferReceiptUrl: null,
+          providerTransferFailureReason: null, transferRequestedAt: null, paymentReference: null,
           reviewedAt, reviewerId: user.id,
           note: "Valor liberado pela administração. O ganhador poderá solicitar novamente quando desejar.",
         },
@@ -114,7 +116,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           transactionFeeCents: item.transactionFeeCents, netCents: item.netCents,
           pixKeyMasked: item.pixKeyMasked, pixKeyType: item.pixKeyType,
           holderCpfMasked: item.holderCpfMasked, requestedAt: item.requestedAt.toISOString(),
-          asaasTransferId: item.asaasTransferId, asaasTransferStatus: item.asaasTransferStatus,
+          providerTransferId: item.providerTransferId, providerTransferStatus: item.providerTransferStatus,
+          providerTransferReceiptUrl: item.providerTransferReceiptUrl, providerTransferFailureReason: item.providerTransferFailureReason,
+          paymentReference: item.paymentReference, transferRequestedAt: item.transferRequestedAt?.toISOString() ?? null,
           reviewedAt: reviewedAt.toISOString(),
         },
       } });

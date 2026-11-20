@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createNumericPurchase } from "@/modules/purchases/create-numeric-purchase";
 import { PurchaseServiceError } from "@/modules/purchases/purchase-service-error";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { createAsaasStaticPixQrCode } from "@/modules/payments/asaas";
+import { createPixOrder, getPixOrder } from "@/modules/payments/mercado-pago";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const purchase = await createNumericPurchase(authPrisma, {
       idempotencyKey: parsed.data.idempotencyKey, cashierId: user.id,
       roundCount: parsed.data.repetitionCount, numbers: parsed.data.numbers, stakeCents: parsed.data.stakeCents,
-      paymentProvider: "ASAAS",
+      paymentProvider: "MERCADO_PAGO",
     });
     if (purchase.status === "CONFIRMED" && purchase.payment?.status === "CONFIRMED" && purchase.receiptCode && purchase.confirmedAt) {
       return NextResponse.json({
@@ -58,19 +58,19 @@ export async function POST(request: NextRequest) {
     }
     let pixCheckout: { copyPaste: string | null; qrCodeBase64: string | null; ticketUrl: string | null } | null = null;
     const payment = purchase.payment;
-    if (payment && payment.provider === "ASAAS" && process.env.ASAAS_API_KEY?.trim()) {
+    if (payment && payment.provider === "MERCADO_PAGO" && process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
       try {
-        const checkout = payment.providerQrCodeId ? null : await createAsaasStaticPixQrCode({
-          purchaseId: purchase.id, amountCents: purchase.totalCents,
+        const checkout = payment.providerPaymentId ? await getPixOrder(payment.providerPaymentId) : await createPixOrder({
+          purchaseId: purchase.id, paymentIdempotencyKey: payment.idempotencyKey,
+          playerId: user.id, amountCents: purchase.totalCents,
         });
         if (checkout) {
           const updated = await authPrisma.payment.update({
             where: { id: payment.id },
             data: {
-              providerQrCodeId: checkout.id, pixCopyPaste: checkout.payload,
-              pixQrCodeBase64: checkout.encodedImage, pixTicketUrl: null,
-              providerStatus: "PENDING", providerStatusDetail: "static_qr_created",
-              expiresAt: checkout.expirationDate ? new Date(checkout.expirationDate) : new Date(Date.now() + 1_800_000),
+              providerPaymentId: checkout.orderId, pixCopyPaste: checkout.qrCode,
+              pixQrCodeBase64: checkout.qrCodeBase64, pixTicketUrl: checkout.ticketUrl,
+              providerStatus: checkout.status, providerStatusDetail: checkout.statusDetail,
             },
             select: { pixCopyPaste: true, pixQrCodeBase64: true, pixTicketUrl: true },
           });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
           pixCheckout = { copyPaste: payment.pixCopyPaste, qrCodeBase64: payment.pixQrCodeBase64, ticketUrl: null };
         }
         if (!pixCheckout?.copyPaste) {
-          return NextResponse.json({ error: "O Asaas ainda não disponibilizou o QR Code desta venda. Tente novamente em instantes.", code: "PIX_QR_NOT_READY", purchaseId: purchase.id }, { status: 502, headers: { "Cache-Control": "no-store" } });
+          return NextResponse.json({ error: "O Mercado Pago ainda não disponibilizou o QR Code desta venda. Tente novamente em instantes.", code: "PIX_QR_NOT_READY", purchaseId: purchase.id }, { status: 502, headers: { "Cache-Control": "no-store" } });
         }
       } catch {
         return NextResponse.json({
@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
       },
       pixCheckout, paymentActionRequired: true,
       message: pixCheckout
-        ? "Pix preparado pelo Asaas. A venda e o recibo continuam pendentes até a confirmação autêntica do pagamento."
-        : "Venda registrada como pendente. Nenhum recibo foi emitido porque o pagamento ainda não foi confirmado. A cobrança Pix ainda não foi criada: configure ASAAS_API_KEY e ASAAS_PIX_KEY no ambiente de produção.",
+        ? "Pix preparado pelo Mercado Pago. A venda e o recibo continuam pendentes até a confirmação autêntica do pagamento."
+        : "Venda registrada como pendente. Nenhum recibo foi emitido porque o pagamento ainda não foi confirmado. A cobrança Pix ainda não foi criada: configure MERCADOPAGO_ACCESS_TOKEN no ambiente de produção.",
     }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof PurchaseServiceError) {

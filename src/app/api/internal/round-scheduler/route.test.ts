@@ -193,7 +193,7 @@ describe("POST /api/internal/round-scheduler", () => {
     });
   });
 
-  it("reconciles only pending Asaas QR payments without browser polling", async () => {
+  it("reconciles only pending Mercado Pago Pix orders without browser polling", async () => {
     mocks.paymentFindMany.mockResolvedValue([{ id: "payment-pending-1" }]);
     mocks.reconcilePixPaymentFromProvider.mockResolvedValue("confirmed");
     const response = await POST(request("Bearer test-secret-long-enough"));
@@ -203,7 +203,7 @@ describe("POST /api/internal/round-scheduler", () => {
       where: expect.objectContaining({ id: "payment-pending-1", status: "PENDING" }),
     }));
     expect(mocks.reconcilePixPaymentFromProvider).toHaveBeenCalledWith(expect.anything(), "payment-pending-1");
-    expect(mocks.paymentFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ status: "PENDING", provider: "ASAAS", providerQrCodeId: { not: null } }) }));
+    expect(mocks.paymentFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ status: "PENDING", provider: "MERCADO_PAGO", providerPaymentId: { not: null } }) }));
     expect(mocks.paymentFindMany.mock.calls[0]?.[0]).not.toHaveProperty("where.OR");
     expect(body).toMatchObject({ pixChecked: 1, pixConfirmed: 1, pixNeedsReconciliation: 0 });
   });

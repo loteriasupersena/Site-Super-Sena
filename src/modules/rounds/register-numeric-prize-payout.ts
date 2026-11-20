@@ -37,7 +37,7 @@ export async function registerNumericPrizePayout(
         },
       },
       prizePayout: { select: { id: true } },
-      prizePaymentRequest: { select: { id: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true } },
+      prizePaymentRequest: { select: { id: true, batchId: true, status: true, netCents: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, paymentReference: true, providerTransferId: true, providerTransferStatus: true, batch: { select: { paymentReference: true, providerTransferId: true, providerTransferStatus: true } } } },
     },
   });
   if (!line) throw new NumericPrizePayoutError("LINE_NOT_FOUND");
@@ -57,15 +57,14 @@ export async function registerNumericPrizePayout(
   ) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
 
   if (input.channel === "CASHIER_CASH") throw new NumericPrizePayoutError("NOT_ELIGIBLE");
-  // A physical receipt is settled only by the Asaas transfer webhook after TRANSFER_DONE.
-  // Never allow an administrative approval or a pending request to create a paid record.
+  // The administrator confirms only after completing the external Pix transfer.
+  // Pending and legacy in-process requests can be confirmed manually after the
+  // administrator verifies the completed bank transfer.
+  const expectedRequestStatus = input.expectedRequestStatus ?? (line.prizePaymentRequest?.status ?? "PENDING");
   if (input.channel === "PLATFORM_PIX" && (
-    !["PROCESSING", "FAILED", "CANCELLED"].includes(input.expectedRequestStatus ?? "") ||
-    !input.reference?.trim() ||
-    !/^prize_(request|batch)_[A-Za-z0-9_-]{8,100}$/.test(input.reference.trim()) ||
-    !line.prizePaymentRequest ||
-    line.prizePaymentRequest.status !== input.expectedRequestStatus ||
-    line.prizePaymentRequest.paymentReference !== input.reference.trim()
+    !["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(expectedRequestStatus)
+    || !line.prizePaymentRequest
+    || line.prizePaymentRequest.status !== expectedRequestStatus
   )) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
@@ -84,10 +83,21 @@ export async function registerNumericPrizePayout(
   const paidAt = new Date();
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
-    where: { id: line.prizePaymentRequest.id, status: input.expectedRequestStatus ?? "PENDING" },
-    data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
+    where: { id: line.prizePaymentRequest.id, status: expectedRequestStatus },
+    data: { status: "PAID", pixKey: null, pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
+  if (line.prizePaymentRequest.batchId) {
+    const remaining = await tx.prizePaymentRequest.count({
+      where: { batchId: line.prizePaymentRequest.batchId, status: { not: "PAID" } },
+    });
+    if (remaining === 0) {
+      await tx.prizePaymentBatch.updateMany({
+        where: { id: line.prizePaymentRequest.batchId, status: { in: ["PENDING", "PROCESSING"] } },
+        data: { status: "PAID", pixKey: null, pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
+      });
+    }
+  }
 
   const payout = await tx.numericPrizePayout.create({
     data: {
@@ -135,6 +145,12 @@ export async function registerNumericPrizePayout(
         netCents: payout.amountCents,
         amountCents: payout.amountCents,
         reference: payout.reference,
+        previousRequestPaymentReference: line.prizePaymentRequest?.paymentReference ?? null,
+        previousRequestTransferId: line.prizePaymentRequest?.providerTransferId ?? null,
+        previousRequestTransferStatus: line.prizePaymentRequest?.providerTransferStatus ?? null,
+        previousBatchPaymentReference: line.prizePaymentRequest?.batch?.paymentReference ?? null,
+        previousBatchTransferId: line.prizePaymentRequest?.batch?.providerTransferId ?? null,
+        previousBatchTransferStatus: line.prizePaymentRequest?.batch?.providerTransferStatus ?? null,
         paidAt: payout.paidAt.toISOString(),
       },
     },
