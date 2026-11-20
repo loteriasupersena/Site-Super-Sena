@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyMasked: string; providerRef: string | null;
+  pixKey: string | null; pixKeyType: string | null; pixKeyMasked: string; providerRef: string | null;
   createdAt: string; updatedAt: string; reviewedBy: string | null;
   statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
 };
@@ -76,7 +76,7 @@ export function AdminWithdrawalManager() {
       {pending.map((item) => <article className="round-option" key={item.id}>
         <div><strong>{item.username}</strong> · {money(item.amountCents)} · {labels[item.status]}</div>
         <p>Solicitado em {dateTime(item.createdAt)}</p>
-        <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
+        <p>Chave Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong>{item.pixKeyType ? " · Tipo: " + item.pixKeyType : ""}</p>
         <label>Referência do comprovante (opcional)<input value={references[item.id] ?? ""} onChange={(event) => setReferences((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={300} placeholder="Identificador da transação Pix" /></label>
         <label>Motivo da liberação (obrigatório)<textarea value={rejectionReasons[item.id] ?? ""} onChange={(event) => setRejectionReasons((current) => ({ ...current, [item.id]: event.target.value }))} maxLength={500} rows={2} placeholder="Ex.: chave Pix inválida ou não localizada." /></label>
         <div className="round-options">
