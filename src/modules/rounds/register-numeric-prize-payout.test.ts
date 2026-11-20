@@ -83,13 +83,17 @@ describe("registerNumericPrizePayout", () => {
     expect(payoutCreate).toHaveBeenCalledOnce();
   });
 
-  it("rejects a supplied reference that conflicts with the stored request", async () => {
+  it("records the administrator's bank reference independently from a legacy provider reference", async () => {
     const { tx, payoutCreate } = setup();
-    await expect(registerNumericPrizePayout(tx as never, {
+    await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
-      expectedRequestStatus: "PENDING", reference: "another-request",
-    })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
-    expect(payoutCreate).not.toHaveBeenCalled();
+      expectedRequestStatus: "PENDING", reference: "bank-transaction-123",
+    });
+    expect(tx.prizePaymentRequest.updateMany).toHaveBeenCalledWith({
+      where: { id: "request-123", status: "PENDING" },
+      data: expect.objectContaining({ status: "PAID", paymentReference: "bank-transaction-123" }),
+    });
+    expect(payoutCreate).toHaveBeenCalledOnce();
   });
 
   it("blocks payout when the stored prize differs from the deterministic result", async () => {
