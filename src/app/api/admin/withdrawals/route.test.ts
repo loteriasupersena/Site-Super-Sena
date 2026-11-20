@@ -56,17 +56,15 @@ describe("admin withdrawals API", () => {
     expect((await GET(request())).status).toBe(403);
   });
 
-  it("loads pending withdrawals separately from the capped historical list", async () => {
+  it("loads only actionable withdrawals and does not query payment history", async () => {
     await GET(request());
-    expect(mocks.findMany).toHaveBeenCalledTimes(2);
+    expect(mocks.findMany).toHaveBeenCalledTimes(1);
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { status: { in: ["PENDING", "APPROVED", "FAILED", "PROCESSING"] } },
       orderBy: { createdAt: "asc" },
     }));
-    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.findMany).not.toHaveBeenCalledWith(expect.objectContaining({
       where: { status: { in: ["PAID", "REJECTED"] } },
-      orderBy: { createdAt: "desc" },
-      take: 200,
     }));
   });
 
