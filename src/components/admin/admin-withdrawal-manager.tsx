@@ -11,6 +11,9 @@ type Item = {
   pixKeyType: string | null;
   pixKeyMasked: string;
 };
+const statusLabels: Record<Item["status"], string> = {
+  PENDING: "AGUARDANDO", APPROVED: "APROVADO", PROCESSING: "EM PROCESSAMENTO", FAILED: "FALHA NA TRANSFERÊNCIA",
+};
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 
 export function AdminWithdrawalManager() {
@@ -95,7 +98,7 @@ export function AdminWithdrawalManager() {
             <strong>{item.username}</strong>
             <strong>{money(item.amountCents)}</strong>
           </div>
-          <p>SAQUE DA CARTEIRA</p>
+          <p><span className="admin-payment-status">{statusLabels[item.status]}</span> · SAQUE DA CARTEIRA</p>
           <p className="admin-payment-pix">Pix: <strong>{item.pixKey ?? item.pixKeyMasked}</strong></p>
           <div className="admin-payment-actions">
             <button type="button" className="secondary-button" disabled={!item.pixKey} onClick={() => void copyPixKey(item)}>
