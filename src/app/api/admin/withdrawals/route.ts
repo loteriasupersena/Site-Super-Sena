@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       statusHistory: { select: { fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { username: true } } }, orderBy: { createdAt: "asc" as const } },
     };
     const [pendingWithdrawals, historicalWithdrawals] = await Promise.all([
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "FAILED", "PROCESSING"] } }, include, orderBy: { createdAt: "asc" } }),
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["APPROVED", "PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
+      authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "APPROVED", "FAILED", "PROCESSING"] } }, include, orderBy: { createdAt: "asc" } }),
+      authPrisma.withdrawal.findMany({ where: { status: { in: ["PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
     ]);
     const withdrawals = [...pendingWithdrawals, ...historicalWithdrawals];
     const items = withdrawals.map(item => {
