@@ -178,8 +178,8 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                   padding: "3px 8px",
                   fontSize: 14,
                   fontWeight: 800,
-                  color: round.status === "RESULTADO_PUBLICADO" ? "#166534" : round.status === "RODADA_CANCELADA" ? "#991b1b" : "#854d0e",
-                  background: round.status === "RESULTADO_PUBLICADO" ? "#dcfce7" : round.status === "RODADA_CANCELADA" ? "#fee2e2" : "#fef3c7",
+                  color: round.status === "RESULTADO_PUBLICADO" ? "#1d4ed8" : round.status === "RODADA_CANCELADA" ? "#991b1b" : "#854d0e",
+                  background: round.status === "RESULTADO_PUBLICADO" ? "#dbeafe" : round.status === "RODADA_CANCELADA" ? "#fee2e2" : "#fef3c7",
                 }}>{roundStatusLabels[round.status]}</span>
               </div>
               <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14 }}><strong>Horário:</strong> {formatDate(round.resultAt)}</p>
