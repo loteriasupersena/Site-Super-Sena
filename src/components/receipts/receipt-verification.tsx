@@ -82,9 +82,9 @@ function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest,
     {paymentRequest?.status === "REJECTED" && <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A transferência anterior não foi concluída. Seu prêmio continua disponível. Informe sua chave Pix para solicitar novamente.</p>}
     {paymentRequest?.status === "PENDING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida. O pagamento será realizado e confirmado pela administração.</p> : paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Pagamento em processamento. Aguarde a atualização do status antes de enviar outra solicitação.</p>
       : paymentRequest?.status === "PAID" ? <p role="status" style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago com sucesso via Pix.</p>
+      : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED"
+        ? <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A solicitação anterior precisa ser conferida pela administração. Após a liberação, você poderá enviar uma nova solicitação.</p>
       : <>
-      {(paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED") &&
-        <p role="alert" style={{ color: "#991b1b", fontWeight: 700 }}>Não foi possível realizar a transferência neste momento. Seu prêmio continua disponível. Você pode solicitar novamente mais tarde.</p>}
       <form onSubmit={submit}>
         <label style={{ display: "block", margin: "10px 0 5px", color: "#111827", fontWeight: 700 }}>Tipo da chave Pix</label>
         <select required value={pixKeyType} onChange={event => setPixKeyType(event.target.value)} style={{ boxSizing: "border-box", width: "100%", minHeight: 54, padding: 12, border: "2px solid #64748b", borderRadius: 8, fontSize: 16, fontWeight: 700, background: "#fff", color: "#111827" }}>
