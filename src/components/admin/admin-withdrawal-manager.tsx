@@ -5,12 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
-  pixKey: string | null; pixKeyType: string | null; pixKeyMasked: string; providerRef: string | null;
-  createdAt: string; updatedAt: string; reviewedBy: string | null;
-  statusHistory: Array<{ fromStatus: string | null; toStatus: string; note: string | null; createdAt: string; actor: string }>;
+  pixKey: string | null; pixKeyType: string | null; pixKeyMasked: string;
+  createdAt: string;
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-const dateTime = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo", hourCycle: "h23" }).format(new Date(value));
 const labels: Record<Item["status"], string> = { PENDING: "Aguardando pagamento", APPROVED: "Aprovado — aguardando pagamento Pix", PROCESSING: "Aguardando conferência do pagamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Pagamento pendente de revisão" };
 
 export function AdminWithdrawalManager() {
