@@ -12,7 +12,7 @@ function makeLine(overrides: Record<string, unknown> = {}) {
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
-    prizePaymentRequest: { id: "request-123", status: "PROCESSING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: "prize_request_request-12345678" },
+    prizePaymentRequest: { id: "request-123", batchId: null, status: "PENDING", netCents: 500, grossCents: 500, administrativeFeeCents: 0, transactionFeeCents: 0, paymentReference: "prize_request_request-12345678" },
     participation: {
       status: "CONFIRMED",
       purchase: {
@@ -47,11 +47,10 @@ function setup(line = makeLine()) {
 }
 
 describe("registerNumericPrizePayout", () => {
-  it("allows external payout for a confirmed cashier ticket using the full individual game stake for a unit hit", async () => {
+  it("allows the administrator to confirm an externally paid Pix request", async () => {
     const { tx, payoutCreate, auditCreate } = setup();
     const result = await registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
-      expectedRequestStatus: "PROCESSING", reference: "prize_request_request-12345678",
     });
     expect(result.amountCents).toBe(500);
     expect(payoutCreate).toHaveBeenCalledOnce();
@@ -59,7 +58,7 @@ describe("registerNumericPrizePayout", () => {
   });
 
 
-  it("does not settle a receipt from administrative approval without a confirmed transfer reference", async () => {
+  it("does not settle a receipt that has no player Pix request", async () => {
     const { tx, payoutCreate, auditCreate } = setup();
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
@@ -68,7 +67,7 @@ describe("registerNumericPrizePayout", () => {
     expect(auditCreate).not.toHaveBeenCalled();
   });
 
-  it("allows a final Asaas confirmation to settle a previously failed transfer", async () => {
+  it("allows the administrator to confirm a request after its previous attempt failed", async () => {
     const { tx, payoutCreate } = setup(makeLine({
       prizePaymentRequest: {
         id: "request-123", status: "FAILED", netCents: 500, grossCents: 500,
@@ -84,11 +83,11 @@ describe("registerNumericPrizePayout", () => {
     expect(payoutCreate).toHaveBeenCalledOnce();
   });
 
-  it("rejects a transfer reference that differs from the stored request", async () => {
+  it("rejects a supplied reference that conflicts with the stored request", async () => {
     const { tx, payoutCreate } = setup();
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
-      expectedRequestStatus: "PROCESSING", reference: "prize_request_another-request",
+      expectedRequestStatus: "PENDING", reference: "another-request",
     })).rejects.toMatchObject({ code: "NOT_ELIGIBLE" });
     expect(payoutCreate).not.toHaveBeenCalled();
   });
@@ -97,7 +96,7 @@ describe("registerNumericPrizePayout", () => {
     const { tx, payoutCreate, auditCreate } = setup(makeLine({ prizeCents: 1000 }));
     await expect(registerNumericPrizePayout(tx as never, {
       lineId: "line-12345678", actorId: "admin-123", channel: "PLATFORM_PIX",
-      expectedRequestStatus: "PROCESSING", reference: "prize_request_request-12345678",
+      expectedRequestStatus: "PENDING",
     })).rejects.toMatchObject({ code: "INCONSISTENT_PRIZE" });
     expect(payoutCreate).not.toHaveBeenCalled();
     expect(auditCreate).not.toHaveBeenCalled();
