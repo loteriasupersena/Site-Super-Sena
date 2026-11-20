@@ -7,11 +7,14 @@ type MercadoPagoOrder = {
   status?: string;
   status_detail?: string;
   total_amount?: string | number;
+  total_paid_amount?: string | number;
   currency?: string;
   external_reference?: string;
   transactions?: {
     payments?: Array<{
       amount?: string | number;
+      paid_amount?: string | number;
+      confirmed_amount?: string | number;
       status?: string;
       status_detail?: string;
       payment_method?: {
@@ -48,7 +51,7 @@ export function parseVerifiedPixOrder(payload: MercadoPagoOrder): VerifiedPixOrd
   const checkout = parseOrder(payload);
   const payment = payload.transactions?.payments?.[0];
   const amount = Number(payload.total_amount);
-  const paymentAmount = Number(payment?.amount);
+  const paymentAmount = Number(payment?.paid_amount ?? payload.total_paid_amount ?? payment?.confirmed_amount ?? payment?.amount);
   return {
     ...checkout,
     externalReference: payload.external_reference ?? null,
