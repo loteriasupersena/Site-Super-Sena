@@ -6,7 +6,6 @@ type Item = {
   id: string; username: string; amountCents: number;
   status: "PENDING" | "APPROVED" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
   pixKey: string | null; pixKeyType: string | null; pixKeyMasked: string;
-  createdAt: string;
 };
 const money = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 const labels: Record<Item["status"], string> = { PENDING: "Aguardando pagamento", APPROVED: "Aprovado — aguardando pagamento Pix", PROCESSING: "Aguardando conferência do pagamento", PAID: "Pago", REJECTED: "Valor devolvido", FAILED: "Pagamento pendente de revisão" };
@@ -67,7 +66,7 @@ export function AdminWithdrawalManager() {
       if (!response.ok) throw new Error(body.error ?? "Não foi possível atualizar o saque.");
       setRejectionReasons((current) => { const next = { ...current }; delete next[item.id]; return next; });
       setNotice(action === "confirm-paid"
-        ? `Pagamento Pix de ${money(item.amountCents)} confirmado e registrado.`
+        ? `Pagamento Pix de ${money(item.amountCents)} confirmado. Pedido removido da fila.`
         : `Valor liberado. A reserva de ${money(body.withdrawal.amountCents)} foi liberada na carteira do jogador.`);
       await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Falha ao atualizar o saque."); }
@@ -75,7 +74,6 @@ export function AdminWithdrawalManager() {
   }
 
   const pending = items.filter((item) => item.status === "PENDING" || item.status === "APPROVED" || item.status === "FAILED" || item.status === "PROCESSING");
-  const pendingCountLabel = pending.length > 0 ? "(" + pending.length + " pendente" + (pending.length === 1 ? "" : "s") + ")" : "(nenhuma pendente)";
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
     <span className="feature-label">CARTEIRA DIGITAL</span>
