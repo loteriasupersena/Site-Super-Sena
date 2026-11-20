@@ -85,7 +85,7 @@ export function AdminPrizePayout() {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar o pagamento.");
-      setNotice("Pix confirmado e registrado no histórico de pagamentos.");
+      setNotice("Pagamento confirmado. Pedido removido da fila.");
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Falha ao confirmar o pagamento.");
@@ -110,7 +110,7 @@ export function AdminPrizePayout() {
     } finally { setBusy(""); }
   }
 
-  const pending = winners.filter((winner) => !winner.paid && winner.physicalReceiptEligible && winner.paymentRequest !== null && ["PENDING", "PROCESSING"].includes(winner.paymentRequest.status));
+  const pending = winners.filter((winner) => !winner.paid && winner.physicalReceiptEligible && winner.paymentRequest !== null);
 
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
@@ -128,10 +128,11 @@ export function AdminPrizePayout() {
           <p>Pix: <strong>{winner.paymentRequest!.pixKey ?? winner.paymentRequest!.pixKeyMasked}</strong>{winner.paymentRequest!.pixKeyType ? " · " + winner.paymentRequest!.pixKeyType : ""}</p>
           <div className="round-options">
             <button type="button" className="secondary-button" disabled={!winner.paymentRequest!.pixKey} onClick={() => void copyPixKey(winner)}>{copiedPixKey === winner.id ? "Chave copiada" : "Copiar chave Pix"}</button>
-            <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent} onClick={() => void confirmPaid(winner)}>
+            <button type="button" disabled={Boolean(busy) || !winner.calculationConsistent || !["PENDING", "PROCESSING"].includes(winner.paymentRequest!.status)} onClick={() => void confirmPaid(winner)}>
               {busy === winner.id ? "Registrando…" : "Confirmar pagamento"}
             </button>
           </div>
+          {["FAILED", "CANCELLED", "REJECTED"].includes(winner.paymentRequest!.status) && <button type="button" className="secondary-button" disabled={Boolean(busy)} onClick={() => void releaseFailed(winner)}>Liberar nova solicitação</button>}
           {!winner.calculationConsistent && <p role="alert">Conferência necessária. Pagamento bloqueado até corrigir a divergência.</p>}
           <label>Referência Pix (opcional)
             <input value={references[winner.id] ?? ""} maxLength={300} onChange={(event) => setReferences((current) => ({ ...current, [winner.id]: event.target.value }))} placeholder="ID da transação" />
