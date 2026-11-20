@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 function authorized(request: NextRequest) {
   const expected = process.env.MERCADOPAGO_RECONCILIATION_TOKEN?.trim();
-  const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  const received = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "").trim();
   if (!expected || expected.length < 32 || !received) return false;
   const a = Buffer.from(received);
   const b = Buffer.from(expected);
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
   const staleBefore = new Date(Date.now() - 30_000);
   const claimedAt = new Date();
   const results = { success: true, checked: 0, confirmed: 0, pending: 0, errors: 0 };
+  const errorDetails: Array<{ paymentId: string; message: string }> = [];
 
   const candidates = await authPrisma.payment.findMany({
     where: {
@@ -48,10 +49,20 @@ export async function POST(request: NextRequest) {
       const outcome = await reconcilePixPaymentFromProvider(authPrisma, candidate.id);
       if (outcome === "confirmed" || outcome === "already_confirmed") results.confirmed++;
       else results.pending++;
-    } catch {
+    } catch (error) {
       results.errors++;
+      const message = error instanceof Error ? error.message : "Falha desconhecida na conciliação.";
+      errorDetails.push({ paymentId: candidate.id, message });
+      console.error("[mercadopago-payment-reconciliation] falha ao conferir pagamento", {
+        paymentId: candidate.id,
+        error: message,
+      });
     }
   }
 
-  return NextResponse.json(results, { headers: { "Cache-Control": "no-store" } });
+  results.success = results.errors === 0;
+  return NextResponse.json(
+    { ...results, errorDetails },
+    { status: results.errors > 0 ? 207 : 200, headers: { "Cache-Control": "no-store" } },
+  );
 }
