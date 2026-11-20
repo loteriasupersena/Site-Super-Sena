@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       const canShowPix = ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status);
       return {
         id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
-                pixKey: canShowPix ? item.pixKey : null,
+                pixKey: canShowPix ? item.pixKey : null, pixKeyType: canShowPix ? item.pixKeyType : null,
         pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
         providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(), reviewedBy: item.reviewedBy?.username ?? null,
