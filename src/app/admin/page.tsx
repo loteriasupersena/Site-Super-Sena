@@ -19,6 +19,8 @@ export default async function AdminPage() {
         <div className="admin-accordion-list">
           <AdminPrizePayout />
 
+          <AdminWithdrawalManager />
+
           <details className="admin-accordion">
             <summary><span>Crédito de teste na carteira</span></summary>
             <div className="admin-accordion-content">
@@ -30,13 +32,6 @@ export default async function AdminPage() {
             <summary><span>Ganhadores e conferência</span></summary>
             <div className="admin-accordion-content">
               <AdminPrizeCreditReconciliation />
-            </div>
-          </details>
-
-          <details className="admin-accordion">
-            <summary><span>Controle financeiro e saques</span></summary>
-            <div className="admin-accordion-content">
-              <AdminWithdrawalManager />
             </div>
           </details>
 
