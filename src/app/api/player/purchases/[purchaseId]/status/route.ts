@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       status: true,
       receiptCode: true,
       confirmedAt: true,
-      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+      payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
     },
   });
   if (!purchase) return NextResponse.json({ error: "Compra não encontrada." }, { status: 404, headers });
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         status: true,
         receiptCode: true,
         confirmedAt: true,
-        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerQrCodeId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
+        payment: { select: { id: true, status: true, provider: true, providerPaymentId: true, providerStatus: true, providerStatusDetail: true, confirmedAt: true, updatedAt: true } },
       },
     });
   }
