@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           id: true, purchaseId: true, participationLineId: true, batchId: true, status: true,
           grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true,
           pixKeyMasked: true, pixKeyType: true, holderCpfMasked: true, requestedAt: true,
-          providerTransferId: true, providerTransferStatus: true, paymentReference: true, transferRequestedAt: true,
+          providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true,
         },
       });
       if (!item) throw new Error("NOT_FOUND");
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           where: { id: item.batchId },
           select: {
             id: true, purchaseId: true, status: true, providerTransferId: true, providerTransferStatus: true, paymentReference: true, transferRequestedAt: true,
-            requests: { select: { id: true, status: true, providerTransferId: true, providerTransferStatus: true, paymentReference: true, transferRequestedAt: true } },
+            requests: { select: { id: true, status: true, providerTransferId: true, providerTransferStatus: true, providerTransferReceiptUrl: true, providerTransferFailureReason: true, paymentReference: true, transferRequestedAt: true } },
           },
         });
         if (!batch || !batch.requests.length) throw new Error("NOT_PENDING");
@@ -87,6 +87,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           entityType: "PrizePaymentBatch", entityId: batch.id,
           metadata: { purchaseId: batch.purchaseId, requestCount: batch.requests.length,
             previousStatus: batch.status, status: "REJECTED", released: true,
+            previousTransfer: { id: batch.providerTransferId, status: batch.providerTransferStatus, receiptUrl: batch.providerTransferReceiptUrl, failureReason: batch.providerTransferFailureReason, paymentReference: batch.paymentReference, requestedAt: batch.transferRequestedAt?.toISOString() ?? null },
+            requests: batch.requests.map(row => ({ id: row.id, status: row.status, transferId: row.providerTransferId, transferStatus: row.providerTransferStatus, transferReceiptUrl: row.providerTransferReceiptUrl, transferFailureReason: row.providerTransferFailureReason, paymentReference: row.paymentReference, transferRequestedAt: row.transferRequestedAt?.toISOString() ?? null })),
             reviewedAt: reviewedAt.toISOString() },
         } });
         return { id: batch.id, status: "REJECTED" as const, releasedRequests: requestsChanged.count, reviewedAt };
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           pixKeyMasked: item.pixKeyMasked, pixKeyType: item.pixKeyType,
           holderCpfMasked: item.holderCpfMasked, requestedAt: item.requestedAt.toISOString(),
           providerTransferId: item.providerTransferId, providerTransferStatus: item.providerTransferStatus,
+          providerTransferReceiptUrl: item.providerTransferReceiptUrl, providerTransferFailureReason: item.providerTransferFailureReason,
+          paymentReference: item.paymentReference, transferRequestedAt: item.transferRequestedAt?.toISOString() ?? null,
           reviewedAt: reviewedAt.toISOString(),
         },
       } });
