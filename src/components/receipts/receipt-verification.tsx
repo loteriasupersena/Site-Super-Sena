@@ -201,7 +201,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                       const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" ? "#991b1b" : "#1d4ed8";
                       return <div key={round.roundCode + number.numberValue + index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
                         <strong style={{ color: "#111827", fontSize: 18, letterSpacing: "0.1em" }}>{number.numberValue}</strong>
-                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
+                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.resultStatus === "PREMIADA" && number.prizeCents !== null && number.prizeCents > 0 && <span style={{ display: "block", marginTop: 2, color: "#166534", fontWeight: 800, fontSize: 14 }}>{money(number.prizeCents)}</span>}{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
                       </div>;
                     })}
                   </div>
