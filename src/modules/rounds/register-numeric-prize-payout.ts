@@ -65,8 +65,6 @@ export async function registerNumericPrizePayout(
     !["PENDING", "PROCESSING", "FAILED", "CANCELLED"].includes(expectedRequestStatus)
     || !line.prizePaymentRequest
     || line.prizePaymentRequest.status !== expectedRequestStatus
-    || (input.reference?.trim() && line.prizePaymentRequest.paymentReference
-      && input.reference.trim() !== line.prizePaymentRequest.paymentReference)
   )) {
     throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   }
