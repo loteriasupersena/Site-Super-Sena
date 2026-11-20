@@ -28,24 +28,22 @@ export async function GET(request: NextRequest) {
   try {
     const include = {
       user: { select: { id: true, username: true } },
-      reviewedBy: { select: { username: true } },
-      statusHistory: { select: { fromStatus: true, toStatus: true, note: true, createdAt: true, actor: { select: { username: true } } }, orderBy: { createdAt: "asc" as const } },
     };
-    const [pendingWithdrawals, historicalWithdrawals] = await Promise.all([
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["PENDING", "APPROVED", "FAILED", "PROCESSING"] } }, include, orderBy: { createdAt: "asc" } }),
-      authPrisma.withdrawal.findMany({ where: { status: { in: ["PAID", "REJECTED"] } }, include, orderBy: { createdAt: "desc" }, take: 200 }),
-    ]);
-    const withdrawals = [...pendingWithdrawals, ...historicalWithdrawals];
+    const withdrawals = await authPrisma.withdrawal.findMany({
+      where: { status: { in: ["PENDING", "APPROVED", "FAILED", "PROCESSING"] } },
+      include,
+      orderBy: { createdAt: "asc" },
+    });
     const items = withdrawals.map(item => {
       const canShowPix = ["PENDING", "APPROVED", "PROCESSING", "FAILED"].includes(item.status);
       return {
-        id: item.id, username: item.user.username, amountCents: item.amountCents, status: item.status,
-                pixKey: canShowPix ? item.pixKey : null, pixKeyType: canShowPix ? item.pixKeyType : null,
+        id: item.id,
+        username: item.user.username,
+        amountCents: item.amountCents,
+        status: item.status,
+        pixKey: canShowPix ? item.pixKey : null,
+        pixKeyType: canShowPix ? item.pixKeyType : null,
         pixKeyMasked: item.pixKeyMasked ?? (item.pixKey ? maskPixKey(item.pixKey) : "Chave indisponível"),
-        providerRef: item.providerRef, createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(), reviewedBy: item.reviewedBy?.username ?? null,
-        statusHistory: item.statusHistory.map(event => ({ fromStatus: event.fromStatus, toStatus: event.toStatus,
-          note: event.note, createdAt: event.createdAt.toISOString(), actor: event.actor?.username ?? "Sistema" })),
       };
     });
     return NextResponse.json({ items }, { headers });

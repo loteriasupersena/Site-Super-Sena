@@ -1,6 +1,6 @@
 import { AreaShell } from "@/components/area-shell";
-import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
 import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
+import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-credit";
@@ -17,25 +17,20 @@ export default async function AdminPage() {
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
       <div className="admin-page-layout">
         <div className="admin-accordion-list">
-          <section className="feature-card" aria-label="Central de solicitações financeiras">
-            <span className="feature-label">PRIMEIRO ATENDIMENTO</span>
-            <h2>Solicitações para pagamento</h2>
-            <p>Os pedidos de prêmio do recibo e os saques da carteira digital aparecem primeiro nesta área, identificados pelo tipo.</p>
-          </section>
           <AdminPrizePayout />
           <AdminWithdrawalManager />
+
+          <details className="admin-accordion">
+            <summary><span>Conferência de créditos online</span></summary>
+            <div className="admin-accordion-content">
+              <AdminPrizeCreditReconciliation />
+            </div>
+          </details>
 
           <details className="admin-accordion">
             <summary><span>Crédito de teste na carteira</span></summary>
             <div className="admin-accordion-content">
               <AdminTestWalletCredit />
-            </div>
-          </details>
-
-          <details className="admin-accordion">
-            <summary><span>Ganhadores e conferência</span></summary>
-            <div className="admin-accordion-content">
-              <AdminPrizeCreditReconciliation />
             </div>
           </details>
 

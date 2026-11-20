@@ -16,11 +16,14 @@ export async function GET(request: NextRequest) {
     const lines = await authPrisma.numericParticipationLine.findMany({
       where: {
         prizeCents: { gt: 0 },
+        prizeCreditedAt: null,
+        prizePayout: { is: null },
+        prizePaymentRequest: { is: { status: { in: ["PENDING", "PROCESSING"] } } },
         participation: {
           is: {
             status: "CONFIRMED",
             round: { is: { status: "COMPLETED" } },
-            purchase: { is: { status: "CONFIRMED" } },
+            purchase: { is: { status: "CONFIRMED", cashierId: { not: null }, playerId: null } },
           },
         },
       },
@@ -60,48 +63,22 @@ export async function GET(request: NextRequest) {
         }, round.resultNumber);
         return {
           id: line.id,
-          numberValue: line.numberValue,
-          stakeCents: line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
-          prizeCategory: review?.category ?? null,
-          prizeCategoryLabel: review ? NUMERIC_PRIZE_CATEGORY_LABELS[review.category] : null,
-          categoryStakeCents: review?.stakeCents ?? null,
-          multiplier: review?.multiplier ?? null,
-          calculatedPrizeCents: review?.calculatedPrizeCents ?? null,
-          calculationConsistent: Boolean(review?.calculationConsistent && review.calculatedPrizeCents === line.prizeCents),
           prizeCents: line.prizeCents ?? 0,
+          prizeCategoryLabel: review ? NUMERIC_PRIZE_CATEGORY_LABELS[review.category] : null,
+          calculationConsistent: Boolean(review?.calculationConsistent && review.calculatedPrizeCents === line.prizeCents),
           roundCode: round.code,
-          resultNumber: round.resultNumber,
-          resultAt: round.resultAt.toISOString(),
-          participationTotalCents: line.participation.totalCents,
-          purchaseTotalCents: line.participation.purchase.totalCents,
           receiptCode: line.participation.purchase.receiptCode,
           playerName: line.participation.purchase.player?.fullName
             ?? line.participation.purchase.player?.username
             ?? line.participation.purchase.customer?.name
             ?? "Cliente sem nome cadastrado",
-          phone: line.participation.purchase.customer?.phone ?? null,
-          cashierName: line.participation.purchase.cashier?.fullName
-            ?? line.participation.purchase.cashier?.username ?? null,
-          physicalReceiptEligible: Boolean(line.participation.purchase.cashierId && !line.participation.purchase.playerId),
-          paid: Boolean(line.prizePayout || line.prizeCreditedAt),
-          payoutChannel: line.prizePayout?.channel ?? (line.prizeCreditedAt ? "WALLET" : null),
-          paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null,
-          reference: line.prizePayout?.reference ?? null,
+          paid: false,
           paymentRequest: line.prizePaymentRequest ? {
-            id: line.prizePaymentRequest.id, status: line.prizePaymentRequest.status,
-            providerTransferStatus: line.prizePaymentRequest.providerTransferStatus,
+            status: line.prizePaymentRequest.status,
             pixKey: line.prizePaymentRequest.pixKey ?? line.prizePaymentRequest.batch?.pixKey ?? null,
             pixKeyMasked: line.prizePaymentRequest.pixKeyMasked,
             pixKeyType: line.prizePaymentRequest.pixKeyType,
-            holderName: null,
-            holderCpfMasked: line.prizePaymentRequest.holderCpfMasked,
-            holderCpf: null,
-            grossCents: line.prizePaymentRequest.grossCents,
-            administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents,
-            transactionFeeCents: line.prizePaymentRequest.transactionFeeCents,
             netCents: line.prizePaymentRequest.netCents,
-            requestedAt: line.prizePaymentRequest.requestedAt.toISOString(),
-            paymentReference: line.prizePaymentRequest.paymentReference,
           } : null,
         };
       }),
