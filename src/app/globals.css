@@ -4400,3 +4400,98 @@ body:has(.home-page-compact) {
     font-size: .76rem;
   }
 }
+
+
+/* Pedido de prêmio: mesmo desenho e alinhamento do saque da carteira. */
+.area-page .admin-prize-payout .admin-prize-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+}
+.area-page .admin-prize-payout .admin-payment-card-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.area-page .admin-prize-payout .admin-payment-card-heading strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.area-page .admin-prize-payout .admin-payment-card-heading strong:last-child {
+  justify-self: end;
+  white-space: nowrap;
+}
+.area-page .admin-prize-payout .admin-prize-card > p {
+  margin: 0;
+}
+.area-page .admin-prize-payout .admin-payment-status {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.area-page .admin-prize-payout .admin-prize-card .admin-payment-pix {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  box-sizing: border-box;
+}
+.area-page .admin-prize-payout .admin-payment-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+.area-page .admin-prize-payout .admin-payment-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  font-size: clamp(.72rem, 3.2vw, .86rem);
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}
+.area-page .admin-prize-payout .admin-payment-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  height: 38px;
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .area-page .admin-prize-payout .admin-prize-card {
+    gap: 7px;
+    padding: 9px;
+  }
+  .area-page .admin-prize-payout .admin-payment-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .area-page .admin-prize-payout .admin-payment-actions button {
+    min-height: 38px;
+    height: 38px;
+    padding-inline: 5px;
+    font-size: .76rem;
+  }
+}
