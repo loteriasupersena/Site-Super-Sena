@@ -84,7 +84,7 @@ export async function registerNumericPrizePayout(
   if (!line.prizePaymentRequest) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   const requestUpdated = await tx.prizePaymentRequest.updateMany({
     where: { id: line.prizePaymentRequest.id, status: expectedRequestStatus },
-    data: { status: "PAID", pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
+    data: { status: "PAID", pixKey: null, pixKeyEncrypted: null, reviewedAt: paidAt, reviewerId: input.actorId ?? undefined, paymentReference: input.reference?.trim() || null },
   });
   if (requestUpdated.count !== 1) throw new NumericPrizePayoutError("NOT_ELIGIBLE");
   if (line.prizePaymentRequest.batchId) {
@@ -94,7 +94,7 @@ export async function registerNumericPrizePayout(
     if (remaining === 0) {
       await tx.prizePaymentBatch.updateMany({
         where: { id: line.prizePaymentRequest.batchId, status: { in: ["PENDING", "PROCESSING"] } },
-        data: { status: "PAID", reviewedAt: paidAt, paymentReference: input.reference?.trim() || null },
+        data: { status: "PAID", pixKey: null, reviewedAt: paidAt, paymentReference: input.reference?.trim() || null },
       });
     }
   }
