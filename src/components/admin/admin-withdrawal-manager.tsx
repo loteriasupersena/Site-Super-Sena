@@ -63,7 +63,7 @@ export function AdminWithdrawalManager() {
     finally { setBusy(null); }
   }
 
-  const pending = items.filter((item) => item.status === "PENDING" || item.status === "FAILED");
+  const pending = items.filter((item) => item.status === "PENDING" || item.status === "FAILED" || item.status === "PROCESSING");
   const history = items.filter((item) => item.status !== "PENDING" && item.status !== "FAILED");
 
   return <section className="feature-card" aria-labelledby="admin-withdrawals-heading">
