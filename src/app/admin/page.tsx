@@ -1,5 +1,6 @@
 import { AreaShell } from "@/components/area-shell";
 import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
+import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-credit";
@@ -18,6 +19,13 @@ export default async function AdminPage() {
         <div className="admin-accordion-list">
           <AdminPrizePayout />
           <AdminWithdrawalManager />
+
+          <details className="admin-accordion">
+            <summary><span>Conferência de créditos online</span></summary>
+            <div className="admin-accordion-content">
+              <AdminPrizeCreditReconciliation />
+            </div>
+          </details>
 
           <details className="admin-accordion">
             <summary><span>Crédito de teste na carteira</span></summary>
