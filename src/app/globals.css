@@ -3922,3 +3922,92 @@ body:has(.home-page-compact) {
   max-width: 100%;
   height: auto;
 }
+
+
+/* Compactação adicional solicitada para os cartões administrativos e financeiros. */
+.admin-prize-payout,
+.admin-withdrawal-manager {
+  gap: 6px;
+  padding: 10px !important;
+}
+.admin-prize-payout .admin-round-list,
+.admin-withdrawal-manager .admin-round-list {
+  gap: 5px;
+}
+.admin-prize-payout .admin-prize-card,
+.admin-withdrawal-manager .admin-prize-card {
+  gap: 5px;
+  padding: 7px 8px;
+}
+.admin-payment-card-heading {
+  gap: 8px;
+}
+.admin-prize-card > p {
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.admin-prize-card > p::-webkit-scrollbar,
+.admin-payment-pix::-webkit-scrollbar {
+  display: none;
+}
+.admin-payment-status {
+  padding: 2px 6px;
+}
+.admin-payment-pix {
+  padding: 5px 7px;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.admin-payment-actions {
+  gap: 5px;
+}
+.admin-payment-actions button,
+.admin-payment-refresh {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 36px;
+  height: 36px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+.admin-payment-refresh {
+  width: 100%;
+}
+.admin-accordion-list {
+  gap: 6px;
+}
+.admin-accordion > summary {
+  padding: 8px 40px 8px 10px;
+  white-space: nowrap;
+}
+.admin-accordion > summary > span:first-child {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-accordion > summary:after {
+  right: 15px;
+}
+.admin-accordion-content {
+  padding: 0 8px 8px;
+}
+@media (max-width: 600px) {
+  .admin-prize-payout,
+  .admin-withdrawal-manager {
+    padding: 10px !important;
+  }
+  .admin-prize-payout .admin-prize-card,
+  .admin-withdrawal-manager .admin-prize-card {
+    padding: 7px 8px;
+  }
+  .admin-payment-actions button {
+    min-height: 36px;
+    height: 36px;
+    font-size: inherit;
+  }
+}
