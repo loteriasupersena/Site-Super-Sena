@@ -17,8 +17,12 @@ export default async function AdminPage() {
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
       <div className="admin-page-layout">
         <div className="admin-accordion-list">
+          <section className="feature-card" aria-label="Central de solicitações financeiras">
+            <span className="feature-label">PRIMEIRO ATENDIMENTO</span>
+            <h2>Solicitações para pagamento</h2>
+            <p>Os pedidos de prêmio do recibo e os saques da carteira digital aparecem primeiro nesta área, identificados pelo tipo.</p>
+          </section>
           <AdminPrizePayout />
-
           <AdminWithdrawalManager />
 
           <details className="admin-accordion">
