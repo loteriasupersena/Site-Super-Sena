@@ -1,5 +1,6 @@
 import { AreaShell } from "@/components/area-shell";
 import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
+import { AdminUnpaidPrizeDashboard } from "@/components/admin/admin-unpaid-prize-dashboard";
 import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
 import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
@@ -17,19 +18,13 @@ export default async function AdminPage() {
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
       <div className="admin-page-layout">
         <div className="admin-accordion-list">
-          <AdminPrizePayout />
-          <AdminWithdrawalManager />
-
           <details className="admin-accordion">
-            <summary><span>Conferência de créditos online</span></summary>
+            <summary><span>Prêmios</span></summary>
             <div className="admin-accordion-content">
+              <AdminPrizePayout />
+              <AdminUnpaidPrizeDashboard />
+              <AdminWithdrawalManager />
               <AdminPrizeCreditReconciliation />
-            </div>
-          </details>
-
-          <details className="admin-accordion">
-            <summary><span>Crédito de teste na carteira</span></summary>
-            <div className="admin-accordion-content">
               <AdminTestWalletCredit />
             </div>
           </details>
