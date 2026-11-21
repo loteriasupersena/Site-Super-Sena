@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { Prisma, PaymentMethod, RoundStatus, type PrismaClient } from "../../generated/prisma/client";
 import { calculateCommissionCents } from "../../domain/cashier-commission";
 import { allocateNumberStake } from "../../domain/allocate-number-stake";
-import { DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION, parseNumericPrizeMultipliers } from "../../domain/numeric-prize-rules";
+import { DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, NUMERIC_GAME_PRICE_CENTS, createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "../../domain/numeric-prize-rules";
 import { normalizeNumber } from "../numbers/normalize-number";
 import { selectNextValidRounds } from "../payments/select-next-valid-rounds";
 import { PurchaseServiceError } from "./purchase-service-error";
@@ -70,16 +70,9 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           return existing;
         }
 
-        const configuredRules = await tx.setting.findUnique({ where: { key: "numeric_prize_multipliers" } });
-        let currentMultipliers = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
-        if (configuredRules) {
-          let parsedValue: unknown;
-          try { parsedValue = JSON.parse(configuredRules.value); }
-          catch { throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION"); }
-          const validated = parseNumericPrizeMultipliers(parsedValue);
-          if (!validated) throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION");
-          currentMultipliers = { ...validated, unit: 6 };
-        }
+        // New purchases always use the fixed, versioned prize table.
+        // Historical purchases keep their stored snapshots.
+        const currentMultipliers = DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
         const snapshot = createNumericPrizeRuleSnapshot(currentMultipliers);
         const maximumLinePrizeCents = Math.max(
           allocation.unitCents * currentMultipliers.unit,
