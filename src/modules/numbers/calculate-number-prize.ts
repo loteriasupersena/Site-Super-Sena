@@ -1,4 +1,4 @@
-import { LEGACY_NUMERIC_PRIZE_RULE_VERSION, readNumericPrizeMultipliers, type NumericPrizeCategory } from "../../domain/numeric-prize-rules";
+import { PREVIOUS_NUMERIC_PRIZE_RULE_VERSION, readNumericPrizeMultipliers, type NumericPrizeCategory } from "../../domain/numeric-prize-rules";
 import { normalizeNumber } from "./normalize-number";
 
 export type NumericSettlementLine = {
@@ -38,17 +38,17 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
   if (!Number.isSafeInteger(stake) || stake < 0) throw new Error("Stored numeric category allocation is invalid.");
 
   let prize: number;
-  if (winningCategory === "unit" && line.ruleVersion !== LEGACY_NUMERIC_PRIZE_RULE_VERSION) {
+  if (winningCategory === "unit" && line.ruleVersion === PREVIOUS_NUMERIC_PRIZE_RULE_VERSION) {
     const totalStakeCents = ALLOCATION_FIELDS.reduce((total, field) => {
       const amount = line[field];
       if (!Number.isSafeInteger(amount) || amount < 0) throw new Error("Stored numeric category allocation is invalid.");
       return total + amount;
     }, 0);
     if (!Number.isSafeInteger(totalStakeCents)) throw new Error("Stored numeric stake is invalid.");
-    // In v2, a hit on Unidade returns exactly 100% of the total wager.
-    // The six-way allocation is used for round accounting, not to reduce the unit prize.
+    // Preserve the previous v2 rule for already-recorded bets.
     prize = totalStakeCents;
   } else {
+    // v3 assigns exactly R$1.00 to each category for a fixed R$6.00 game.
     prize = stake * multipliers[winningCategory];
   }
 
