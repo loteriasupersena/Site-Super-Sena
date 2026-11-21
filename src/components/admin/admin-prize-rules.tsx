@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 type Multipliers = { unit: number; tens: number; hundreds: number; milhar: number; quina: number; sena: number };
 const defaults: Multipliers = { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 };
 const fields: Array<{ key: keyof Multipliers; label: string }> = [
-  { key: "unit", label: "Unidade" },
   { key: "tens", label: "Dezena" },
   { key: "hundreds", label: "Centena" },
   { key: "milhar", label: "Milhar (quatro números)" },
@@ -61,7 +60,7 @@ export function AdminPrizeRules() {
   return <section className="feature-card" aria-labelledby="admin-prize-rules-heading">
     <span className="feature-label">Regras do jogo</span>
     <h2 id="admin-prize-rules-heading">Multiplicadores de prêmios</h2>
-    <p>O multiplicador da Unidade é fixo em 6: o servidor calcula um sexto da aposta e devolve o valor integral quando somente a Unidade é acertada. Os demais multiplicadores podem ser alterados. Apostas antigas preservam a regra gravada na compra.</p>
+    <p>Na Unidade, o acerto devolve exatamente o valor total apostado, sem multiplicador. A divisão em seis partes serve ao rateio contábil; eventual sobra de centavos fica na Unidade. Os demais cinco multiplicadores podem ser alterados. Apostas antigas preservam a regra gravada na compra.</p>
     {loading ? <p>Carregando configuração salva…</p> : <form className="admin-round-create" onSubmit={save}>
       {fields.map((field) => <label key={field.key}>{field.label} (vezes)
         <input
