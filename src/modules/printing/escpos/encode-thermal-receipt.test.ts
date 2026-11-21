@@ -62,14 +62,15 @@ describe("encodeThermalReceipt", () => {
     expect(text).not.toContain("O valor de cada aposta");
   });
 
-  it("prints the fixed R$1 allocation to each of the six prizes", () => {
+  it("prints the fixed stake without exposing internal prize allocation", () => {
     const bytes = encodeThermalReceipt({
       ...receipt,
       entries: [{ ...receipt.entries[0]!, stakeCents: 600 }],
     }, profile);
     const text = String.fromCharCode(...bytes);
     expect(text).toContain("R$ 6,00");
-    expect(text).toContain("Rateio: R$ 1,00 para cada um dos 6 premios.");
+    expect(text).not.toContain("Rateio");
+    expect(text).not.toContain("R$ 1,00");
   });
 
   it("selects the configured ESC/POS font mode", () => {
