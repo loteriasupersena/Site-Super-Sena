@@ -3994,3 +3994,58 @@ body:has(.home-page-compact) {
 }
 
 
+
+
+/* Identidade visual Super Sena — azul turquesa da arte institucional. */
+:root {
+  --background: #00D8F5;
+}
+
+html,
+body {
+  background-color: #00D8F5 !important;
+}
+
+body {
+  color: #08265f !important;
+}
+
+/* Fundo geral de todas as áreas e páginas. Os cartões internos permanecem escuros
+   para manter contraste e legibilidade dos formulários e informações. */
+.home-page,
+.home-page.home-page-compact,
+.home-entry,
+.auth-layout,
+.site-page-shell,
+.page-shell,
+.auth-page,
+.area-page,
+.public-results-page,
+main {
+  background-color: transparent !important;
+  color: #08265f;
+}
+
+/* Cabeçalho fixo compartilhado por todas as telas. */
+.site-header.site-header-scenery {
+  background: #00D8F5 !important;
+  box-shadow: 0 5px 18px rgb(0 45 105 / 14%);
+  border-bottom-color: #f4d34a;
+}
+
+/* Textos que ficam diretamente sobre o novo fundo azul. */
+.area-header h1,
+.area-header .area-description,
+.area-header .account-name,
+.public-results-title-row h1,
+.public-results-subtitle,
+.public-results-header .public-results-eyebrow {
+  color: #08265f !important;
+}
+
+/* Áreas externas da página inicial acompanham a nova cor institucional. */
+.home-header,
+.home-header-wrap,
+.home-footer {
+  background-color: #00D8F5 !important;
+}
