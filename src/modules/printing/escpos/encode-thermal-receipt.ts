@@ -186,9 +186,6 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
     if (!Number.isSafeInteger(entry.stakeCents) || entry.stakeCents < 0) throw new Error("Invalid stake");
     for (const part of wrap(entry.numberValue, columns)) bytes.push(...line(part, profile));
     for (const part of padPair("", money(entry.stakeCents), columns)) bytes.push(...line(part, profile));
-    if (entry.stakeCents === 600) {
-      for (const part of wrap("Rateio: R$ 1,00 para cada um dos 6 premios.", columns)) bytes.push(...line(part, profile));
-    }
     bytes.push(...line("-".repeat(columns), profile));
     if (!roundEntries.has(entry.roundCode)) roundEntries.set(entry.roundCode, entry);
   }
