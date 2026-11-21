@@ -201,7 +201,6 @@ export function ThermalReceipt({
               </div>
             );
           })}
-          <p>O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.</p>
         </section>
 
         <div className="thermal-receipt-divider" />
