@@ -47,9 +47,9 @@ describe("createNumericPurchase pending Pix intent", () => {
 
   it("stores the bet intent without selecting or creating round participations", async () => {
     const purchaseCreate = vi.fn().mockResolvedValue({
-      id: "purchase-12345678", status: "PENDING_PAYMENT", paymentMethod: "PIX", totalCents: 1200,
+      id: "purchase-12345678", status: "PENDING_PAYMENT", paymentMethod: "PIX", totalCents: 3600,
       receiptCode: null, confirmedAt: null, participations: [],
-      numericIntent: { roundCount: 2, numbers: ["000007"], allocation: { unitCents: 100, tensCents: 100, hundredsCents: 100, milharCents: 100, quinaCents: 100, senaCents: 100 } },
+      numericIntent: { roundCount: 3, numbers: ["000007", "000008"], allocation: { unitCents: 100, tensCents: 100, hundredsCents: 100, milharCents: 100, quinaCents: 100, senaCents: 100 } },
       payment: { id: "payment-1", status: "PENDING" },
     });
     const tx = {
@@ -65,8 +65,8 @@ describe("createNumericPurchase pending Pix intent", () => {
       idempotencyKey: "pending-intent-key-0001",
       playerId: "player-1",
       paymentMethod: "PIX",
-      roundCount: 2,
-      numbers: ["000007"],
+      roundCount: 3,
+      numbers: ["000007", "000008"],
       stakeCents: 600,
     });
 
@@ -75,10 +75,10 @@ describe("createNumericPurchase pending Pix intent", () => {
     const data = purchaseCreate.mock.calls[0]![0].data;
     expect(data).not.toHaveProperty("participations");
     expect(data.numericIntent.create).toMatchObject({
-      roundCount: 2, numbers: ["000007"], ruleVersion: "numeric-six-digit-v3",
+      roundCount: 3, numbers: ["000007", "000008"], ruleVersion: "numeric-six-digit-v3",
       ruleSnapshot: { version: "numeric-six-digit-v3", multipliers: { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 } },
     });
-    expect(data.payment.create.amountCents).toBe(1200);
+    expect(data.payment.create.amountCents).toBe(3600);
     expect(result).toMatchObject({ status: "PENDING_PAYMENT", receiptCode: null, participations: [] });
   });
 });
