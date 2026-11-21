@@ -3,7 +3,7 @@ import { createNumericPurchase } from "./create-numeric-purchase";
 
 describe("createNumericPurchase pending Pix intent", () => {
 
-  it("snapshots the current admin multipliers into a new pending Pix bet", async () => {
+  it("ignores old editable settings and snapshots the fixed prize table into a new pending Pix bet", async () => {
     const configured = { unit: 6, tens: 30, hundreds: 250, milhar: 2500, quina: 25000, sena: 250000 };
     const purchaseCreate = vi.fn().mockResolvedValue({
       id: "purchase-custom-rules", status: "PENDING_PAYMENT", paymentMethod: "PIX", totalCents: 600,
@@ -26,6 +26,7 @@ describe("createNumericPurchase pending Pix intent", () => {
       numbers: ["000007"], stakeCents: 600,
     });
 
+    expect(tx.setting.findUnique).not.toHaveBeenCalled();
     expect(purchaseCreate.mock.calls[0]![0].data.numericIntent.create.ruleSnapshot).toEqual({
       version: "numeric-six-digit-v3",
       multipliers: { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 },
@@ -62,8 +63,8 @@ describe("createNumericPurchase pending Pix intent", () => {
     const data = purchaseCreate.mock.calls[0]![0].data;
     expect(data).not.toHaveProperty("participations");
     expect(data.numericIntent.create).toMatchObject({
-      roundCount: 2, numbers: ["000007"], ruleVersion: "numeric-six-digit-v2",
-      ruleSnapshot: { version: "numeric-six-digit-v2", multipliers: { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 } },
+      roundCount: 2, numbers: ["000007"], ruleVersion: "numeric-six-digit-v3",
+      ruleSnapshot: { version: "numeric-six-digit-v3", multipliers: { unit: 6, tens: 20, hundreds: 200, milhar: 2000, quina: 20000, sena: 200000 } },
     });
     expect(data.payment.create.amountCents).toBe(1200);
     expect(result).toMatchObject({ status: "PENDING_PAYMENT", receiptCode: null, participations: [] });
