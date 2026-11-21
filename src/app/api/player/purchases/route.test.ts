@@ -94,7 +94,9 @@ describe("POST /api/player/purchases", () => {
     const invalidCount = await POST(request({ ...validBody(), repetitionCount: 11 }));
     expect(invalidCount.status).toBe(400);
     const obsoleteRoundIds = await POST(request({ ...validBody(), roundIds: ["round-1"] }));
+    const editableStake = await POST(request({ ...validBody(), stakeCents: 100 }));
     expect(obsoleteRoundIds.status).toBe(400);
+    expect(editableStake.status).toBe(400);
     expect(mocks.createNumericPurchase).not.toHaveBeenCalled();
   });
 
