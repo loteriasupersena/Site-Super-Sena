@@ -47,7 +47,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       await tx.session.deleteMany({ where: { userId: target.id } });
       await tx.customer.updateMany({
         where: { createdById: target.id },
-        data: { createdById: null, name: "Cliente removido", phone: null },
+        data: { createdById: null },
       });
       await tx.withdrawal.updateMany({
         where: { userId: target.id },
