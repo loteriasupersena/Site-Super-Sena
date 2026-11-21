@@ -2,20 +2,20 @@
 
 import { useState, type CSSProperties } from "react";
 
+const GAME_PRICE_CENTS = 600;
 const categories = [
-  { key: "sena", label: "Sena", digits: 6, initial: "300000" },
-  { key: "quina", label: "Quina", digits: 5, initial: "30000" },
-  { key: "milhar", label: "Milhar", digits: 4, initial: "3000" },
-  { key: "centena", label: "Centena", digits: 3, initial: "300" },
-  { key: "dezena", label: "Dezena", digits: 2, initial: "30" },
-  { key: "unidade", label: "Unidade", digits: 1, initial: "3" },
+  { key: "sena", label: "Sena", digits: 6, prizeCents: 20_000_000 },
+  { key: "quina", label: "Quina", digits: 5, prizeCents: 2_000_000 },
+  { key: "milhar", label: "Milhar", digits: 4, prizeCents: 200_000 },
+  { key: "centena", label: "Centena", digits: 3, prizeCents: 20_000 },
+  { key: "dezena", label: "Dezena", digits: 2, prizeCents: 2_000 },
+  { key: "unidade", label: "Unidade", digits: 1, prizeCents: 600 },
 ] as const;
 
 type CategoryKey = (typeof categories)[number]["key"];
 type CategoryResult = { hits: number; prizes: number };
 type Result = {
   attempts: number;
-  stakeCents: number;
   totalBet: number;
   totalPrizes: number;
   commission: number;
@@ -30,10 +30,6 @@ const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value / 100);
 const percent = (value: number) =>
   `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
-
-function parseDecimal(value: string): number {
-  return Number(value.trim().replace(",", "."));
-}
 
 function seededRandom(seedText: string): () => number {
   let seed = 2166136261;
@@ -52,26 +48,14 @@ function seededRandom(seedText: string): () => number {
 
 function emptyCategoryResults(): Record<CategoryKey, CategoryResult> {
   return {
-    sena: { hits: 0, prizes: 0 },
-    quina: { hits: 0, prizes: 0 },
-    milhar: { hits: 0, prizes: 0 },
-    centena: { hits: 0, prizes: 0 },
-    dezena: { hits: 0, prizes: 0 },
-    unidade: { hits: 0, prizes: 0 },
+    sena: { hits: 0, prizes: 0 }, quina: { hits: 0, prizes: 0 },
+    milhar: { hits: 0, prizes: 0 }, centena: { hits: 0, prizes: 0 },
+    dezena: { hits: 0, prizes: 0 }, unidade: { hits: 0, prizes: 0 },
   };
 }
 
 export function AdminGameSimulator() {
   const [attempts, setAttempts] = useState("10000");
-  const [stake, setStake] = useState("1,00");
-  const [multipliers, setMultipliers] = useState<Record<CategoryKey, string>>({
-    sena: "300000",
-    quina: "30000",
-    milhar: "3000",
-    centena: "300",
-    dezena: "30",
-    unidade: "3",
-  });
   const [commission, setCommission] = useState("0");
   const [seed, setSeed] = useState("");
   const [progress, setProgress] = useState(0);
@@ -81,30 +65,13 @@ export function AdminGameSimulator() {
 
   async function runSimulation() {
     const count = Number(attempts);
-    const stakeValue = parseDecimal(stake);
-    const commissionRate = parseDecimal(commission);
-    const multiplierValues = Object.fromEntries(
-      categories.map((category) => [category.key, Number(multipliers[category.key])])
-    ) as Record<CategoryKey, number>;
-
-    if (!Number.isInteger(count) || count < 1 || count > 1000000) {
-      setError("Informe de 1 a 1.000.000 de sorteios.");
-      return;
-    }
-    if (!Number.isFinite(stakeValue) || stakeValue < 1 || stakeValue > 10000) {
-      setError("O valor apostado deve ser entre R$ 1,00 e R$ 10.000,00.");
+    const commissionRate = Number(commission.trim().replace(",", "."));
+    if (!Number.isInteger(count) || count < 1 || count > 1_000_000) {
+      setError("Informe de 1 a 1.000.000 de jogos para simular.");
       return;
     }
     if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) {
       setError("A comissão deve ficar entre 0% e 100%.");
-      return;
-    }
-    if (categories.some((category) =>
-      !Number.isSafeInteger(multiplierValues[category.key]) ||
-      multiplierValues[category.key] < 0 ||
-      multiplierValues[category.key] > 1000000
-    )) {
-      setError("Informe multiplicadores inteiros entre 0 e 1.000.000.");
       return;
     }
 
@@ -113,16 +80,6 @@ export function AdminGameSimulator() {
     setProgress(0);
     setRunning(true);
 
-    const stakeCents = Math.round(stakeValue * 100);
-    const baseShare = Math.floor(stakeCents / 6);
-    const shares: Record<CategoryKey, number> = {
-      unidade: baseShare + (stakeCents - baseShare * 6),
-      dezena: baseShare,
-      centena: baseShare,
-      milhar: baseShare,
-      quina: baseShare,
-      sena: baseShare,
-    };
     const byCategory = emptyCategoryResults();
     const random = seed.trim() ? seededRandom(seed.trim()) : Math.random;
     let totalPrizes = 0;
@@ -133,76 +90,50 @@ export function AdminGameSimulator() {
       const batch = () => {
         const stop = Math.min(processed + 5000, count);
         for (; processed < stop; processed++) {
-          const drawn = String(Math.floor(random() * 1000000)).padStart(6, "0");
-          const bet = String(Math.floor(random() * 1000000)).padStart(6, "0");
+          const drawn = String(Math.floor(random() * 1_000_000)).padStart(6, "0");
+          const bet = String(Math.floor(random() * 1_000_000)).padStart(6, "0");
           const winner = categories.find((category) =>
             bet.slice(-category.digits) === drawn.slice(-category.digits)
           );
           if (winner) {
             hits++;
-            const key = winner.key;
-            const prize = shares[key] * multiplierValues[key];
-            byCategory[key].hits++;
-            byCategory[key].prizes += prize;
-            totalPrizes += prize;
+            byCategory[winner.key].hits++;
+            byCategory[winner.key].prizes += winner.prizeCents;
+            totalPrizes += winner.prizeCents;
           }
         }
         setProgress((processed / count) * 100);
-        if (processed < count) {
-          setTimeout(batch, 0);
-        } else {
-          resolve();
-        }
+        if (processed < count) setTimeout(batch, 0);
+        else resolve();
       };
       batch();
     });
 
-    const totalBet = count * stakeCents;
+    const totalBet = count * GAME_PRICE_CENTS;
     const commissionCents = Math.round(totalBet * commissionRate / 100);
     setResult({
-      attempts: count,
-      stakeCents,
-      totalBet,
-      totalPrizes,
-      commission: commissionCents,
-      net: totalBet - totalPrizes - commissionCents,
-      hits,
-      misses: count - hits,
-      byCategory,
-      seed: seed.trim(),
+      attempts: count, totalBet, totalPrizes, commission: commissionCents,
+      net: totalBet - totalPrizes - commissionCents, hits, misses: count - hits,
+      byCategory, seed: seed.trim(),
     });
     setRunning(false);
   }
 
   const inputStyle: CSSProperties = {
-    width: "100%",
-    minHeight: 48,
-    boxSizing: "border-box",
-    borderRadius: 14,
-    border: "1px solid var(--border, #334155)",
-    background: "var(--input, #0b1421)",
-    color: "var(--foreground, #f1f5f9)",
-    padding: "10px 12px",
-    fontSize: 16,
+    width: "100%", minHeight: 48, boxSizing: "border-box", borderRadius: 14,
+    border: "1px solid var(--border, #334155)", background: "var(--input, #0b1421)",
+    color: "var(--foreground, #f1f5f9)", padding: "10px 12px", fontSize: 16,
   };
   const cardStyle: CSSProperties = {
-    border: "1px solid var(--border, #334155)",
-    borderRadius: 20,
-    background: "var(--card, #172233)",
-    padding: 14,
-    marginTop: 12,
+    border: "1px solid var(--border, #334155)", borderRadius: 20,
+    background: "var(--card, #172233)", padding: 14, marginTop: 12,
   };
   const labelStyle: CSSProperties = {
-    display: "grid",
-    gap: 9,
-    color: "var(--muted-foreground, #b8c5d6)",
-    fontWeight: 600,
-    fontSize: 15,
+    display: "grid", gap: 9, color: "var(--muted-foreground, #b8c5d6)",
+    fontWeight: 600, fontSize: 15,
   };
   const gridStyle: CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 12,
+    display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12,
   };
 
   return (
@@ -212,34 +143,30 @@ export function AdminGameSimulator() {
       </div>
 
       <div style={cardStyle}>
-        <h2 id="game-simulator-title" style={{ marginTop: 0, marginBottom: 22 }}>Parâmetros</h2>
+        <h2 id="game-simulator-title" style={{ marginTop: 0, marginBottom: 18 }}>Parâmetros</h2>
+        <p style={{ lineHeight: 1.6, marginTop: 0 }}>
+          Cada jogo custa R$ 6,00, com R$ 1,00 destinado a cada categoria. Os valores dos prêmios são fixos.
+        </p>
         <div style={gridStyle}>
           <label style={labelStyle}>
-            Quantidade de sorteios
+            Quantidade de jogos
             <input style={inputStyle} type="number" min="1" max="1000000" value={attempts} disabled={running} onChange={(event) => setAttempts(event.target.value)} />
           </label>
           <label style={labelStyle}>
-            Valor apostado por número (R$)
-            <input style={inputStyle} inputMode="decimal" value={stake} disabled={running} onChange={(event) => setStake(event.target.value)} />
-          </label>
-          {categories.map((category) => (
-            <label key={category.key} style={labelStyle}>
-              Multiplicador {category.label}
-              <input style={inputStyle} type="number" min="0" max="1000000" step="1" value={multipliers[category.key]} disabled={running} onChange={(event) => setMultipliers((current) => ({ ...current, [category.key]: event.target.value }))} />
-            </label>
-          ))}
-          <label style={labelStyle}>
-            Comissão simulada sobre o total apostado (%)
+            Comissão simulada (%)
             <input style={inputStyle} inputMode="decimal" value={commission} disabled={running} onChange={(event) => setCommission(event.target.value)} />
           </label>
-          <label style={labelStyle}>
+          <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
             Semente opcional
             <input style={inputStyle} value={seed} disabled={running} placeholder="Aleatória a cada execução" onChange={(event) => setSeed(event.target.value)} />
           </label>
         </div>
-        <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginTop: 18 }}>
-          Cada tentativa gera um número apostado e um sorteado, ambos com seis algarismos. O valor é dividido entre as seis categorias; a sobra de centavos vai para Unidade. Só é pago o prêmio da categoria de maior precisão acertada. A comissão é uma hipótese aplicada sobre o total apostado, não uma apuração das comissões reais dos cambistas.
-        </p>
+        <div style={{ marginTop: 14, lineHeight: 1.55, color: "var(--muted-foreground, #94a3b8)" }}>
+          <strong>Valores fixos dos prêmios:</strong>
+          <div>{[...categories].reverse().map((category) => (
+            <div key={category.key}>{category.label}: {money(category.prizeCents)}</div>
+          ))}</div>
+        </div>
         <button type="button" className="primary-button" disabled={running} onClick={() => void runSimulation()}>
           {running ? "Executando simulação…" : "Iniciar simulação"}
         </button>
@@ -255,52 +182,42 @@ export function AdminGameSimulator() {
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0, marginBottom: 14 }}>Resultado financeiro</h2>
         {!result ? (
-          <p style={{ color: "var(--muted-foreground, #94a3b8)" }}>Preencha os parâmetros e inicie a simulação para visualizar os resultados.</p>
+          <p style={{ color: "var(--muted-foreground, #94a3b8)" }}>Informe a quantidade de jogos e inicie a simulação.</p>
         ) : (
           <>
             <div style={gridStyle}>
               {[
-                ["Total apostado", money(result.totalBet), result.attempts.toLocaleString("pt-BR") + " tentativas"],
+                ["Total apostado", money(result.totalBet), result.attempts.toLocaleString("pt-BR") + " jogos"],
                 ["Total bruto de prêmios", money(result.totalPrizes), "Valor pago aos jogadores"],
-                ["RTP observado", percent(result.totalBet ? result.totalPrizes / result.totalBet * 100 : 0), money(result.totalPrizes) + " em prêmios"],
-                ["Comissão do cambista", money(result.commission), percent(result.totalBet ? result.commission / result.totalBet * 100 : 0) + " do total apostado"],
-                ["Lucro da banca", money(result.net), percent(result.totalBet ? result.net / result.totalBet * 100 : 0) + " do total apostado, antes de impostos e despesas"],
+                ["Retorno aos jogadores", percent(result.totalBet ? result.totalPrizes / result.totalBet * 100 : 0), money(result.totalPrizes) + " em prêmios"],
+                ["Comissão", money(result.commission), percent(result.totalBet ? result.commission / result.totalBet * 100 : 0) + " do total apostado"],
+                ["Saldo da banca", money(result.net), percent(result.totalBet ? result.net / result.totalBet * 100 : 0) + " antes de impostos e despesas"],
               ].map(([label, value, note]) => (
                 <article key={label} style={{ border: "1px solid var(--border, #334155)", borderRadius: 14, background: "var(--background, #0d1725)", padding: 12, minWidth: 0 }}>
                   <div style={{ color: "var(--muted-foreground, #94a3b8)", marginBottom: 8 }}>{label}</div>
-                  <strong style={{ display: "block", fontSize: "clamp(17px, 3.5vw, 25px)", lineHeight: 1.2, overflowWrap: "anywhere", color: label === "Lucro da banca" ? (result.net > 0 ? "#34d399" : "#f87171") : "var(--foreground, #f1f5f9)" }}>{value}</strong>
+                  <strong style={{ display: "block", fontSize: "clamp(17px, 3.5vw, 25px)", lineHeight: 1.2, overflowWrap: "anywhere" }}>{value}</strong>
                   <div style={{ color: "var(--muted-foreground, #94a3b8)", marginTop: 6, lineHeight: 1.35, fontSize: 13 }}>{note}</div>
                 </article>
               ))}
             </div>
-
             <div style={{ overflowX: "auto", marginTop: 14 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 0, tableLayout: "fixed" }}>
-                <thead>
-                  <tr>
-                    {["Categoria", "Acertos", "Prob. observada", "Prêmio bruto"].map((heading) => (
-                      <th key={heading} style={{ textAlign: heading === "Categoria" ? "left" : "right", padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)", color: "var(--muted-foreground, #94a3b8)" }}>{heading}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...categories].reverse().map((category) => {
-                    const data = result.byCategory[category.key];
-                    return (
-                      <tr key={category.key}>
-                        <td style={{ padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)" }}>{category.label}</td>
-                        <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{data.hits.toLocaleString("pt-BR")}</td>
-                        <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{percent(data.hits / result.attempts * 100)}</td>
-                        <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{money(data.prizes)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
+                <thead><tr>
+                  {["Categoria", "Acertos", "Prob. observada", "Prêmio bruto"].map((heading) => (
+                    <th key={heading} style={{ textAlign: heading === "Categoria" ? "left" : "right", padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)", color: "var(--muted-foreground, #94a3b8)" }}>{heading}</th>
+                  ))}
+                </tr></thead>
+                <tbody>{[...categories].reverse().map((category) => {
+                  const data = result.byCategory[category.key];
+                  return <tr key={category.key}>
+                    <td style={{ padding: "8px 5px", fontSize: 12, borderBottom: "1px solid var(--border, #334155)" }}>{category.label}</td>
+                    <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{data.hits.toLocaleString("pt-BR")}</td>
+                    <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{percent(data.hits / result.attempts * 100)}</td>
+                    <td style={{ textAlign: "right", padding: 12, borderBottom: "1px solid var(--border, #334155)" }}>{money(data.prizes)}</td>
+                  </tr>;
+                })}</tbody>
               </table>
             </div>
-            <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginBottom: 0 }}>
-              Referência teórica para faixas exclusivas, com números uniformes e independentes: Unidade 9%; Dezena 0,9%; Centena 0,09%; Milhar 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
-            </p>
           </>
         )}
       </div>
@@ -316,25 +233,21 @@ export function AdminGameSimulator() {
             </p>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 340 }}>
-                <tbody>
-                  {[
-                    ["Acertos em pelo menos uma modalidade", result.hits.toLocaleString("pt-BR")],
-                    ["Tentativas sem nenhum acerto", result.misses.toLocaleString("pt-BR")],
-                    ["Média de prêmio por tentativa", money(Math.round(result.totalPrizes / result.attempts))],
-                    ["Resultado líquido por tentativa", money(Math.round(result.net / result.attempts))],
-                  ].map(([label, value]) => (
-                    <tr key={label}>
-                      <td style={{ padding: 13, borderBottom: "1px solid var(--border, #334155)" }}>{label}</td>
-                      <td style={{ padding: 13, borderBottom: "1px solid var(--border, #334155)", textAlign: "right", fontWeight: 600 }}>{value}</td>
-                    </tr>
-                  ))}
-                </tbody>
+                <tbody>{[
+                  ["Acertos em pelo menos uma modalidade", result.hits.toLocaleString("pt-BR")],
+                  ["Jogos sem nenhum acerto", result.misses.toLocaleString("pt-BR")],
+                  ["Média de prêmio por jogo", money(Math.round(result.totalPrizes / result.attempts))],
+                  ["Saldo médio por jogo", money(Math.round(result.net / result.attempts))],
+                ].map(([label, value]) => <tr key={label}>
+                  <td style={{ padding: 13, borderBottom: "1px solid var(--border, #334155)" }}>{label}</td>
+                  <td style={{ padding: 13, borderBottom: "1px solid var(--border, #334155)", textAlign: "right", fontWeight: 600 }}>{value}</td>
+                </tr>)}</tbody>
               </table>
             </div>
           </>
         )}
         <p style={{ color: "var(--muted-foreground, #7f91a8)", lineHeight: 1.6, marginBottom: 0, marginTop: 20 }}>
-          Este é um simulador matemático local. Não cria apostas reais, não chama o servidor de produção e não movimenta pagamentos. Os resultados variam entre execuções quando a semente fica vazia.
+          Este simulador matemático não cria apostas reais nem movimenta pagamentos. A comissão é uma hipótese e os resultados variam conforme os números sorteados.
         </p>
       </div>
     </section>
