@@ -29,13 +29,13 @@ describe("admin fixed prize rules API", () => {
 
   it("rejects unauthenticated and non-admin users", async () => {
     mocks.getSessionUser.mockResolvedValue(null);
-    expect((await GET(request())!).status).toBe(401);
+    expect(((await GET(request()))!).status).toBe(401);
     mocks.getSessionUser.mockResolvedValue({ id: "player", role: "PLAYER", mustChangePassword: false });
-    expect((await GET(request())!).status).toBe(403);
+    expect(((await GET(request()))!).status).toBe(403);
   });
 
   it("returns the fixed game price and six prize values", async () => {
-    const response = await GET(request())!;
+    const response = (await GET(request()))!;
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       gamePriceCents: 600,
@@ -46,7 +46,7 @@ describe("admin fixed prize rules API", () => {
   });
 
   it("does not allow prize values to be changed", async () => {
-    const response = await PUT(request("PUT", { unit: 6, tens: 20 }))!;
+    const response = (await PUT(request("PUT", { unit: 6, tens: 20 })))!;
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
       error: "Os valores dos prêmios são fixos e não podem ser alterados pelo painel.",
@@ -54,10 +54,10 @@ describe("admin fixed prize rules API", () => {
   });
 
   it("rejects cross-origin attempts to change the prize table", async () => {
-    const response = await PUT(new NextRequest("https://example.test/api/admin/prize-rules", {
+    const response = (await PUT(new NextRequest("https://example.test/api/admin/prize-rules", {
       method: "PUT",
       headers: { host: "example.test", origin: "https://attacker.test", cookie: "superquina_session=session-token" },
-    }))!;
+    })))!;
     expect(response.status).toBe(403);
   });
 });
