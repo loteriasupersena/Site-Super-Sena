@@ -81,8 +81,9 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           currentMultipliers = { ...validated, unit: 6 };
         }
         const snapshot = createNumericPrizeRuleSnapshot(currentMultipliers);
+        // Unidade returns the full stake; its accounting allocation and legacy multiplier do not set the prize.
         const maximumLinePrizeCents = Math.max(
-          allocation.unitCents * currentMultipliers.unit,
+          input.stakeCents,
           allocation.tensCents * currentMultipliers.tens,
           allocation.hundredsCents * currentMultipliers.hundreds,
           allocation.milharCents * currentMultipliers.milhar,
