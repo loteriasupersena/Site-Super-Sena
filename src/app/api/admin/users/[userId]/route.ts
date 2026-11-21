@@ -54,8 +54,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         data: { pixKey: null, pixKeyEncrypted: null, pixKeyType: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null, holderCpfMasked: null, pixKeyMasked: null },
       });
       await tx.prizePaymentRequest.updateMany({
-        where: { purchase: { playerId: target.id } },
+        where: { purchase: { is: { playerId: target.id } } },
         data: { pixKey: null, pixKeyEncrypted: null, pixKeyType: null, holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null, holderCpfMasked: null },
+      });
+      await tx.prizePaymentBatch.updateMany({
+        where: { purchase: { is: { playerId: target.id } } },
+        data: { pixKey: null, pixKeyEncrypted: null, pixKeyType: "", holderName: null, holderNameEncrypted: null, holderCpfEncrypted: null, holderCpfMasked: null },
       });
       await tx.auditEvent.updateMany({
         where: { OR: [{ actorId: target.id }, { entityType: "User", entityId: target.id }] },
