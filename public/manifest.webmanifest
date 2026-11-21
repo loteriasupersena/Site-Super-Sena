@@ -5,8 +5,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#062a78",
-  "theme_color": "#07358f",
+  "background_color": "#00D8F5",
+  "theme_color": "#00D8F5",
   "icons": [
     {
       "src": "/images/brand/super-sena-icone.webp",
