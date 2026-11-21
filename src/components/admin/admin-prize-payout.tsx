@@ -89,7 +89,6 @@ export function AdminPrizePayout() {
   );
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
-    <span className="feature-label">PRÊMIOS</span>
     <h2 id="admin-prize-payout-heading">Pedidos ({pending.length})</h2>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {loading ? <p>Carregando…</p> : pending.length === 0
