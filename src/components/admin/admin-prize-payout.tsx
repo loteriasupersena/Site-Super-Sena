@@ -35,10 +35,10 @@ export function AdminPrizePayout() {
     try {
       const response = await fetch("/api/admin/prizes/pending", { cache: "no-store" });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Falha ao carregar pedidos.");
+      if (!response.ok) throw new Error(body.error ?? "Falha ao carregar solicitações.");
       setWinners(body.winners as Winner[]);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Falha ao carregar pedidos.");
+      setError(reason instanceof Error ? reason.message : "Falha ao carregar solicitações.");
     } finally {
       setLoading(false);
     }
@@ -89,10 +89,10 @@ export function AdminPrizePayout() {
   );
 
   return <section className="feature-card admin-prize-payout" aria-labelledby="admin-prize-payout-heading">
-    <h2 id="admin-prize-payout-heading">Pedidos ({pending.length})</h2>
+    <h2 id="admin-prize-payout-heading">Solicitações ({pending.length})</h2>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {loading ? <p>Carregando…</p> : pending.length === 0
-      ? <p>Nenhum pedido pendente.</p>
+      ? <p>Nenhuma solicitação pendente.</p>
       : <div className="admin-round-list">
         {pending.map((winner) => <article className="round-option admin-prize-card" key={winner.id}>
           <div className="admin-payment-card-heading">
