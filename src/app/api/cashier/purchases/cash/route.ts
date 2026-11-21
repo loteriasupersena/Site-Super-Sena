@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400 }); }
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Informe de 1 a 10 repetições, números de seis algarismos e valores em centavos." }, { status: 400 });
+    return NextResponse.json({ error: "Informe de 1 a 10 repetições e números de seis algarismos." }, { status: 400 });
   }
   try {
     const purchase = await createNumericPurchase(authPrisma, {
