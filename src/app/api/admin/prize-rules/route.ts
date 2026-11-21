@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
-import { DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, parseNumericPrizeMultipliers } from "@/domain/numeric-prize-rules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const SETTING_KEY = "numeric_prize_multipliers";
-const schema = z.object({
-  unit: z.number().int().min(0).max(1_000_000),
-  tens: z.number().int().min(0).max(1_000_000),
-  hundreds: z.number().int().min(0).max(1_000_000),
-  milhar: z.number().int().min(0).max(1_000_000),
-  quina: z.number().int().min(0).max(1_000_000),
-  sena: z.number().int().min(0).max(1_000_000),
-}).strict().refine((value) => value.unit === 6, { message: "O multiplicador da Unidade deve ser 6." });
+
+const FIXED_PRIZES_CENTS = {
+  unit: 600,
+  tens: 2_000,
+  hundreds: 20_000,
+  milhar: 200_000,
+  quina: 2_000_000,
+  sena: 20_000_000,
+} as const;
 
 async function admin(request: NextRequest) {
   const user = await getSessionUser(request.cookies.get(SESSION_COOKIE)?.value);
@@ -37,55 +35,19 @@ function validOrigin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const access = await admin(request);
   if ("error" in access) return access.error;
-  try {
-    const setting = await authPrisma.setting.findUnique({ where: { key: SETTING_KEY } });
-    const value = setting ? parseNumericPrizeMultipliers(JSON.parse(setting.value)) : DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
-    if (!value) throw new Error("Invalid stored multiplier configuration");
-    value.unit = 6;
-    return NextResponse.json({ multipliers: value, updatedAt: setting?.updatedAt.toISOString() ?? null }, { headers: { "Cache-Control": "no-store, private" } });
-  } catch {
-    return NextResponse.json({ error: "Não foi possível carregar os multiplicadores salvos." }, { status: 500, headers: { "Cache-Control": "no-store" } });
-  }
+  return NextResponse.json({
+    gamePriceCents: 600,
+    categoryStakeCents: 100,
+    prizesCents: FIXED_PRIZES_CENTS,
+    updatedAt: null,
+  }, { headers: { "Cache-Control": "no-store, private" } });
 }
 
 export async function PUT(request: NextRequest) {
   const access = await admin(request);
   if ("error" in access) return access.error;
   if (!validOrigin(request)) return NextResponse.json({ error: "Requisição inválida." }, { status: 403, headers: { "Cache-Control": "no-store" } });
-
-  let body: unknown;
-  try { body = await request.json(); }
-  catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400 }); }
-  const parsed = schema.safeParse(body);
-  if (!parsed.success || !parseNumericPrizeMultipliers(body)) {
-    return NextResponse.json({ error: "Informe multiplicadores inteiros entre 0 e 1.000.000." }, { status: 400, headers: { "Cache-Control": "no-store" } });
-  }
-
-  const nextValue = JSON.stringify(parsed.data);
-  try {
-    const result = await authPrisma.$transaction(async (tx) => {
-      const previous = await tx.setting.findUnique({ where: { key: SETTING_KEY } });
-      const setting = await tx.setting.upsert({
-        where: { key: SETTING_KEY },
-        create: { key: SETTING_KEY, value: nextValue },
-        update: { value: nextValue },
-      });
-      await tx.settingChange.create({
-        data: { settingKey: SETTING_KEY, oldValue: previous?.value ?? null, newValue: nextValue, changedById: access.user.id },
-      });
-      await tx.auditEvent.create({
-        data: {
-          actorId: access.user.id,
-          action: "NUMERIC_PRIZE_MULTIPLIERS_UPDATED",
-          entityType: "Setting",
-          entityId: SETTING_KEY,
-          metadata: { oldValue: previous?.value ?? null, newValue: nextValue },
-        },
-      });
-      return setting;
-    });
-    return NextResponse.json({ multipliers: parsed.data, updatedAt: result.updatedAt.toISOString(), message: "Multiplicadores salvos. Novas apostas usarão estes valores." }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
-    return NextResponse.json({ error: "Não foi possível salvar os multiplicadores. Nenhuma alteração foi confirmada." }, { status: 500, headers: { "Cache-Control": "no-store" } });
-  }
+  return NextResponse.json({
+    error: "Os valores dos prêmios são fixos e não podem ser alterados pelo painel.",
+  }, { status: 409, headers: { "Cache-Control": "no-store" } });
 }
