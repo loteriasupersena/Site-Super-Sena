@@ -34,10 +34,9 @@ describe("encodeThermalReceipt", () => {
     expect(text).not.toContain("Milhar:");
     expect(text).not.toContain("Quina:");
     expect(text).not.toContain("Sena:");
-    expect(text).toContain("O valor de cada aposta sera");
-    expect(text).toContain("dividido entre os 6 premios do");
-    expect(text).toContain("1o ao 6o premio.");
-    expect(text.indexOf("O valor de cada aposta sera")).toBeLessThan(text.indexOf("TOTAL PAGO"));
+    expect(text).not.toContain("O valor de cada aposta sera");
+    expect(text).not.toContain("dividido entre os 6 premios do");
+    expect(text).toContain("TOTAL PAGO");
     expect(text).toContain("SQ-1234567890ABCDEF");
     expect(text).toContain("Joao da Silva");
     expect(Array.from(bytes.slice(-3))).toEqual([0x0a, 0x0a, 0x0a]);
@@ -60,7 +59,7 @@ describe("encodeThermalReceipt", () => {
     expect(text.match(/Rodada SQ-20261112-1200/g)).toHaveLength(1);
     expect(text.indexOf("784998")).toBeLessThan(text.indexOf("Repeticao 1"));
     expect(text.indexOf("Repeticao 1")).toBeLessThan(text.indexOf("Repeticao 2"));
-    expect(text.indexOf("O valor de cada aposta")).toBeLessThan(text.indexOf("TOTAL PAGO"));
+    expect(text).not.toContain("O valor de cada aposta");
   });
 
   it("selects the configured ESC/POS font mode", () => {
