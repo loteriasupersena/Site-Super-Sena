@@ -8,6 +8,7 @@ import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-cred
 import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
+import { AdminUserDataErasure } from "@/components/admin/admin-user-data-erasure";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,13 @@ export default async function AdminPage() {
               <AdminWithdrawalManager />
               <AdminPrizeCreditReconciliation />
               <AdminTestWalletCredit />
+            </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Privacidade e exclusão de contas</span></summary>
+            <div className="admin-accordion-content">
+              <AdminUserDataErasure />
             </div>
           </details>
 
