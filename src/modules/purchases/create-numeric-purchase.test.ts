@@ -2,6 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import { createNumericPurchase } from "./create-numeric-purchase";
 
 describe("createNumericPurchase pending Pix intent", () => {
+  it("rejects any per-number price other than R$6.00 before opening a transaction", async () => {
+    const transaction = vi.fn();
+    await expect(createNumericPurchase({ $transaction: transaction } as never, {
+      idempotencyKey: "fixed-price-reject-0001",
+      playerId: "player-1",
+      roundCount: 1,
+      numbers: ["000007"],
+      stakeCents: 100,
+    })).rejects.toMatchObject({ code: "INVALID_PURCHASE" });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
 
   it("ignores old editable settings and snapshots the fixed prize table into a new pending Pix bet", async () => {
     const configured = { unit: 6, tens: 30, hundreds: 250, milhar: 2500, quina: 25000, sena: 250000 };
