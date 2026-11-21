@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createNumericPurchase } from "@/modules/purchases/create-numeric-purchase";
+import { NUMERIC_GAME_PRICE_CENTS } from "@/domain/numeric-prize-rules";
 import { PurchaseServiceError } from "@/modules/purchases/purchase-service-error";
 import { authPrisma, getSessionUser, SESSION_COOKIE } from "@/lib/auth/session";
 import { createPixOrder, getPixOrder } from "@/modules/payments/mercado-pago";
@@ -12,7 +13,6 @@ const requestSchema = z.object({
   idempotencyKey: z.string().trim().min(16).max(200),
   repetitionCount: z.number().int().min(1).max(10),
   numbers: z.array(z.string().regex(/^[0-9]{6}$/)).min(1).max(100),
-  stakeCents: z.number().int().safe().min(100).max(2_000_000_000),
 }).strict();
 
 export async function POST(request: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     const purchase = await createNumericPurchase(authPrisma, {
       idempotencyKey: parsed.data.idempotencyKey, cashierId: user.id,
-      roundCount: parsed.data.repetitionCount, numbers: parsed.data.numbers, stakeCents: parsed.data.stakeCents,
+      roundCount: parsed.data.repetitionCount, numbers: parsed.data.numbers, stakeCents: NUMERIC_GAME_PRICE_CENTS,
       paymentProvider: "MERCADO_PAGO",
     });
     if (purchase.status === "CONFIRMED" && purchase.payment?.status === "CONFIRMED" && purchase.receiptCode && purchase.confirmedAt) {
