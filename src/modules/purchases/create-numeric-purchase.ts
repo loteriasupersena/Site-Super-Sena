@@ -26,7 +26,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
   if (!Number.isInteger(roundCount) || roundCount < 1 || roundCount > 10) throw new PurchaseServiceError("Choose between 1 and 10 upcoming rounds", "INVALID_PURCHASE");
   if (input.roundIds && (input.roundIds.length !== roundCount || new Set(input.roundIds).size !== input.roundIds.length)) throw new PurchaseServiceError("Invalid round count", "INVALID_PURCHASE");
   if (!Array.isArray(input.numbers) || input.numbers.length < 1 || input.numbers.length > 100) throw new PurchaseServiceError("Enter at least one six-digit number", "INVALID_PURCHASE");
-  if (!Number.isSafeInteger(input.stakeCents) || input.stakeCents < 100 || input.stakeCents > 2_000_000_000) throw new PurchaseServiceError("Each number must have a stake of at least R$1.00", "INVALID_PURCHASE");
+  if (input.stakeCents !== NUMERIC_GAME_PRICE_CENTS) throw new PurchaseServiceError("Cada jogo de seis dígitos custa exatamente R$ 6,00.", "INVALID_PURCHASE");
 
   let numbers: string[];
   try { numbers = input.numbers.map(normalizeNumber); }
