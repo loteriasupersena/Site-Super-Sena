@@ -16,11 +16,11 @@ export default function HomePage() {
       <main className="home-entry">
         <figure className="home-how-infographic numeric-game-infographic">
           <Image
-            src="/images/brand/super-sena-inicio.webp"
-            alt="Como funciona o jogo Super Sena"
+            src="/images/brand/super-sena-inicio-fixed.svg"
+            alt="Super Sena: cada jogo custa R$ 6,00 e concorre a seis prêmios com valores fixos"
             className="home-how-infographic-image"
             width={1200}
-            height={1200}
+            height={1000}
             priority
             sizes="(max-width: 768px) 100vw, 1100px"
           />
