@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlayerPurchaseReceipt } from "@/components/receipts/player-purchase-receipt";
 
 type Mode = "PLAYER" | "CASHIER";
@@ -14,15 +14,10 @@ type Purchase = {
 };
 type PixCheckout = { copyPaste: string | null; qrCodeBase64: string | null; ticketUrl: string | null };
 
+const FIXED_GAME_PRICE_CENTS = 600;
+
 function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-}
-function parseStake(value: string): number | null {
-  const normalized = value.trim().replace(",", ".");
-  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
-  const [whole, fraction = ""] = normalized.split(".");
-  const cents = Number(whole) * 100 + Number((fraction + "00").slice(0, 2));
-  return Number.isSafeInteger(cents) && cents >= 100 && cents <= 2_000_000_000 ? cents : null;
 }
 function clearInput(value: string) {
   return value.replace(/\D/g, "").slice(0, 6);
@@ -32,7 +27,6 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
   const [repetitionCount, setParticipationCount] = useState(1);
   const [numberInput, setNumberInput] = useState("");
   const [numbers, setNumbers] = useState<string[]>([]);
-  const [stake, setStake] = useState("1,00");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PIX");
   const [walletBalanceCents, setWalletBalanceCents] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -149,13 +143,13 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     return () => { active = false; window.clearInterval(timer); };
   }, [mode, paymentMethod, purchase?.id]);
 
-  const stakeCents = useMemo(() => parseStake(stake), [stake]);
+  const stakeCents = FIXED_GAME_PRICE_CENTS;
   const pendingNumber = clearInput(numberInput);
   const hasPendingNumber = numberInput.length > 0;
   const effectiveNumbers = hasPendingNumber && /^[0-9]{6}$/.test(pendingNumber)
     ? [...numbers, pendingNumber]
     : numbers;
-  const totalEstimate = stakeCents !== null ? stakeCents * effectiveNumbers.length * repetitionCount : 0;
+  const totalEstimate = stakeCents * effectiveNumbers.length * repetitionCount;
 
   function generateRandomNumber() {
     const existing = new Set(numbers);
@@ -190,7 +184,6 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     idempotency.current = null;
     setNumbers([]);
     setNumberInput("");
-    setStake("1,00");
     setParticipationCount(1);
     setPaymentMethod("PIX");
     setError("");
@@ -222,7 +215,6 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
       setError("Esse número já foi adicionado. Remova a repetição antes de continuar.");
       return;
     }
-    if (stakeCents === null) { setError("O valor mínimo por número e rodada é R$ 1,00."); return; }
     if (mode === "PLAYER" && paymentMethod === "WALLET" && (walletBalanceCents === null || walletBalanceCents < totalEstimate)) {
       setError("Saldo insuficiente ou indisponível para esta compra."); return;
     }
@@ -242,7 +234,6 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
           idempotencyKey: idempotencyKey,
           repetitionCount,
           numbers: numbersToSubmit,
-          stakeCents,
           ...(mode === "PLAYER" ? { paymentMethod } : {}),
         }),
       });
@@ -307,8 +298,8 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
 
         <div className="numeric-stake-summary-row">
           <div className="numeric-stake-control">
-            <label htmlFor="numeric-stake">Valor da aposta (R$)</label>
-            <input id="numeric-stake" disabled={Boolean(purchase)} value={stake} onChange={(event) => setStake(event.target.value)} inputMode="decimal" />
+            <span>Valor fixo por jogo</span>
+            <strong>{money(FIXED_GAME_PRICE_CENTS)}</strong>
           </div>
           <div className="numeric-total-box" aria-live="polite">
             <span>Total</span>
