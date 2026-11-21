@@ -38,14 +38,13 @@ const validBody = () => ({
   idempotencyKey: "idempotency-key-0001",
   repetitionCount: 1,
   numbers: ["012345"],
-  stakeCents: 100,
   paymentMethod: "PIX",
 });
 const purchase = () => ({
   id: "purchase-1", receiptCode: null, status: "PENDING_PAYMENT",
   payment: { status: "PENDING", idempotencyKey: "payment-key", providerPaymentId: null },
-  totalCents: 100, currency: "BRL",
-  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 } },
+  totalCents: 600, currency: "BRL",
+  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 100, tensCents: 100, hundredsCents: 100, milharCents: 100, quinaCents: 100, senaCents: 100 } },
   participations: [],
 });
 
@@ -105,10 +104,10 @@ describe("POST /api/player/purchases", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.createNumericPurchase).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       playerId: "player-1", paymentMethod: "PIX", roundCount: 1,
-      numbers: ["012345"], stakeCents: 100,
+      numbers: ["012345"], stakeCents: 600,
     }));
     const body = await response.json();
-    expect(body.purchase.totalCents).toBe(100);
+    expect(body.purchase.totalCents).toBe(600);
     expect(body.purchase.participations).toEqual([]);
     expect(body.purchase.numericIntent).toMatchObject({ repetitionCount: 1, numbers: ["012345"] });
     expect(body.purchase.receiptCode).toBeNull();
