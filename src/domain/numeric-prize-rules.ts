@@ -3,8 +3,11 @@ export const NUMERIC_PRIZE_CATEGORIES = ["unit", "tens", "hundreds", "milhar", "
 export type NumericPrizeCategory = (typeof NUMERIC_PRIZE_CATEGORIES)[number];
 export type NumericPrizeMultipliers = Record<NumericPrizeCategory, number>;
 
+export const NUMERIC_GAME_PRICE_CENTS = 600;
+export const NUMERIC_CATEGORY_STAKE_CENTS = 100;
 export const LEGACY_NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v1";
-export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v2";
+export const PREVIOUS_NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v2";
+export const NUMERIC_PRIZE_RULE_VERSION = "numeric-six-digit-v3";
 
 export const DEFAULT_NUMERIC_PRIZE_MULTIPLIERS: NumericPrizeMultipliers = {
   unit: 6, tens: 20, hundreds: 200, milhar: 2_000, quina: 20_000, sena: 200_000,
@@ -29,7 +32,7 @@ export function createNumericPrizeRuleSnapshot(multipliers: NumericPrizeMultipli
 }
 
 export function readNumericPrizeMultipliers(ruleVersion: string, snapshot: unknown): NumericPrizeMultipliers | null {
-  if (![LEGACY_NUMERIC_PRIZE_RULE_VERSION, NUMERIC_PRIZE_RULE_VERSION].includes(ruleVersion) ||
+  if (![LEGACY_NUMERIC_PRIZE_RULE_VERSION, PREVIOUS_NUMERIC_PRIZE_RULE_VERSION, NUMERIC_PRIZE_RULE_VERSION].includes(ruleVersion) ||
       snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
   const value = snapshot as Record<string, unknown>;
   if (value.version !== ruleVersion) return null;
