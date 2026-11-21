@@ -14,8 +14,6 @@ type Purchase = {
 };
 type PixCheckout = { copyPaste: string | null; qrCodeBase64: string | null; ticketUrl: string | null };
 
-const FIXED_GAME_PRICE_CENTS = 600;
-
 function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
@@ -27,6 +25,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
   const [repetitionCount, setParticipationCount] = useState(1);
   const [numberInput, setNumberInput] = useState("");
   const [numbers, setNumbers] = useState<string[]>([]);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PIX");
   const [walletBalanceCents, setWalletBalanceCents] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -143,7 +142,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
     return () => { active = false; window.clearInterval(timer); };
   }, [mode, paymentMethod, purchase?.id]);
 
-  const stakeCents = FIXED_GAME_PRICE_CENTS;
+  const stakeCents = 600;
   const pendingNumber = clearInput(numberInput);
   const hasPendingNumber = numberInput.length > 0;
   const effectiveNumbers = hasPendingNumber && /^[0-9]{6}$/.test(pendingNumber)
@@ -298,8 +297,8 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
 
         <div className="numeric-stake-summary-row">
           <div className="numeric-stake-control">
-            <span>Valor fixo por jogo</span>
-            <strong>{money(FIXED_GAME_PRICE_CENTS)}</strong>
+            <span>Valor por número</span>
+            <strong>{money(stakeCents)}</strong>
           </div>
           <div className="numeric-total-box" aria-live="polite">
             <span>Total</span>
