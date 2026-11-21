@@ -22,16 +22,26 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
   if (!category) return null;
   const multipliers = readNumericPrizeMultipliers(line.ruleVersion, line.ruleSnapshot);
   if (!multipliers) return { category, stakeCents: line[FIELDS[category]], multiplier: null, calculatedPrizeCents: null, calculationConsistent: false };
-  const stakeCents = line[FIELDS[category]], multiplier = multipliers[category];
-  let calculatedPrizeCents: number;
-  if (category === "unit" && line.ruleVersion !== "numeric-six-digit-v1") {
-    const totalStakeCents = (["unitCents", "tensCents", "hundredsCents", "milharCents", "quinaCents", "senaCents"] as const)
-      .reduce((total, field) => total + line[field], 0);
-    // Unidade returns 100% of the full wager; allocation is only for round accounting.
-    calculatedPrizeCents = totalStakeCents;
-  } else {
-    calculatedPrizeCents = stakeCents * multiplier;
+  const categoryAllocationCents = line[FIELDS[category]];
+  const isFullStakeUnit = category === "unit" && line.ruleVersion !== "numeric-six-digit-v1";
+  if (isFullStakeUnit) {
+    const allocations = (["unitCents", "tensCents", "hundredsCents", "milharCents", "quinaCents", "senaCents"] as const)
+      .map((field) => line[field]);
+    const validAllocations = allocations.every((amount) => Number.isSafeInteger(amount) && amount >= 0);
+    const totalStakeCents = allocations.reduce((total, amount) => total + amount, 0);
+    // Unidade devolve a aposta inteira. Sua parcela contábil e o multiplicador legado não entram no cálculo.
+    return {
+      category,
+      stakeCents: totalStakeCents,
+      multiplier: null,
+      calculatedPrizeCents: totalStakeCents,
+      calculationConsistent: validAllocations && Number.isSafeInteger(totalStakeCents)
+        && totalStakeCents > 0 && totalStakeCents <= 2_147_483_647,
+    };
   }
-  return { category, stakeCents, multiplier, calculatedPrizeCents,
-    calculationConsistent: Number.isSafeInteger(stakeCents) && stakeCents >= 0 && Number.isSafeInteger(calculatedPrizeCents) && calculatedPrizeCents >= 0 && calculatedPrizeCents <= 2_147_483_647 };
+
+  const multiplier = multipliers[category];
+  const calculatedPrizeCents = categoryAllocationCents * multiplier;
+  return { category, stakeCents: categoryAllocationCents, multiplier, calculatedPrizeCents,
+    calculationConsistent: Number.isSafeInteger(categoryAllocationCents) && categoryAllocationCents >= 0 && Number.isSafeInteger(calculatedPrizeCents) && calculatedPrizeCents >= 0 && calculatedPrizeCents <= 2_147_483_647 };
 }
