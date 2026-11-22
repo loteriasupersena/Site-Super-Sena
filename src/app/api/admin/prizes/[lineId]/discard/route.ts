@@ -63,14 +63,23 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         throw new Error("PRIZE_NOT_INCONSISTENT");
       }
       const paymentRequest = line.prizePaymentRequest;
-      if (paymentRequest && ["PAID", "PROCESSING"].includes(paymentRequest.status)) {
-        throw new Error("PAYMENT_IN_PROGRESS:" + paymentRequest.status + ":REQUEST");
+      // Admin authorized removal of this fictitious test prize and its own payment links.
+      // Shared batch records are retained while they still contain other requests or items.
+      const batchId = paymentRequest?.batchId ?? null;
+      if (line.prizePaymentBatchItems.length > 0) {
+        await tx.prizePaymentBatchItem.deleteMany({ where: { participationLineId: line.id } });
       }
-      if (paymentRequest?.batch && (
-        ["PAID", "PROCESSING"].includes(paymentRequest.batch.status) ||
-        Boolean(paymentRequest.batch.providerTransferId)
-      )) {
-        throw new Error("PAYMENT_IN_PROGRESS:" + paymentRequest.batch.status + (paymentRequest.batch.providerTransferId ? ":TRANSFER_ID" : ":BATCH"));
+      if (paymentRequest) {
+        await tx.prizePaymentRequest.delete({ where: { id: paymentRequest.id } });
+      }
+      if (batchId) {
+        const [remainingRequests, remainingItems] = await Promise.all([
+          tx.prizePaymentRequest.count({ where: { batchId } }),
+          tx.prizePaymentBatchItem.count({ where: { batchId } }),
+        ]);
+        if (remainingRequests === 0 && remainingItems === 0) {
+          await tx.prizePaymentBatch.deleteMany({ where: { id: batchId } });
+        }
       }
 
       // Remove somente os vínculos de uma solicitação ainda não paga/em processamento.
