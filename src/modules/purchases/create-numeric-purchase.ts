@@ -61,11 +61,9 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
             ? intent.roundCount === roundCount && JSON.stringify(intent.numbers) === JSON.stringify(numbers) &&
               JSON.stringify(intent.allocation) === JSON.stringify(allocation) && existing.totalCents === totalCents
             : existing.participations.length === roundCount &&
-              existing.participations.every((part) => part.numericLines.length === numbers.length) &&
-              existing.participations.flatMap((part) => part.numericLines.map((line) => line.numberValue + "|" +
-                (line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents)))
-                .sort().join("\n") === Array.from({ length: roundCount }, () => numbers.map((n) => n + "|" + input.stakeCents))
-                .flat().sort().join("\n");
+              existing.participations.every((part) => part.totalCents === perRoundCents &&
+                part.numericLines.length === numbers.length &&
+                part.numericLines.map((line) => line.numberValue).sort().join("\n") === [...numbers].sort().join("\n"));
           if (!sameOwner || !sameIntent) throw new PurchaseServiceError("The idempotency key was already used for a different purchase", "IDEMPOTENCY_CONFLICT");
           return existing;
         }
