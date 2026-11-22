@@ -51,11 +51,11 @@ export function AdminUnpaidPrizeDashboard() {
   }, []);
 
   const discardPrize = async (item: ReviewItem) => {
-    if (!window.confirm("Remover este prêmio inconsistente de R$ 1,00? A aposta será preservada. Esta ação não pode ser desfeita.")) return;
+    if (!item.receiptCode || !window.confirm(`Confirma a remoção somente do prêmio de R$ 1,00 do recibo ${item.receiptCode}? A aposta e o recibo serão preservados. Esta ação não pode ser desfeita.`)) return;
     setDiscardingId(item.id);
     setNotice("");
     try {
-      const response = await fetch(`/api/admin/prizes/${encodeURIComponent(item.id)}/discard`, { method: "POST" });
+      const response = await fetch(`/api/admin/prizes/${encodeURIComponent(item.id)}/discard`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ receiptCode: item.receiptCode }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Não foi possível remover o prêmio.");
       setNotice("Prêmio de teste removido. A aposta foi preservada.");
