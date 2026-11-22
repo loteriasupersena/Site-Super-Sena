@@ -273,6 +273,8 @@ model NumericParticipationLine {
 
   @@index([numberValue])
   @@index([participationId])
+  @@index([prizeExpiredAt])
+  @@index([prizeExpiryReviewedAt])
 }
 
 model Payment {
