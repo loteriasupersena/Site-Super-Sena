@@ -23,5 +23,6 @@ describe("calculateNumberPrizeCents", () => {
     const valid = line("123456");
     expect(() => calculateNumberPrizeCents({ ...valid, ruleSnapshot: null }, "123456")).toThrow(/snapshot/i);
     expect(() => calculateNumberPrizeCents({ ...valid, senaCents: -1 }, "123456")).toThrow(/allocation/i);
+    expect(() => calculateNumberPrizeCents({ ...valid, tensCents: -1 }, "123456")).toThrow(/allocation/i);
   });
 });
