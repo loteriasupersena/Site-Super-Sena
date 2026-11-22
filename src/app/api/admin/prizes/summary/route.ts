@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         id: true, numberValue: true, tensCents: true,
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true,
-        prizePaymentRequest: { select: { status: true, netCents: true } },
+        prizePaymentRequest: { select: { status: true, netCents: true, requestedAt: true } },
         participation: { select: { round: { select: { resultNumber: true, resultPublishedAt: true } }, purchase: { select: { receiptCode: true } } } },
       },
     });
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     for (const line of lines) {
       const publishedAt = line.participation.round.resultPublishedAt;
       const expiredAt = publishedAt ? publishedAt.getTime() + 7 * 24 * 60 * 60 * 1000 : null;
-      if (expiredAt !== null && Date.now() >= expiredAt) continue;
+      if (expiredAt !== null && Date.now() >= expiredAt && (!line.prizePaymentRequest?.requestedAt || line.prizePaymentRequest.requestedAt.getTime() > expiredAt)) continue;
       const review = getNumericPrizeReview({
         numberValue: line.numberValue,
                 tensCents: line.tensCents,
