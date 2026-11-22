@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         },
       },
       select: {
-        id: true, numberValue: true, unitCents: true, tensCents: true,
+        id: true, numberValue: true, tensCents: true,
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
         prizePayout: { select: { channel: true, paidAt: true, reference: true } },
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         const round = line.participation.round;
         const review = getNumericPrizeReview({
           numberValue: line.numberValue,
-          unitCents: line.unitCents, tensCents: line.tensCents,
+          tensCents: line.tensCents,
           hundredsCents: line.hundredsCents, milharCents: line.milharCents, senaCents: line.senaCents,
           quinaCents: line.quinaCents, ruleVersion: line.ruleVersion,
           ruleSnapshot: line.ruleSnapshot,
