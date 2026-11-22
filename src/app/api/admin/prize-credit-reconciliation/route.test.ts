@@ -27,7 +27,7 @@ function request(method = "GET", body?: unknown, origin = "https://example.test"
   });
 }
 const line = {
-  id: "line-123", participationId: "participation-1", numberValue: "123456", prizeCents: 1000, unitCents: 1, tensCents: 2, hundredsCents: 3, milharCents: 4, quinaCents: 5, senaCents: 6, ruleVersion: "v1", ruleSnapshot: {}, prizeCreditedAt: null, prizePayout: null, createdAt: new Date("2026-01-01T00:00:00Z"),
+  id: "line-123", participationId: "participation-1", numberValue: "123456", prizeCents: 1000, tensCents: 2, hundredsCents: 3, milharCents: 4, quinaCents: 5, senaCents: 6, ruleVersion: "v1", ruleSnapshot: {}, prizeCreditedAt: null, prizePayout: null, createdAt: new Date("2026-01-01T00:00:00Z"),
   participation: {
     id: "participation-1", status: "CONFIRMED",
     round: { id: "round-1", code: "R-01", status: "COMPLETED", resultAt: new Date("2026-01-02T00:00:00Z"), resultNumber: "123456" },
