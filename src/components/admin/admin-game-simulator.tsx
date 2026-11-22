@@ -295,7 +295,7 @@ export function AdminGameSimulator() {
               </table>
             </div>
             <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginBottom: 0 }}>
-              Referência teórica para faixas exclusivas, com números uniformes e independentes: Dezena 1%; Centena 0,1%; Milhar 0,01%; Quina 0,001%; Sena 0,0001%. As frequências observadas variam e não são garantias.
+              Referência teórica para faixas exclusivas, com números uniformes e independentes: Dezena 0,9%; Centena 0,09%; Milhar 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
             </p>
           </>
         )}
