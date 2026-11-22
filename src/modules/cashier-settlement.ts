@@ -8,6 +8,9 @@ export type CashierSettlementCalculation = {
   salesCount: number;
   gamesCount: number;
   commissionCents: number;
+  // Legacy snapshot columns remain zero for schema compatibility. Historical
+  // settlements retain their original values, but new cashier settlements
+  // never include prize payouts.
   cashPrizePayoutCount: number;
   cashPrizePayoutCents: number;
   pendingCashSalesCount: number;
@@ -43,7 +46,7 @@ export async function calculateCashierSettlement(
     ],
   };
 
-  const [cash, pix, commissions, games, cashPrizePayouts, pendingCashSales, eligibleSales] = await Promise.all([
+  const [cash, pix, commissions, games, pendingCashSales, eligibleSales] = await Promise.all([
     tx.purchase.aggregate({
       where: { ...eligible, paymentMethod: "CASH" },
       _sum: { totalCents: true }, _count: { _all: true },
@@ -58,10 +61,6 @@ export async function calculateCashierSettlement(
     }),
     tx.numericParticipationLine.count({
       where: { participation: { is: { status: "CONFIRMED", purchase: { is: eligibleForFinancials } } } },
-    }),
-    tx.numericPrizePayout.aggregate({
-      where: { cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff } },
-      _sum: { amountCents: true }, _count: { _all: true },
     }),
     tx.purchase.aggregate({
       where: {
@@ -96,10 +95,9 @@ export async function calculateCashierSettlement(
   const cashSalesCents = cash._sum.totalCents ?? 0;
   const pixSalesCents = pix._sum.totalCents ?? 0;
   const commissionCents = commissions._sum.amountCents ?? 0;
-  const cashPrizePayoutCents = cashPrizePayouts._sum.amountCents ?? 0;
-  // PIX is already held by the platform. Only cash received by the cashier
-  // participates in the physical transfer between the two cash boxes.
-  const netBalanceCents = cashSalesCents - commissionCents - cashPrizePayoutCents;
+  // PIX is already held by the platform. Only cash sales less the cashier's
+  // commission participate in the physical transfer between cash boxes.
+  const netBalanceCents = cashSalesCents - commissionCents;
 
   return {
     cashSalesCents,
@@ -108,8 +106,8 @@ export async function calculateCashierSettlement(
     salesCount: cash._count._all + pix._count._all,
     gamesCount: games,
     commissionCents,
-    cashPrizePayoutCount: cashPrizePayouts._count._all,
-    cashPrizePayoutCents,
+    cashPrizePayoutCount: 0,
+    cashPrizePayoutCents: 0,
     pendingCashSalesCount: pendingCashSales._count._all,
     pendingCashSalesCents: pendingCashSales._sum.totalCents ?? 0,
     netBalanceCents,
