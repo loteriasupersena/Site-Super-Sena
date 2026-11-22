@@ -1,6 +1,6 @@
--- Replace the six-category numeric game with five prize categories.
--- Preserve each line's original total stake. The five new allocations use floor(total / 5)
--- and assign every remainder cent to Dezena. Existing calculated prize amounts remain unchanged.
+-- Apply the five-category allocation only to lines whose prize has not yet been calculated.
+-- Each existing line's total stake is preserved; every remainder cent goes to Dezena.
+-- Previously calculated prizes and their historical rule snapshots are not changed.
 UPDATE "NumericParticipationLine" AS nl
 SET
   "tensCents" = base.share + base.remainder,
@@ -8,8 +8,8 @@ SET
   "milharCents" = base.share,
   "quinaCents" = base.share,
   "senaCents" = base.share,
-  "ruleVersion" = CASE WHEN nl."prizeCents" IS NULL THEN 'numeric-six-digit-five-prizes-v3' ELSE nl."ruleVersion" END,
-  "ruleSnapshot" = CASE WHEN nl."prizeCents" IS NULL THEN jsonb_build_object(
+  "ruleVersion" = 'numeric-six-digit-five-prizes-v3',
+  "ruleSnapshot" = jsonb_build_object(
     'version', 'numeric-six-digit-five-prizes-v3',
     'multipliers', jsonb_build_object(
       'tens', COALESCE((nl."ruleSnapshot"->'multipliers'->>'tens')::integer, 20),
@@ -18,15 +18,16 @@ SET
       'quina', COALESCE((nl."ruleSnapshot"->'multipliers'->>'quina')::integer, 20000),
       'sena', COALESCE((nl."ruleSnapshot"->'multipliers'->>'sena')::integer, 200000)
     )
-  ) ELSE nl."ruleSnapshot" END
+  )
 FROM (
   SELECT
     "id",
     FLOOR(("unitCents" + "tensCents" + "hundredsCents" + "milharCents" + "quinaCents" + "senaCents")::numeric / 5)::integer AS share,
     MOD(("unitCents" + "tensCents" + "hundredsCents" + "milharCents" + "quinaCents" + "senaCents"), 5)::integer AS remainder
   FROM "NumericParticipationLine"
+  WHERE "prizeCents" IS NULL
 ) AS base
-WHERE nl."id" = base."id";
+WHERE nl."id" = base."id" AND nl."prizeCents" IS NULL;
 
 -- Pending cash/wallet sale intents are not attached to rounds yet. Rebuild their
 -- allocation JSON with five categories and preserve their configured multipliers.
@@ -74,4 +75,5 @@ SET "value" = jsonb_build_object(
 )::text
 WHERE "key" = 'numeric_prize_multipliers';
 
+-- Remove the retired operational allocation column. Historical prizeCents values stay intact.
 ALTER TABLE "NumericParticipationLine" DROP COLUMN "unitCents";
