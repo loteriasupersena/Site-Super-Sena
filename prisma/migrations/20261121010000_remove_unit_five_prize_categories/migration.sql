@@ -2,7 +2,7 @@
 -- Existing unsettled lines are reallocated from their original total stake:
 -- floor(total / 5) to each category, with every remainder cent assigned to Dezena.
 -- Already calculated prizes are left untouched.
-UPDATE "NumericParticipationLine"
+UPDATE "NumericParticipationLine" AS nl
 SET
   "tensCents" = base.share + base.remainder,
   "hundredsCents" = base.share,
@@ -55,9 +55,9 @@ SET
 FROM (
   SELECT
     "id",
-    FLOOR(("allocation"->>'unitCents')::integer + ("allocation"->>'tensCents')::integer +
+    FLOOR((("allocation"->>'unitCents')::integer + ("allocation"->>'tensCents')::integer +
       ("allocation"->>'hundredsCents')::integer + ("allocation"->>'milharCents')::integer +
-      ("allocation"->>'quinaCents')::integer + ("allocation"->>'senaCents')::integer) / 5 AS share,
+      ("allocation"->>'quinaCents')::integer + ("allocation"->>'senaCents')::integer)::numeric / 5)::integer AS share,
     MOD(("allocation"->>'unitCents')::integer + ("allocation"->>'tensCents')::integer +
       ("allocation"->>'hundredsCents')::integer + ("allocation"->>'milharCents')::integer +
       ("allocation"->>'quinaCents')::integer + ("allocation"->>'senaCents')::integer, 5) AS remainder
