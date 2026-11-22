@@ -1,12 +1,12 @@
 :root {
   color-scheme: dark;
-  --background: #001584;
-  --surface: #141b26;
+  --background: #002389;
+  --surface: #10203f;
   --text: #f4f6fb;
   --muted: #a0adbf;
   --border: #2b3546;
   --accent: #59d5f2;
-  --accent-soft: #1b2a3c;
+  --accent-soft: #172f5d;
 }
 
 * {
@@ -4000,7 +4000,7 @@ body:has(.home-page-compact) {
 :root {
   --ss-royal: #0066ff;
   --sena-royal: #0066ff;
-  --background: #0066ff;
+  --background: #002389;
 }
 
 html,
@@ -4057,4 +4057,29 @@ body,
 .numeric-game-purchase .numeric-stake-presets > button:disabled{
   opacity:.55;
   cursor:not-allowed;
+}
+
+
+/* Identidade visual global Super Sena — azul extraído da arte oficial. */
+:root {
+  --background: #002389;
+  --site-blue: #002389;
+  --site-blue-deep: #001d70;
+  --surface: #10203f;
+}
+html, body {
+  background: #002389 !important;
+  background-color: #002389 !important;
+}
+body, .page-shell, .site-page-shell, .auth-layout, .area-page,
+.home-page, .home-page.home-page-compact, .home-page-compact .home-entry {
+  background-color: #002389 !important;
+}
+.site-header.site-header-scenery {
+  background: #002389 !important;
+  background-image: none !important;
+}
+.home-footer, .landing-footer, .public-results-footer, footer {
+  background-color: #002389 !important;
+  background-image: none !important;
 }
