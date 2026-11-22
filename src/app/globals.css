@@ -3996,11 +3996,12 @@ body:has(.home-page-compact) {
 
 
 
-/* SUPER SENA — FUNDO AZUL UNIFICADO EM TODAS AS ÁREAS */
+/* SUPER SENA — FUNDO AZUL GLOBAL INSPIRADO NA ARTE DE DIVULGAÇÃO */
 :root {
-  --ss-royal: #0066ff;
-  --sena-royal: #0066ff;
-  --background: #0066ff;
+  --ss-royal: #00298f;
+  --sena-royal: #00298f;
+  --background: #00298f;
+  --site-background: #00298f;
 }
 
 html,
@@ -4011,6 +4012,6 @@ body,
 .home-header,
 .home-footer,
 .landing-footer {
-  background: #0066ff !important;
-  background-image: none !important;
+  background-color: #00298f !important;
+  background-image: linear-gradient(180deg, #001d6b 0%, #00298f 52%, #001d6b 100%) !important;
 }
