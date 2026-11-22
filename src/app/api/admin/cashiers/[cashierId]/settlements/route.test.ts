@@ -20,7 +20,7 @@ const snapshot = {
   id: "settlement-1", cashierId, adminId: "admin-1", settledAt: cutoff,
   cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
   salesCount: 3, gamesCount: 7, commissionCents: 900,
-  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
+  cashPrizePayoutCount: 0, cashPrizePayoutCents: 0, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
 };
 function request(origin = "https://example.test") {
   return new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
@@ -129,7 +129,7 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.settlementCreate).not.toHaveBeenCalled();
   });
 
-  it("creates one financial snapshot with CASH, confirmed PIX, commission, games and unpaid-association payouts", async () => {
+  it("creates one financial snapshot with cash and Pix sales, commission and games", async () => {
     const response = await POST(request(), context);
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ settlement: { id: snapshot.id, totalSalesCents: 15000, commissionCents: 900 } });
@@ -173,7 +173,7 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.settlementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       cashierId, adminId: "admin-1", settledAt: cutoff, cashSalesCents: 10000, pixSalesCents: 5000,
       totalSalesCents: 15000, salesCount: 3, gamesCount: 7, commissionCents: 900,
-      cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500,
+      cashPrizePayoutCount: 0, cashPrizePayoutCents: 0,
     }) });
     expect(mocks.payoutUpdateMany).toHaveBeenCalledWith({ where: {
       cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff },
