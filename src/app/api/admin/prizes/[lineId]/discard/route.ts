@@ -36,6 +36,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         include: {
           prizePayout: true,
           prizePaymentRequest: { include: { batch: true } },
+          prizePaymentBatchItems: { select: { id: true } },
           participation: { include: { round: true, purchase: true } },
         },
       });
@@ -63,13 +64,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
       }
       const paymentRequest = line.prizePaymentRequest;
       if (paymentRequest || line.prizePaymentBatchItems.length > 0) {
-        paymentRequest.status === "PAID" ||
-        paymentRequest.status === "PROCESSING" ||
-        paymentRequest.providerTransferId ||
-        paymentRequest.batch?.status === "PAID" ||
-        paymentRequest.batch?.status === "PROCESSING" ||
-        paymentRequest.batch?.providerTransferId
-      )) {
         throw new Error("PAYMENT_IN_PROGRESS");
       }
 
