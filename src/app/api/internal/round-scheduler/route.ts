@@ -242,8 +242,59 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Expire unclaimed physical prizes seven days after the actual result publication.
+  // A request registered on or before the deadline remains eligible, even if payment is pending.
+  let prizesExpired = 0;
+  try {
+    const expiredCandidates = await authPrisma.$queryRaw<Array<{ id: string; prizeCents: number; receiptCode: string | null }>>`
+      SELECT l."id", l."prizeCents", p."receiptCode"
+      FROM "NumericParticipationLine" l
+      JOIN "PurchaseParticipation" pp ON pp."id" = l."participationId"
+      JOIN "Round" r ON r."id" = pp."roundId"
+      JOIN "Purchase" p ON p."id" = pp."purchaseId"
+      LEFT JOIN "PrizePaymentRequest" req ON req."participationLineId" = l."id"
+      LEFT JOIN "NumericPrizePayout" payout ON payout."participationLineId" = l."id"
+      WHERE l."prizeCents" > 0
+        AND l."prizeExpiredAt" IS NULL
+        AND l."prizeCreditedAt" IS NULL
+        AND payout."id" IS NULL
+        AND pp."status" = 'CONFIRMED'
+        AND p."status" = 'CONFIRMED'
+        AND r."status" = 'COMPLETED'
+        AND r."resultPublishedAt" IS NOT NULL
+        AND r."resultPublishedAt" + INTERVAL '7 days' <= ${now}
+        AND (req."id" IS NULL OR req."requestedAt" > r."resultPublishedAt" + INTERVAL '7 days')
+      ORDER BY r."resultPublishedAt" ASC, l."id" ASC
+      LIMIT 500
+    `;
+    for (const item of expiredCandidates) {
+      await authPrisma.$transaction(async (tx) => {
+        const changed = await tx.numericParticipationLine.updateMany({
+          where: { id: item.id, prizeExpiredAt: null, prizeCreditedAt: null, prizePayout: { is: null } },
+          data: { prizeExpiredAt: now },
+        });
+        if (changed.count !== 1) return;
+        await tx.auditEvent.create({ data: {
+          action: "PHYSICAL_PRIZE_EXPIRED_UNCLAIMED",
+          entityType: "NumericParticipationLine",
+          entityId: item.id,
+          metadata: {
+            receiptCode: item.receiptCode,
+            prizeCents: item.prizeCents,
+            expiredAt: now.toISOString(),
+            rule: "7 dias corridos após a publicação efetiva do resultado",
+            betAndReceiptPreserved: true,
+          },
+        } });
+        prizesExpired += 1;
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }
+  } catch (error) {
+    recordFailure("prize_expiration", error);
+  }
+
   return NextResponse.json({
-    ok: failures === 0, created, closed, drawn, prizesSettled, failures, timeZone: TIME_ZONE,
+    ok: failures === 0, created, closed, drawn, prizesSettled, prizesExpired, failures, timeZone: TIME_ZONE,
     pixChecked, pixConfirmed, pixNeedsReconciliation,
     paidPurchasesChecked, paidPurchasesAllocated, paidPurchasesWaiting, errorDetails,
   }, {
