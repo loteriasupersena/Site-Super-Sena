@@ -37,7 +37,7 @@ export async function drawRoundResults(prisma: PrismaClient, roundId: string, ac
         `;
         if (databaseNow.getTime() < round.resultAt.getTime()) throw new RoundDrawError("Scheduled result time has not been reached", "DRAW_NOT_DUE");
         const resultNumber = drawNumber();
-        const completed = await tx.round.update({ where: { id: roundId }, data: { resultNumber, status: RoundStatus.COMPLETED } });
+        const completed = await tx.round.update({ where: { id: roundId }, data: { resultNumber, status: RoundStatus.COMPLETED, resultPublishedAt: databaseNow } });
         await tx.auditEvent.create({ data: {
           ...(actorId ? { actorId } : {}),
           action: actorId ? "NUMERIC_ROUND_DRAWN" : "NUMERIC_ROUND_DRAWN_AUTOMATICALLY",
