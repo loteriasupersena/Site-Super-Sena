@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         participation: {
           is: {
             status: "CONFIRMED",
-            round: { is: { status: "COMPLETED", resultPublishedAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
+            round: { is: { status: "COMPLETED" } },
             purchase: { is: { status: "CONFIRMED", cashierId: { not: null }, playerId: null } },
           },
         },
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         participation: {
           select: {
             totalCents: true,
-            round: { select: { code: true, resultNumber: true, resultAt: true } },
+            round: { select: { code: true, resultNumber: true, resultAt: true, resultPublishedAt: true } },
             purchase: {
               select: {
                 totalCents: true, receiptCode: true, playerId: true, cashierId: true,
@@ -52,7 +52,12 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      winners: lines.map((line) => {
+      winners: lines.filter((line) => {
+        const publishedAt = line.participation.round.resultPublishedAt;
+        if (!publishedAt) return true;
+        const deadline = publishedAt.getTime() + 7 * 24 * 60 * 60 * 1000;
+        return Date.now() < deadline || line.prizePaymentRequest!.requestedAt.getTime() <= deadline;
+      }).map((line) => {
         const round = line.participation.round;
         const review = getNumericPrizeReview({
           numberValue: line.numberValue,
