@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
           id: true, numberValue: true, tensCents: true, hundredsCents: true, milharCents: true,
           quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true,
           prizePaymentRequest: { select: {
-            status: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, netCents: true,
+            status: true, pixKey: true, pixKeyMasked: true, pixKeyType: true, netCents: true, grossCents: true,
             requestedAt: true, holderName: true, holderCpfMasked: true,
             batch: { select: { pixKey: true } },
           } },
