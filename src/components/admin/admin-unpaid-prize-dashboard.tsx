@@ -100,11 +100,7 @@ export function AdminUnpaidPrizeDashboard() {
 
   return (
     <section className="feature-card admin-unpaid-prize-dashboard" aria-labelledby="admin-unpaid-prize-heading">
-      <span className="feature-label">CONTROLE FINANCEIRO</span>
-      <div className="admin-payment-card-heading">
-        <h2 id="admin-unpaid-prize-heading">Premiações a pagar</h2>
-        <span className="admin-payment-status">ATUALIZAÇÃO AUTOMÁTICA</span>
-      </div>
+      <h2 id="admin-unpaid-prize-heading">Premiações a pagar</h2>
       {error && <p role="alert" className="note-inline">{error}</p>}
       {notice && <p role="status" className="note-inline">{notice}</p>}
       {loading && !summary ? <p>Carregando premiações…</p> : summary && <>
@@ -148,7 +144,6 @@ export function AdminUnpaidPrizeDashboard() {
         {summary.expiredItems?.length > 0 && (
           <div className="admin-prize-review-tools">
             <h3>Prêmios expirados — aguardando baixa administrativa</h3>
-            <p className="admin-prize-summary-footnote">O prazo de sete dias terminou sem solicitação. Esses valores já saíram das premiações pendentes. A baixa registra a conferência administrativa, sem apagar aposta ou recibo.</p>
             {summary.expiredItems.map((item) => (
               <div className="admin-prize-review-row" key={item.id}>
                 <div>
@@ -179,9 +174,6 @@ export function AdminUnpaidPrizeDashboard() {
             ))}
           </div>
         )}
-        <p className="admin-prize-summary-footnote">
-          O total considera prêmios apurados ainda sem baixa de pagamento ou crédito. Prêmios com solicitação continuam na conta até o pagamento ser registrado.
-        </p>
       </>}
       <button type="button" className="secondary-button admin-payment-refresh" disabled={loading} onClick={() => { setLoading(true); void load(); }}>
         Atualizar agora
