@@ -5260,3 +5260,23 @@ body,
   background: #0066ff !important;
   background-image: none !important;
 }
+
+
+/* SUPER SENA — PRESERVA A IMAGEM DE FUNDO DA PÁGINA INICIAL */
+.home-page.home-page-compact.landing-page {
+  background-color: #0066ff !important;
+  background-image:
+    linear-gradient(180deg, rgb(0 35 120 / 30%) 0%, rgb(0 35 120 / 46%) 48%, rgb(0 21 84 / 64%) 100%),
+    url("/images/brand/super-sena-inicio.webp") !important;
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (max-width: 760px) {
+  .home-page.home-page-compact.landing-page {
+    background-attachment: scroll;
+    background-position: center top;
+  }
+}
