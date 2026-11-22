@@ -11,8 +11,6 @@ type Settlement = {
   salesCount: number;
   gamesCount: number;
   commissionCents: number;
-  cashPrizePayoutCount: number;
-  cashPrizePayoutCents: number;
   pendingCashSalesCount: number;
   pendingCashSalesCents: number;
   netBalanceCents: number;
@@ -62,7 +60,6 @@ export function CashierSettlementHistory() {
           <article className="cashier-summary-tile"><span>Vendas em Pix</span><strong>{money(item.pixSalesCents)}</strong></article>
           <article className="cashier-summary-tile"><span>Total vendido</span><strong>{money(item.totalSalesCents)}</strong></article>
           <article className="cashier-summary-tile"><span>Comissão</span><strong>{money(item.commissionCents)}</strong></article>
-          <article className="cashier-summary-tile"><span>Prêmios pagos em dinheiro ({item.cashPrizePayoutCount})</span><strong>{money(item.cashPrizePayoutCents)}</strong></article>
           <article className="cashier-summary-tile"><span>Dinheiro em vendas levado ao próximo período ({item.pendingCashSalesCount})</span><strong>{money(item.pendingCashSalesCents)}</strong></article>
           <article className="cashier-summary-tile"><span>Vendas · jogos</span><strong>{item.salesCount} · {item.gamesCount}</strong></article>
         </div>
