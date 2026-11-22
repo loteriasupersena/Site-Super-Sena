@@ -103,10 +103,8 @@ export function AdminPaymentRequests() {
   return <section className="feature-card admin-payment-requests" aria-labelledby="admin-payment-requests-heading">
     <span className="feature-label">CONTROLE FINANCEIRO</span>
     <div className="admin-payment-card-heading">
-      <h2 id="admin-payment-requests-heading">Solicitações de pagamento ({items.length})</h2>
-      <span className="admin-payment-status">ATUALIZAÇÃO AUTOMÁTICA</span>
+      <h2 id="admin-payment-requests-heading">Solicitações de pagamentos</h2>
     </div>
-    <p className="admin-payment-intro">Prêmios de recibos e saques da carteira digital reunidos em uma única fila de conferência.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Carregando solicitações…</p> : items.length === 0
@@ -144,7 +142,6 @@ export function AdminPaymentRequests() {
       </div>}
     <button type="button" className="secondary-button admin-payment-refresh" disabled={loading || busy !== null} onClick={() => { setLoading(true); void load(); }}>Atualizar agora</button>
     <style jsx>{`
-      .admin-payment-intro { color: #cbd5e1; margin: 8px 0 18px; }
       .admin-payment-list { display: grid; gap: 12px; }
       .admin-payment-item { border: 1px solid #40516a; border-radius: 12px; padding: 14px; background: #203247; color: #f4f6fb; }
       .admin-payment-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
