@@ -35,11 +35,12 @@ export async function GET(request: NextRequest) {
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true,
         prizePaymentRequest: { select: { status: true, netCents: true } },
-        participation: { select: { round: { select: { resultNumber: true } } } },
+        participation: { select: { round: { select: { resultNumber: true } }, purchase: { select: { receiptCode: true } } } },
       },
     });
 
     const groups = new Map<string, { category: string; count: number; grossCents: number; dueCents: number; unrequestedCount: number; requestedCount: number }>();
+    const reviewItems: { id: string; prizeCents: number; category: string; receiptCode: string | null }[] = [];
     let totalGrossCents = 0;
     let totalDueCents = 0;
     let unrequestedCount = 0;
@@ -65,7 +66,11 @@ export async function GET(request: NextRequest) {
       const hasRequest = Boolean(line.prizePaymentRequest);
       if (hasRequest) requestedCount += 1;
       else unrequestedCount += 1;
-      if (!review?.calculationConsistent || review.calculatedPrizeCents !== grossCents) inconsistentCount += 1;
+      const inconsistent = !review?.calculationConsistent || review.calculatedPrizeCents !== grossCents;
+      if (inconsistent) inconsistentCount += 1;
+      if (grossCents === 100 && !review?.calculationConsistent) {
+        reviewItems.push({ id: line.id, prizeCents: grossCents, category, receiptCode: line.participation.purchase.receiptCode });
+      }
 
       const current = groups.get(category) ?? { category, count: 0, grossCents: 0, dueCents: 0, unrequestedCount: 0, requestedCount: 0 };
       current.count += 1;
@@ -92,6 +97,7 @@ export async function GET(request: NextRequest) {
       unrequestedCount,
       requestedCount,
       inconsistentCount,
+      reviewItems,
       breakdown,
       updatedAt: new Date().toISOString(),
     }, { headers });
