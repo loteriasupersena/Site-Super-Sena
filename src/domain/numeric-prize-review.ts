@@ -30,13 +30,16 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
   if (!multipliers) return { category, stakeCents, multiplier: null, calculatedPrizeCents: null, calculationConsistent: false };
   const multiplier = multipliers[category];
   const calculatedPrizeCents = stakeCents * multiplier;
+  const allocations = Object.values(FIELDS).map((field) => line[field]);
+  const totalStakeCents = allocations.reduce((total, amount) => total + amount, 0);
+  const validAllocation = allocations.every((amount) => Number.isSafeInteger(amount) && amount >= 0) &&
+    Number.isSafeInteger(totalStakeCents) && totalStakeCents >= 100 && totalStakeCents <= 2_147_483_647;
   return {
     category,
     stakeCents,
     multiplier,
     calculatedPrizeCents,
-    calculationConsistent: Number.isSafeInteger(stakeCents) && stakeCents >= 0 &&
-      Number.isSafeInteger(calculatedPrizeCents) && calculatedPrizeCents >= 0 &&
-      calculatedPrizeCents <= 2_147_483_647,
+    calculationConsistent: validAllocation && Number.isSafeInteger(calculatedPrizeCents) &&
+      calculatedPrizeCents >= 0 && calculatedPrizeCents <= 2_147_483_647,
   };
 }
