@@ -8,7 +8,6 @@ const categories = [
   { key: "milhar", label: "Milhar", digits: 4, initial: "3000" },
   { key: "centena", label: "Centena", digits: 3, initial: "300" },
   { key: "dezena", label: "Dezena", digits: 2, initial: "30" },
-  { key: "unidade", label: "Unidade", digits: 1, initial: "3" },
 ] as const;
 
 type CategoryKey = (typeof categories)[number]["key"];
@@ -57,7 +56,6 @@ function emptyCategoryResults(): Record<CategoryKey, CategoryResult> {
     milhar: { hits: 0, prizes: 0 },
     centena: { hits: 0, prizes: 0 },
     dezena: { hits: 0, prizes: 0 },
-    unidade: { hits: 0, prizes: 0 },
   };
 }
 
@@ -70,7 +68,6 @@ export function AdminGameSimulator() {
     milhar: "3000",
     centena: "300",
     dezena: "30",
-    unidade: "3",
   });
   const [commission, setCommission] = useState("0");
   const [seed, setSeed] = useState("");
@@ -114,10 +111,9 @@ export function AdminGameSimulator() {
     setRunning(true);
 
     const stakeCents = Math.round(stakeValue * 100);
-    const baseShare = Math.floor(stakeCents / 6);
+    const baseShare = Math.floor(stakeCents / 5);
     const shares: Record<CategoryKey, number> = {
-      unidade: baseShare + (stakeCents - baseShare * 6),
-      dezena: baseShare,
+      dezena: baseShare + (stakeCents - baseShare * 5),
       centena: baseShare,
       milhar: baseShare,
       quina: baseShare,
@@ -238,7 +234,7 @@ export function AdminGameSimulator() {
           </label>
         </div>
         <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginTop: 18 }}>
-          Cada tentativa gera um número apostado e um sorteado, ambos com seis algarismos. O valor é dividido entre as seis categorias; a sobra de centavos vai para Unidade. Só é pago o prêmio da categoria de maior precisão acertada. A comissão é uma hipótese aplicada sobre o total apostado, não uma apuração das comissões reais dos cambistas.
+          Cada tentativa gera um número apostado e um sorteado, ambos com seis algarismos. O valor é dividido entre as cinco categorias; toda sobra de centavos vai para Dezena. Só é pago o prêmio da categoria de maior precisão acertada. A comissão é uma hipótese aplicada sobre o total apostado, não uma apuração das comissões reais dos cambistas.
         </p>
         <button type="button" className="primary-button" disabled={running} onClick={() => void runSimulation()}>
           {running ? "Executando simulação…" : "Iniciar simulação"}
@@ -299,7 +295,7 @@ export function AdminGameSimulator() {
               </table>
             </div>
             <p style={{ color: "var(--muted-foreground, #94a3b8)", lineHeight: 1.6, marginBottom: 0 }}>
-              Referência teórica para faixas exclusivas, com números uniformes e independentes: Unidade 9%; Dezena 0,9%; Centena 0,09%; Milhar 0,009%; Quina 0,0009%; Sena 0,0001%. As frequências observadas variam e não são garantias.
+              Referência teórica para faixas exclusivas, com números uniformes e independentes: Dezena 1%; Centena 0,1%; Milhar 0,01%; Quina 0,001%; Sena 0,0001%. As frequências observadas variam e não são garantias.
             </p>
           </>
         )}
