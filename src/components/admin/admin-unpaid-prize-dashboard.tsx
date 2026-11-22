@@ -100,9 +100,7 @@ export function AdminUnpaidPrizeDashboard() {
 
   return (
     <section className="feature-card admin-unpaid-prize-dashboard" aria-labelledby="admin-unpaid-prize-heading">
-      <h2 id="admin-unpaid-prize-heading">Premiações a pagar</h2>
       {error && <p role="alert" className="note-inline">{error}</p>}
-      {notice && <p role="status" className="note-inline">{notice}</p>}
       {loading && !summary ? <p>Carregando premiações…</p> : summary && <>
         <div className="admin-prize-summary-grid">
           <div className="admin-prize-summary-metric">
@@ -114,33 +112,6 @@ export function AdminUnpaidPrizeDashboard() {
             <strong>{money(summary.totalDueCents)}</strong>
           </div>
         </div>
-        <div className="admin-prize-summary-meta">
-          <span>Sem solicitação: <strong>{summary.unrequestedCount}</strong></span>
-          <span>Com solicitação: <strong>{summary.requestedCount}</strong></span>
-        </div>
-        <h3>Detalhamento por premiação</h3>
-        <div className="admin-prize-summary-table-wrap">
-          <table className="admin-prize-summary-table">
-            <thead><tr><th>Categoria</th><th>Qtd.</th><th>Valor pendente</th></tr></thead>
-            <tbody>
-              {summary.breakdown.length === 0
-                ? <tr><td colSpan={3}>Nenhum prêmio pendente.</td></tr>
-                : summary.breakdown.map((item) => (
-                  <tr key={item.category}>
-                    <td>{item.category}</td>
-                    <td>{item.count}</td>
-                    <td>{money(item.dueCents)}</td>
-                  </tr>
-                ))}
-            </tbody>
-            <tfoot><tr><th>Total</th><th>{summary.count}</th><th>{money(summary.totalDueCents)}</th></tr></tfoot>
-          </table>
-        </div>
-        {summary.inconsistentCount > 0 && (
-          <p role="alert" className="note-inline">
-            Atenção: {summary.inconsistentCount} prêmio(s) precisam de conferência do cálculo.
-          </p>
-        )}
         {summary.expiredItems?.length > 0 && (
           <div className="admin-prize-review-tools">
             <h3>Prêmios expirados — aguardando baixa administrativa</h3>
@@ -175,9 +146,6 @@ export function AdminUnpaidPrizeDashboard() {
           </div>
         )}
       </>}
-      <button type="button" className="secondary-button admin-payment-refresh" disabled={loading} onClick={() => { setLoading(true); void load(); }}>
-        Atualizar agora
-      </button>
       <style jsx>{`
         .admin-prize-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0 10px; }
         .admin-prize-summary-metric { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; background: #172638; color: #f4f6fb; min-width: 0; }
