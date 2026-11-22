@@ -329,9 +329,19 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
   margin-top: 4mm;
+  padding: 2mm 1mm;
   text-align: center;
   font-size: 10px;
+  background: #fff !important;
+  background-image: none !important;
+  color: #000 !important;
+}
+.thermal-receipt-footer > * {
+  color: #000 !important;
+  background: transparent !important;
 }
 .thermal-receipt-footer-code { margin-top: 1mm; font-weight: 700; }
 .thermal-receipt-actions {
