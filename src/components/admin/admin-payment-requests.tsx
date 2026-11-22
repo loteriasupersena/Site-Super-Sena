@@ -101,9 +101,8 @@ export function AdminPaymentRequests() {
   }
 
   return <section className="feature-card admin-payment-requests" aria-labelledby="admin-payment-requests-heading">
-    <span className="feature-label">CONTROLE FINANCEIRO</span>
     <div className="admin-payment-card-heading">
-      <h2 id="admin-payment-requests-heading">Solicitações de pagamentos</h2>
+      <h2 id="admin-payment-requests-heading" className="sr-only">Solicitações de pagamento</h2>
     </div>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
