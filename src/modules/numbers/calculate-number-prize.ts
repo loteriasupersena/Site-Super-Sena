@@ -36,8 +36,15 @@ export function calculateNumberPrizeCents(line: NumericSettlementLine, drawnNumb
   const winningCategory = matches.find(({ matched }) => matched)?.category;
   if (!winningCategory) return 0;
 
+  const allocations = Object.values(ALLOCATION_FIELD).map((field) => line[field]);
+  if (allocations.some((amount) => !Number.isSafeInteger(amount) || amount < 0)) {
+    throw new Error("Stored numeric category allocation is invalid.");
+  }
+  const totalStakeCents = allocations.reduce((total, amount) => total + amount, 0);
+  if (!Number.isSafeInteger(totalStakeCents) || totalStakeCents < 100) {
+    throw new Error("Stored numeric stake is invalid.");
+  }
   const stake = line[ALLOCATION_FIELD[winningCategory]];
-  if (!Number.isSafeInteger(stake) || stake < 0) throw new Error("Stored numeric category allocation is invalid.");
   const prize = stake * multipliers[winningCategory];
   if (!Number.isSafeInteger(prize) || prize > 2_147_483_647) throw new Error("Numeric prize exceeds the database integer range.");
   return prize;
