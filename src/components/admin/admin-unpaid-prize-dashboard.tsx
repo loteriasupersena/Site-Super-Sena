@@ -13,6 +13,8 @@ type PrizeGroup = {
 
 type ReviewItem = { id: string; prizeCents: number; category: string; receiptCode: string | null };
 
+type ExpiredItem = { id: string; prizeCents: number; receiptCode: string | null; roundCode: string; resultNumber: string | null; expiredAt: string };
+
 type Summary = {
   count: number;
   totalGrossCents: number;
@@ -22,6 +24,7 @@ type Summary = {
   inconsistentCount: number;
   breakdown: PrizeGroup[];
   reviewItems: ReviewItem[];
+  expiredItems: ExpiredItem[];
   updatedAt: string;
 };
 
@@ -34,6 +37,7 @@ export function AdminUnpaidPrizeDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [discardingId, setDiscardingId] = useState<string | null>(null);
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
@@ -65,6 +69,24 @@ export function AdminUnpaidPrizeDashboard() {
       setError(reason instanceof Error ? reason.message : "Não foi possível remover o prêmio.");
     } finally {
       setDiscardingId(null);
+    }
+  };
+
+  const acknowledgeExpiredPrize = async (item: ExpiredItem) => {
+    if (!window.confirm("Registrar a baixa administrativa do prêmio expirado do recibo " + (item.receiptCode ?? "sem código") + "? A aposta e o recibo serão preservados. Esta ação ficará no histórico de auditoria.")) return;
+    setAcknowledgingId(item.id);
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/prizes/expired/" + encodeURIComponent(item.id) + "/acknowledge", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível registrar a baixa.");
+      setNotice("Baixa administrativa registrada. A aposta e o recibo foram preservados.");
+      setLoading(true);
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível registrar a baixa.");
+    } finally {
+      setAcknowledgingId(null);
     }
   };
 
@@ -120,6 +142,24 @@ export function AdminUnpaidPrizeDashboard() {
           <p role="alert" className="note-inline">
             Atenção: {summary.inconsistentCount} prêmio(s) precisam de conferência do cálculo.
           </p>
+        )}
+        {summary.expiredItems?.length > 0 && (
+          <div className="admin-prize-review-tools">
+            <h3>Prêmios expirados — aguardando baixa administrativa</h3>
+            <p className="admin-prize-summary-footnote">O prazo de sete dias terminou sem solicitação. Esses valores já saíram das premiações pendentes. A baixa registra a conferência administrativa, sem apagar aposta ou recibo.</p>
+            {summary.expiredItems.map((item) => (
+              <div className="admin-prize-review-row" key={item.id}>
+                <div>
+                  <strong>{money(item.prizeCents)}</strong>
+                  <span>Rodada {item.roundCode} · Recibo: {item.receiptCode ?? "não informado"}</span>
+                  <span>Resultado: {item.resultNumber ?? "—"} · Expirado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(item.expiredAt))}</span>
+                </div>
+                <button type="button" className="secondary-button" disabled={acknowledgingId !== null || discardingId !== null} onClick={() => void acknowledgeExpiredPrize(item)}>
+                  {acknowledgingId === item.id ? "Registrando…" : "Registrar baixa"}
+                </button>
+              </div>
+            ))}
+          </div>
         )}
         {summary.reviewItems?.length > 0 && (
           <div className="admin-prize-review-tools">
