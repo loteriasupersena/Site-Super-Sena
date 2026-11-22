@@ -3,7 +3,6 @@ export type ThermalReceiptEntry = {
   roundCode: string;
   resultAt: string;
   stakeCents: number;
-  unitCents?: number;
   tensCents?: number;
   hundredsCents?: number;
   milharCents?: number;
