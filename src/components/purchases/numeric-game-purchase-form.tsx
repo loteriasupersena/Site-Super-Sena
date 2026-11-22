@@ -309,6 +309,23 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
           <div className="numeric-stake-control">
             <label htmlFor="numeric-stake">Valor da aposta (R$)</label>
             <input id="numeric-stake" disabled={Boolean(purchase)} value={stake} onChange={(event) => setStake(event.target.value)} inputMode="decimal" />
+            <div className="numeric-stake-presets" role="group" aria-label="Valores rápidos da aposta">
+              {[2, 5, 10].map((value) => {
+                const selected = stakeCents === value * 100;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={selected ? "is-selected" : ""}
+                    aria-pressed={selected}
+                    disabled={Boolean(purchase)}
+                    onClick={() => { setStake(value.toFixed(2).replace(".", ",")); setError(""); }}
+                  >
+                    R$ {value},00
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="numeric-total-box" aria-live="polite">
             <span>Total</span>
