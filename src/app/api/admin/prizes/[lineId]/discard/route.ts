@@ -24,6 +24,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
   if (user.role !== "ADMIN" || user.mustChangePassword) return NextResponse.json({ error: "Somente o administrador pode remover este prêmio." }, { status: 403, headers });
 
   const { lineId } = await context.params;
+  let confirmation: { receiptCode?: string } = {};
+  try { confirmation = await request.json(); } catch { return NextResponse.json({ error: "Confirme o código do recibo." }, { status: 400, headers }); }
+  const confirmedReceiptCode = typeof confirmation.receiptCode === "string" ? confirmation.receiptCode.trim().toUpperCase() : "";
   if (!/^[A-Za-z0-9_-]{8,100}$/.test(lineId)) return NextResponse.json({ error: "Prêmio não encontrado." }, { status: 404, headers });
 
   try {
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
           participation: { include: { round: true, purchase: true } },
         },
       });
-      if (!line || line.prizeCents !== 100 || line.prizeCreditedAt || line.prizePayout) {
+      if (!line || line.prizeCents !== 100 || line.prizeCreditedAt || line.prizePayout || !confirmedReceiptCode || line.participation.purchase.receiptCode?.toUpperCase() !== confirmedReceiptCode) {
         throw new Error("PRIZE_NOT_ELIGIBLE");
       }
       if (line.participation.status !== "CONFIRMED" ||
@@ -55,11 +58,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         ruleVersion: line.ruleVersion,
         ruleSnapshot: line.ruleSnapshot,
       }, line.participation.round.resultNumber);
-      if (review?.calculationConsistent && review.calculatedPrizeCents === line.prizeCents) {
+      if (review !== null) {
         throw new Error("PRIZE_NOT_INCONSISTENT");
       }
       const paymentRequest = line.prizePaymentRequest;
-      if (paymentRequest && (
+      if (paymentRequest || line.prizePaymentBatchItems.length > 0) {
         paymentRequest.status === "PAID" ||
         paymentRequest.status === "PROCESSING" ||
         paymentRequest.providerTransferId ||
@@ -70,10 +73,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         throw new Error("PAYMENT_IN_PROGRESS");
       }
 
-      await tx.prizePaymentBatchItem.deleteMany({ where: { participationLineId: line.id } });
-      if (paymentRequest) {
-        await tx.prizePaymentRequest.delete({ where: { id: paymentRequest.id } });
-      }
       await tx.numericParticipationLine.update({
         where: { id: line.id },
         data: { prizeCents: null, prizeCreditedAt: null },
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
       return NextResponse.json({ error: "O prêmio está consistente com a apuração e não pode ser removido por esta ação." }, { status: 409, headers });
     }
     if (error instanceof Error && error.message === "PAYMENT_IN_PROGRESS") {
-      return NextResponse.json({ error: "Há uma solicitação ou transferência em andamento. A remoção foi bloqueada." }, { status: 409, headers });
+      return NextResponse.json({ error: "Há uma solicitação ou vínculo de pagamento. A remoção foi bloqueada para preservar o histórico financeiro." }, { status: 409, headers });
     }
     return NextResponse.json({ error: "Não foi possível remover o prêmio." }, { status: 500, headers });
   }
