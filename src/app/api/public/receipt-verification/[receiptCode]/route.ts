@@ -21,7 +21,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-              select: { id: true, numberValue: true, unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true, batch: { select: { id: true, status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } } },
+              select: { id: true, numberValue: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true, batch: { select: { id: true, status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } } },
             },
           },
         },
@@ -46,7 +46,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         if (completed && round.resultNumber) {
           try {
             calculated = calculateNumberPrizeCents({
-              numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
+              numberValue: line.numberValue, tensCents: line.tensCents,
               hundredsCents: line.hundredsCents, milharCents: line.milharCents, senaCents: line.senaCents,
               quinaCents: line.quinaCents, ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
             }, round.resultNumber);
