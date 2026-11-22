@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       let recalculated: number;
       try {
         recalculated = calculateNumberPrizeCents({
-          numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
+          numberValue: line.numberValue, tensCents: line.tensCents,
           hundredsCents: line.hundredsCents, milharCents: line.milharCents,
           quinaCents: line.quinaCents, senaCents: line.senaCents, ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
         }, round.resultNumber);
