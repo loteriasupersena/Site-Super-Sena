@@ -21,7 +21,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true, resultPublishedAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-              select: { id: true, numberValue: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true, batch: { select: { id: true, status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } } },
+              select: { id: true, numberValue: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true, requestedAt: true, batch: { select: { id: true, status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } } },
             },
           },
         },
@@ -54,7 +54,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         }
         const prize = line.prizeCents ?? calculated;
         const prizeExpiresAt = round.resultPublishedAt ? new Date(round.resultPublishedAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
-        const prizeExpired = Boolean(completed && prize !== null && prize > 0 && prizeExpiresAt && now >= prizeExpiresAt.getTime() && !line.prizeCreditedAt && !line.prizePayout);
+        const requestedWithinDeadline = Boolean(line.prizePaymentRequest?.requestedAt && prizeExpiresAt && line.prizePaymentRequest.requestedAt.getTime() <= prizeExpiresAt.getTime());
+        const prizeExpired = Boolean(completed && prize !== null && prize > 0 && prizeExpiresAt && now >= prizeExpiresAt.getTime() && !line.prizeCreditedAt && !line.prizePayout && !requestedWithinDeadline);
         return { participationLineId: line.id, numberValue: line.numberValue,
           resultStatus: prizeExpired ? "EXPIRADO" : !completed ? "AGUARDANDO" : prize !== null ? prize > 0 ? "PREMIADA" : "NAO_PREMIADA" : "AGUARDANDO_APURACAO",
           prizeCents: completed && prize !== null && prize > 0 ? prize : null, prizeExpired, prizeExpiresAt: prizeExpiresAt?.toISOString() ?? null,
