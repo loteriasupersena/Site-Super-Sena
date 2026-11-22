@@ -17,4 +17,5 @@ describe("getNumericPrizeReview", () => {
   });
   it("does not classify a one-digit-only match as a prize", () => expect(getNumericPrizeReview(line("123456"), "999996")).toBeNull());
   it("rejects invalid snapshots", () => expect(getNumericPrizeReview({ ...line("123456"), ruleSnapshot: null }, "123456")?.calculationConsistent).toBe(false));
+  it("rejects an invalid allocation even when another category wins", () => expect(getNumericPrizeReview({ ...line("123456"), tensCents: -1 }, "123456")?.calculationConsistent).toBe(false));
 });
