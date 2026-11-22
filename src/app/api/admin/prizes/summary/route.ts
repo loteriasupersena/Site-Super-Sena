@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       else unrequestedCount += 1;
       const inconsistent = !review?.calculationConsistent || review.calculatedPrizeCents !== grossCents;
       if (inconsistent) inconsistentCount += 1;
-      if (grossCents === 100 && !review?.calculationConsistent) {
+      if (grossCents === 100 && inconsistent) {
         reviewItems.push({ id: line.id, prizeCents: grossCents, category, receiptCode: line.participation.purchase.receiptCode });
       }
 
