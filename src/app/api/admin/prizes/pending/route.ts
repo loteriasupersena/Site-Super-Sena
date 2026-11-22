@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const lines = await authPrisma.numericParticipationLine.findMany({
       where: {
         prizeCents: { gt: 0 },
+        prizeExpiredAt: null,
         prizeCreditedAt: null,
         prizePayout: { is: null },
         prizePaymentRequest: { is: { status: { in: ["PENDING", "PROCESSING"] } } },
