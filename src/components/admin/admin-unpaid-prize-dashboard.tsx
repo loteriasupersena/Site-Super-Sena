@@ -66,7 +66,9 @@ export function AdminUnpaidPrizeDashboard() {
       setLoading(true);
       await load();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Não foi possível remover o prêmio.");
+      const message = reason instanceof Error ? reason.message : "Não foi possível remover o prêmio.";
+      setError(message);
+      window.alert(message);
     } finally {
       setDiscardingId(null);
     }
