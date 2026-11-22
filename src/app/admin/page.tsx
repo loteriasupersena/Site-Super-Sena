@@ -16,7 +16,10 @@ export default async function AdminPage() {
   return (
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
       <div className="admin-page-layout">
-        <AdminPaymentRequests />
+        <div className="admin-payment-section">
+          <span className="feature-label">Solicitações de pagamento</span>
+          <AdminPaymentRequests />
+        </div>
         <div className="admin-accordion-list">
           <details className="admin-accordion">
             <summary><span>Prêmios</span></summary>
