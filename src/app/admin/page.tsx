@@ -8,7 +8,6 @@ import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-cred
 import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
-import "./admin-dashboard.css";
 
 export const dynamic = "force-dynamic";
 
@@ -16,125 +15,48 @@ export default async function AdminPage() {
   const user = await requireRole("ADMIN");
 
   return (
-    <AreaShell
-      title="Administração"
-      username={user.username}
-      description="Configuração e supervisão da plataforma."
-    >
-      <div className="admin-dashboard">
-        <header className="admin-dashboard-intro">
-          <div>
-            <span className="admin-dashboard-eyebrow">Central de controle</span>
-            <h2>Painel administrativo</h2>
-            <p>Gerencie premiações, cambistas e parâmetros financeiros em um só lugar.</p>
-          </div>
-          <div className="admin-dashboard-status" aria-label="Área administrativa">
-            <span className="admin-dashboard-status-dot" />
-            Ambiente administrativo
-          </div>
-        </header>
-
-        <section className="admin-dashboard-section admin-dashboard-prizes" aria-labelledby="admin-prizes-title">
-          <div className="admin-dashboard-section-heading">
-            <div className="admin-dashboard-section-number">01</div>
-            <div>
-              <span className="admin-dashboard-kicker">Financeiro</span>
-              <h3 id="admin-prizes-title">Prêmios e resgates</h3>
-              <p>Acompanhe pagamentos pendentes, saques e conciliação de créditos.</p>
-            </div>
-          </div>
-          <div className="admin-dashboard-grid admin-dashboard-grid-prizes">
-            <article className="admin-dashboard-card admin-dashboard-card-wide">
-              <div className="admin-dashboard-card-heading">
-                <h4>Prêmios não pagos</h4>
-                <span>Monitoramento</span>
-              </div>
-              <AdminUnpaidPrizeDashboard />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Pagamento de prêmios</h4>
-                <span>Operação</span>
-              </div>
+    <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
+      <div className="admin-page-layout">
+        <div className="admin-accordion-list">
+          <details className="admin-accordion">
+            <summary><span>Prêmios</span></summary>
+            <div className="admin-accordion-content">
               <AdminPrizePayout />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Saques</h4>
-                <span>Solicitações</span>
-              </div>
+              <AdminUnpaidPrizeDashboard />
               <AdminWithdrawalManager />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Conciliação de créditos</h4>
-                <span>Conferência</span>
-              </div>
               <AdminPrizeCreditReconciliation />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Crédito de teste</h4>
-                <span>Ferramenta administrativa</span>
-              </div>
               <AdminTestWalletCredit />
-            </article>
-          </div>
-        </section>
-
-        <section className="admin-dashboard-section" aria-labelledby="admin-cashiers-title">
-          <div className="admin-dashboard-section-heading">
-            <div className="admin-dashboard-section-number">02</div>
-            <div>
-              <span className="admin-dashboard-kicker">Rede de vendas</span>
-              <h3 id="admin-cashiers-title">Gestão de cambistas</h3>
-              <p>Cadastre novos parceiros e administre os cadastros existentes.</p>
             </div>
-          </div>
-          <div className="admin-dashboard-grid admin-dashboard-grid-two">
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Cadastro de cambista</h4>
-                <span>Novo cadastro</span>
-              </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Cadastro de cambista</span></summary>
+            <div className="admin-accordion-content">
               <AdminCashierManager mode="create" />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Gerenciar cambistas</h4>
-                <span>Cadastros e gestão</span>
-              </div>
-              <AdminCashierManager mode="manage" />
-            </article>
-          </div>
-        </section>
-
-        <section className="admin-dashboard-section" aria-labelledby="admin-settings-title">
-          <div className="admin-dashboard-section-heading">
-            <div className="admin-dashboard-section-number">03</div>
-            <div>
-              <span className="admin-dashboard-kicker">Parâmetros do jogo</span>
-              <h3 id="admin-settings-title">Multiplicadores e simulador</h3>
-              <p>Configure os multiplicadores e avalie a sustentabilidade financeira.</p>
             </div>
-          </div>
-          <div className="admin-dashboard-grid admin-dashboard-grid-two">
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Configuração de multiplicadores</h4>
-                <span>Regras de premiação</span>
-              </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Gestão de cambistas</span></summary>
+            <div className="admin-accordion-content">
+              <AdminCashierManager mode="manage" />
+            </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Multiplicadores de prêmios</span></summary>
+            <div className="admin-accordion-content">
               <AdminPrizeRules />
-            </article>
-            <article className="admin-dashboard-card">
-              <div className="admin-dashboard-card-heading">
-                <h4>Simulador financeiro</h4>
-                <span>Análise em tempo real</span>
-              </div>
+            </div>
+          </details>
+
+          <details className="admin-accordion">
+            <summary><span>Simulador de sustentabilidade</span></summary>
+            <div className="admin-accordion-content">
               <AdminGameSimulator />
-            </article>
-          </div>
-        </section>
+            </div>
+          </details>
+        </div>
       </div>
     </AreaShell>
   );
