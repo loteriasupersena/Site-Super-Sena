@@ -4659,3 +4659,566 @@ body {
   html { scroll-behavior: auto; }
   .landing-button, .site-header-navigation a { transition: none; }
 }
+
+
+/* ==========================================================================
+   SUPER SENA — IDENTIDADE VISUAL GLOBAL SAFIRA & OURO
+   Camada de apresentação: não altera estrutura, estados ou comportamento.
+   ========================================================================== */
+:root {
+  --background: #001584;
+  --surface: #103a8a;
+  --card: #123d91;
+  --text: #f8fbff;
+  --muted: #d6e4ff;
+  --border: rgb(250 204 21 / 42%);
+  --accent: #facc15;
+  --accent-soft: rgb(250 204 21 / 13%);
+  --sena-royal: #001584;
+  --sena-sapphire: #0b2f78;
+  --sena-sapphire-light: #174da4;
+  --sena-gold: #facc15;
+  --sena-gold-deep: #d8ad42;
+  --sena-red: #dc2626;
+  --sena-blue: #2563eb;
+  --sena-input: #f8fbff;
+  --sena-ink: #10234a;
+}
+
+html {
+  background: var(--sena-royal);
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgb(44 103 215 / 28%), transparent 38%),
+    radial-gradient(ellipse at 92% 18%, rgb(16 75 169 / 24%), transparent 34%),
+    linear-gradient(145deg, #001584 0%, #06266f 52%, #00104d 100%) !important;
+  background-attachment: fixed !important;
+  color: #f8fbff;
+}
+
+.site-header.site-header-scenery {
+  background:
+    linear-gradient(115deg, #00104f 0%, #082b78 54%, #00145d 100%) !important;
+  border-bottom: 1px solid rgb(250 204 21 / 52%) !important;
+  box-shadow: 0 8px 24px rgb(0 8 38 / 28%);
+}
+
+.site-header.site-header-scenery .site-header-login {
+  border-color: #facc15 !important;
+  background: linear-gradient(180deg, #f04444 0%, #c81e1e 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #8e1616, 0 6px 14px rgb(0 0 0 / 22%);
+}
+
+.site-header-navigation a,
+.site-header-navigation a.site-header-check {
+  border-color: rgb(250 204 21 / 55%) !important;
+  background: linear-gradient(145deg, #164a9c, #092b70) !important;
+  color: #fff !important;
+}
+
+.area-page,
+.auth-layout,
+.site-page-shell,
+.public-results-page {
+  color: #f8fbff;
+}
+
+.area-header {
+  border-bottom-color: rgb(250 204 21 / 42%) !important;
+}
+
+.area-title,
+.area-description,
+.area-header h1 {
+  color: #fff !important;
+}
+
+.account-name {
+  color: #dce8ff !important;
+}
+
+/* Cartões principais: identidade consistente para jogador, cambista e admin. */
+.welcome-card,
+.auth-card,
+.feature-card,
+.ticket-check,
+.player-history-purchase,
+.ticket-check-result,
+.cashier-purchase-result,
+.round-option,
+.purchase-form fieldset,
+.admin-round-create,
+.player-collapsible-section,
+.player-menu-card,
+.cashier-summary-menu,
+.admin-accordion,
+.admin-cashier-details,
+.admin-prize-payout .admin-prize-card,
+.cashier-info-card,
+.numeric-game-purchase,
+.recent-result,
+.admin-dashboard-intro,
+.admin-dashboard-section,
+.admin-dashboard-card {
+  background: linear-gradient(145deg, #17499b 0%, #0b2c72 58%, #08245f 100%) !important;
+  background-image: linear-gradient(145deg, #17499b 0%, #0b2c72 58%, #08245f 100%) !important;
+  border: 1px solid rgb(216 173 66 / 58%) !important;
+  color: #f8fbff !important;
+  box-shadow: 0 10px 26px rgb(0 8 38 / 22%), inset 0 1px rgb(255 255 255 / 7%) !important;
+}
+
+.admin-dashboard-section {
+  border-color: rgb(250 204 21 / 48%) !important;
+}
+
+.admin-dashboard-card {
+  background: linear-gradient(150deg, #1a4c9b 0%, #103778 100%) !important;
+  border-color: rgb(216 173 66 / 42%) !important;
+}
+
+.admin-dashboard-card-heading {
+  border-bottom-color: rgb(250 204 21 / 34%) !important;
+}
+
+.admin-dashboard-card-heading span,
+.admin-dashboard-section-number {
+  border-color: rgb(250 204 21 / 55%) !important;
+  background: linear-gradient(145deg, #234f91, #12336f) !important;
+  color: #ffe58a !important;
+}
+
+.admin-dashboard-section-heading h3,
+.admin-dashboard-card-heading h4,
+.admin-dashboard-intro h2 {
+  color: #fff !important;
+}
+
+/* Superfícies internas e linhas de dados. */
+.recent-result,
+.cashier-summary-menu .cashier-summary-tile,
+.admin-cashier-details dl > div,
+.cashier-info-card .cashier-prize-line,
+.admin-accordion-content > .feature-card,
+.player-menu-card .recent-results-content .recent-result,
+.cashier-info-card .recent-results-content .recent-result,
+.admin-prize-payout .admin-prize-card,
+.admin-unpaid-prize-dashboard,
+.admin-withdrawal-manager,
+.admin-prize-credit-reconciliation {
+  background: linear-gradient(145deg, #1b4b91 0%, #123574 100%) !important;
+  border: 1px solid rgb(216 173 66 / 38%) !important;
+  color: #fff !important;
+}
+
+.feature-card h1,
+.feature-card h2,
+.feature-card h3,
+.numeric-game-purchase h1,
+.numeric-game-purchase h2,
+.numeric-game-purchase h3,
+.cashier-info-card h1,
+.cashier-info-card h2,
+.cashier-info-card h3,
+.player-history-purchase h1,
+.player-history-purchase h2,
+.player-history-purchase h3,
+.admin-dashboard h2,
+.admin-dashboard h3,
+.admin-dashboard h4,
+.player-collapsible-title {
+  color: #fff !important;
+}
+
+.feature-card p,
+.ticket-check p,
+.ticket-check-hint,
+.player-history-purchase span,
+.cashier-info-card p,
+.cashier-info-card label,
+.admin-accordion-description,
+.admin-prize-payout .admin-prize-card p,
+.cashier-summary-menu-hint,
+.player-collapsible-hint,
+.admin-dashboard p {
+  color: #dce8ff !important;
+}
+
+.feature-label,
+.eyebrow,
+.admin-dashboard-eyebrow,
+.admin-dashboard-kicker {
+  color: #ffe27a !important;
+}
+
+/* Volante de apostas, campo de seis dígitos e valores. */
+.area-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.admin-dashboard :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.auth-layout :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  background: var(--sena-input) !important;
+  color: var(--sena-ink) !important;
+  border: 1px solid #d8ad42 !important;
+  border-radius: 11px;
+  color-scheme: light;
+  box-shadow: inset 0 1px 2px rgb(16 35 74 / 7%);
+}
+
+.area-page :is(input, select, textarea)::placeholder,
+.admin-dashboard :is(input, select, textarea)::placeholder,
+.auth-layout :is(input, select, textarea)::placeholder {
+  color: #6b7891 !important;
+  opacity: 1;
+}
+
+.area-page :is(input, select, textarea):focus-visible,
+.admin-dashboard :is(input, select, textarea):focus-visible,
+.auth-layout :is(input, select, textarea):focus-visible {
+  outline: 3px solid rgb(250 204 21 / 62%) !important;
+  outline-offset: 2px;
+  border-color: #facc15 !important;
+}
+
+.area-page select option,
+.admin-dashboard select option,
+.auth-layout select option {
+  background: #f8fbff;
+  color: #10234a;
+}
+
+.numeric-entry-row input,
+.area-page-compact .numeric-entry-row input {
+  background: #fff !important;
+  color: #001b55 !important;
+  border: 2px solid #d8ad42 !important;
+  box-shadow: inset 0 2px 5px rgb(0 21 84 / 9%), 0 0 0 2px rgb(250 204 21 / 12%);
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+
+.numeric-number-chip,
+.added-number-row .numeric-number-chip {
+  border: 1px solid #facc15 !important;
+  background: linear-gradient(145deg, #fff3b0, #facc15) !important;
+  color: #17346c !important;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 18%);
+  font-weight: 900;
+}
+
+.added-numbers,
+.numeric-total-box,
+.numeric-stake-summary-row {
+  border-color: rgb(250 204 21 / 45%) !important;
+}
+
+.numeric-total-box {
+  background: linear-gradient(145deg, #fff4c2, #facc15) !important;
+  color: #172f60 !important;
+}
+
+.numeric-total-box span,
+.numeric-total-box strong {
+  color: #172f60 !important;
+}
+
+.area-page-compact .numeric-game-purchase .round-repeat-fieldset,
+.area-page-compact .numeric-game-purchase .round-payment-fieldset {
+  background: linear-gradient(145deg, #10377e, #0b2865) !important;
+  border: 1px solid rgb(250 204 21 / 44%) !important;
+  color: #fff !important;
+}
+
+.area-page-compact .numeric-game-purchase .round-repeat-fieldset > legend,
+.area-page-compact .numeric-game-purchase .round-payment-fieldset > legend {
+  color: #ffe27a !important;
+}
+
+.area-page .round-payment-fieldset label,
+.area-page .round-repeat-fieldset label {
+  color: #f8fbff !important;
+}
+
+.area-page input[type="radio"],
+.area-page input[type="checkbox"],
+.admin-dashboard input[type="radio"],
+.admin-dashboard input[type="checkbox"] {
+  accent-color: #facc15;
+}
+
+/* Ações: azul para operações secundárias e vermelho para a ação principal. */
+.area-page button:not(.remove-number-button),
+.admin-dashboard button,
+.auth-layout button,
+.landing-page .landing-button {
+  border-radius: 11px;
+  font-weight: 800;
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+}
+
+.area-page .numeric-game-purchase form > button[type="submit"],
+.area-page .player-wallet-withdrawals-content form button[type="submit"],
+.admin-dashboard button:not(.secondary-button),
+.auth-layout button[type="submit"] {
+  border: 1px solid #ff9b9b !important;
+  background: linear-gradient(180deg, #ef4444 0%, #c81e1e 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 0 #8e1616, 0 7px 15px rgb(0 0 0 / 20%) !important;
+}
+
+.area-page .secondary-button,
+.admin-dashboard .secondary-button,
+.area-page .numeric-entry-actions button {
+  border: 1px solid #8ec5ff !important;
+  background: linear-gradient(180deg, #3286ef 0%, #1553b7 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 0 #0b3479, 0 7px 15px rgb(0 0 0 / 18%) !important;
+}
+
+.area-page button:hover:not(:disabled),
+.admin-dashboard button:hover:not(:disabled),
+.auth-layout button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.area-page button:active:not(:disabled),
+.admin-dashboard button:active:not(:disabled),
+.auth-layout button:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.area-page button:disabled,
+.admin-dashboard button:disabled,
+.auth-layout button:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.remove-number-button {
+  border: 1px solid #fca5a5 !important;
+  background: #fff1f2 !important;
+  color: #b91c1c !important;
+}
+
+/* Modais de Pix e confirmação: superfície clara, QR legível e ações destacadas. */
+.modal-backdrop,
+.wallet-withdrawal-confirm-backdrop {
+  background: rgb(0 12 48 / 78%) !important;
+  backdrop-filter: blur(5px);
+}
+
+.modal-panel,
+.modal-panel.pix-modal,
+.wallet-withdrawal-confirm-dialog {
+  background: linear-gradient(155deg, #fff 0%, #f2f6ff 100%) !important;
+  border: 2px solid #d8ad42 !important;
+  border-radius: 20px !important;
+  color: #10234a !important;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 38%) !important;
+}
+
+.pix-modal h3,
+.wallet-withdrawal-confirm-dialog h3,
+.modal-panel h3 {
+  color: #082b70 !important;
+}
+
+.pix-modal p,
+.pix-modal small,
+.pix-modal strong,
+.pix-modal > div,
+.wallet-withdrawal-confirm-dialog p,
+.wallet-withdrawal-confirm-dialog dt,
+.wallet-withdrawal-confirm-dialog dd {
+  color: #263b61 !important;
+}
+
+.pix-checkout {
+  display: grid;
+  place-items: center;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #d8ad42;
+  border-radius: 16px;
+  background: #fff !important;
+}
+
+.pix-checkout img {
+  width: min(100%, 260px);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.pix-modal .pix-close-button,
+.wallet-withdrawal-confirm-actions button.secondary-button {
+  border: 1px solid #b9c7df !important;
+  background: linear-gradient(180deg, #e8eef9, #d3def0) !important;
+  color: #16366f !important;
+  box-shadow: 0 3px 0 #aabbd5 !important;
+}
+
+/* Tabelas e listagens de prêmios: leitura clara em telas grandes e pequenas. */
+.area-page table,
+.admin-dashboard table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid rgb(216 173 66 / 55%);
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #10234a;
+}
+
+.area-page thead,
+.admin-dashboard thead {
+  background: linear-gradient(90deg, #0b2f78, #174da4);
+  color: #fff;
+}
+
+.area-page th,
+.area-page td,
+.admin-dashboard th,
+.admin-dashboard td {
+  padding: 11px 13px;
+  border-bottom: 1px solid #dce5f3;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.area-page tbody tr:nth-child(even),
+.admin-dashboard tbody tr:nth-child(even) {
+  background: #edf3ff;
+}
+
+.area-page tbody tr:last-child td,
+.admin-dashboard tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.area-page .admin-round-list,
+.area-page .recent-results-list,
+.admin-dashboard .admin-round-list {
+  min-width: 0;
+  width: 100%;
+}
+
+.area-page .admin-round-list > *,
+.area-page .recent-results-list > *,
+.admin-dashboard .admin-round-list > * {
+  border-color: rgb(216 173 66 / 45%) !important;
+}
+
+/* Página inicial: reforça cartões de prêmio e chamadas da landing page. */
+.landing-page .landing-prize-card,
+.landing-page .landing-cashier,
+.landing-page .landing-section,
+.landing-page .landing-how-card {
+  border-color: rgb(216 173 66 / 60%) !important;
+  box-shadow: 0 12px 28px rgb(0 8 38 / 18%);
+}
+
+.landing-page .landing-prize-index {
+  color: #ffe27a !important;
+}
+
+.landing-page .landing-prize-multiplier {
+  color: #facc15 !important;
+}
+
+/* Acessibilidade e responsividade — incluindo iPhones em orientação retrato. */
+.area-page *,
+.admin-dashboard *,
+.auth-layout * {
+  min-width: 0;
+}
+
+.area-page img,
+.admin-dashboard img,
+.auth-layout img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 760px) {
+  body {
+    background-attachment: scroll !important;
+  }
+
+  .area-page,
+  .auth-layout,
+  .site-page-shell {
+    padding-inline: 14px !important;
+  }
+
+  .feature-card,
+  .numeric-game-purchase,
+  .cashier-info-card,
+  .player-menu-card,
+  .admin-dashboard-section,
+  .admin-dashboard-card {
+    border-radius: 16px !important;
+  }
+
+  .numeric-entry-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .numeric-entry-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .numeric-entry-actions button {
+    min-height: 46px;
+  }
+
+  .area-page table,
+  .admin-dashboard table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-panel,
+  .wallet-withdrawal-confirm-dialog {
+    width: min(100%, 520px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .area-page,
+  .auth-layout,
+  .site-page-shell {
+    padding-inline: 10px !important;
+  }
+
+  .numeric-stake-summary-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .numeric-entry-row input {
+    min-height: 56px !important;
+    font-size: 1.55rem !important;
+  }
+
+  .admin-dashboard-section-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .area-page *,
+  .admin-dashboard *,
+  .auth-layout * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
