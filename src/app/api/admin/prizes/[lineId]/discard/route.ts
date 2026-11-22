@@ -82,14 +82,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         }
       }
 
-      // Remove somente os vínculos de uma solicitação ainda não paga/em processamento.
-      // Outros itens de um lote compartilhado permanecem intactos.
-      if (line.prizePaymentBatchItems.length > 0) {
-        await tx.prizePaymentBatchItem.deleteMany({ where: { participationLineId: line.id } });
-      }
-      if (paymentRequest) {
-        await tx.prizePaymentRequest.delete({ where: { id: paymentRequest.id } });
-      }
 
       await tx.numericParticipationLine.update({
         where: { id: line.id },
