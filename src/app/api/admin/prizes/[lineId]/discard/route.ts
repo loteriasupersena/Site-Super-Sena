@@ -112,6 +112,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
     if (error instanceof Error && error.message === "PAYMENT_IN_PROGRESS") {
       return NextResponse.json({ error: "Há uma solicitação ou vínculo de pagamento. A remoção foi bloqueada para preservar o histórico financeiro." }, { status: 409, headers });
     }
-    return NextResponse.json({ error: "Não foi possível remover o prêmio." }, { status: 500, headers });
+    console.error("[admin-prize-discard] failed", {
+      lineId,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+      prismaCode: typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code) : null,
+    });
+    const prismaCode = typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code) : "";
+    if (prismaCode === "P2003" || prismaCode === "P2014") {
+      return NextResponse.json({ error: "A remoção foi bloqueada por um vínculo financeiro ou histórico relacionado. Nenhum registro foi alterado." }, { status: 409, headers });
+    }
+    if (prismaCode === "P2025") {
+      return NextResponse.json({ error: "O registro ou a solicitação vinculada não foi encontrado. Atualize o painel." }, { status: 409, headers });
+    }
+    if (prismaCode === "P2034") {
+      return NextResponse.json({ error: "Houve conflito simultâneo ao atualizar este prêmio. Atualize o painel e tente novamente." }, { status: 409, headers });
+    }
+    return NextResponse.json({ error: "Falha interna ao remover o prêmio. Código técnico: " + (prismaCode || "SEM_CODIGO") + ". Nenhuma alteração foi confirmada." }, { status: 500, headers });
   }
 }
