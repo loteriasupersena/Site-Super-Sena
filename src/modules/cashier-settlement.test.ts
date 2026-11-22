@@ -32,14 +32,14 @@ describe("calculateCashierSettlement", () => {
       pixSalesCents: 30000,
       totalSalesCents: 80000,
       commissionCents: 8000,
-      cashPrizePayoutCents: 5000,
-      netBalanceCents: 37000,
-      cashierOwesPlatformCents: 37000,
+      cashPrizePayoutCents: 0,
+      netBalanceCents: 42000,
+      cashierOwesPlatformCents: 42000,
       platformOwesCashierCents: 0,
     });
   });
 
-  it("shows when the platform owes the cashier after cash prizes and commission", async () => {
+  it("does not subtract prize payments from the cashier settlement balance", async () => {
     const tx = transactionFixture({
       cash: 0, pix: 10000, commission: 1000, payouts: 2000, payoutCount: 1, games: 1,
       sales: [{ id: "pix-sale", totalCents: 10000, commission: { cashierId: "cashier-1", rateBasisPoints: 1000, amountCents: 1000 } }],
