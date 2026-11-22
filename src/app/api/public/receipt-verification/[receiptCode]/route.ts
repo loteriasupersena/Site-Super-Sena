@@ -18,7 +18,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         participations: {
           where: { status: "CONFIRMED" }, orderBy: { round: { resultAt: "asc" } },
           select: {
-            round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true } },
+            round: { select: { code: true, status: true, resultNumber: true, startsAt: true, resultAt: true, resultPublishedAt: true } },
             numericLines: {
               orderBy: [{ createdAt: "asc" }, { id: "asc" }],
               select: { id: true, numberValue: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true, ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true, prizePayout: { select: { channel: true, paidAt: true } }, prizePaymentRequest: { select: { status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true, pixKeyMasked: true, batch: { select: { id: true, status: true, grossCents: true, administrativeFeeCents: true, transactionFeeCents: true, netCents: true } } } } },
@@ -53,9 +53,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
           } catch { /* Never guess if saved rules are inconsistent. */ }
         }
         const prize = line.prizeCents ?? calculated;
+        const prizeExpiresAt = round.resultPublishedAt ? new Date(round.resultPublishedAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+        const prizeExpired = Boolean(completed && prize !== null && prize > 0 && prizeExpiresAt && now >= prizeExpiresAt.getTime() && !line.prizeCreditedAt && !line.prizePayout);
         return { participationLineId: line.id, numberValue: line.numberValue,
-          resultStatus: !completed ? "AGUARDANDO" : prize !== null ? prize > 0 ? "PREMIADA" : "NAO_PREMIADA" : "AGUARDANDO_APURACAO",
-          prizeCents: completed && prize !== null && prize > 0 ? prize : null, prizePaid: Boolean(line.prizeCreditedAt || line.prizePayout), payoutChannel: line.prizePayout?.channel ?? null, paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null, paymentRequest: line.prizePaymentRequest ? { status: line.prizePaymentRequest.status, grossCents: line.prizePaymentRequest.grossCents, administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents, transactionFeeCents: line.prizePaymentRequest.transactionFeeCents, netCents: line.prizePaymentRequest.netCents, pixKeyMasked: line.prizePaymentRequest.pixKeyMasked, batch: line.prizePaymentRequest.batch ? { id: line.prizePaymentRequest.batch.id, status: line.prizePaymentRequest.batch.status, grossCents: line.prizePaymentRequest.batch.grossCents, administrativeFeeCents: line.prizePaymentRequest.batch.administrativeFeeCents, transactionFeeCents: line.prizePaymentRequest.batch.transactionFeeCents, netCents: line.prizePaymentRequest.batch.netCents } : null } : null };
+          resultStatus: prizeExpired ? "EXPIRADO" : !completed ? "AGUARDANDO" : prize !== null ? prize > 0 ? "PREMIADA" : "NAO_PREMIADA" : "AGUARDANDO_APURACAO",
+          prizeCents: completed && prize !== null && prize > 0 ? prize : null, prizeExpired, prizeExpiresAt: prizeExpiresAt?.toISOString() ?? null,
+          prizePaid: Boolean(line.prizeCreditedAt || line.prizePayout), payoutChannel: line.prizePayout?.channel ?? null, paidAt: line.prizePayout?.paidAt.toISOString() ?? line.prizeCreditedAt?.toISOString() ?? null, paymentRequest: line.prizePaymentRequest ? { status: line.prizePaymentRequest.status, grossCents: line.prizePaymentRequest.grossCents, administrativeFeeCents: line.prizePaymentRequest.administrativeFeeCents, transactionFeeCents: line.prizePaymentRequest.transactionFeeCents, netCents: line.prizePaymentRequest.netCents, pixKeyMasked: line.prizePaymentRequest.pixKeyMasked, batch: line.prizePaymentRequest.batch ? { id: line.prizePaymentRequest.batch.id, status: line.prizePaymentRequest.batch.status, grossCents: line.prizePaymentRequest.batch.grossCents, administrativeFeeCents: line.prizePaymentRequest.batch.administrativeFeeCents, transactionFeeCents: line.prizePaymentRequest.batch.transactionFeeCents, netCents: line.prizePaymentRequest.batch.netCents } : null } : null };
       });
       return { roundCode: round.code, status, startsAt: round.startsAt.toISOString(), resultAt: round.resultAt.toISOString(),
         resultNumber: completed ? round.resultNumber : null, numbers };
