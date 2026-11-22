@@ -1,40 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { allocateNumberStake } from "../../domain/allocate-number-stake";
-import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION, LEGACY_NUMERIC_PRIZE_RULE_VERSION, DEFAULT_NUMERIC_PRIZE_MULTIPLIERS } from "../../domain/numeric-prize-rules";
+import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "../../domain/numeric-prize-rules";
 import { calculateNumberPrizeCents } from "./calculate-number-prize";
-function line(numberValue: string) { return { numberValue, ...allocateNumberStake(600), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() }; }
+function line(numberValue: string, stakeCents = 600) { return { numberValue, ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() }; }
 
 describe("calculateNumberPrizeCents", () => {
-  it("pays only Sena on an exact six-digit match", () => expect(calculateNumberPrizeCents(line("123456"), "123456")).toBe(100 * 200_000));
-  it("pays only Quina on the final five digits", () => expect(calculateNumberPrizeCents(line("123456"), "923456")).toBe(100 * 20_000));
-  it("pays only Milhar on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(100 * 2_000));
-  it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(100 * 200));
-  it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(100 * 20));
-  it.each([100, 101, 105, 600, 999, 1000])("returns exactly the full stake on a unit-only match for %i cents", (stakeCents) => {
-    const wager = { numberValue: "123456", ...allocateNumberStake(stakeCents), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
-    expect(calculateNumberPrizeCents(wager, "999996")).toBe(stakeCents);
-  });
-  it("calculates a unit prize independently for each six-digit game in the same receipt", () => {
-    const receiptGames = [
-      { numberValue: "123451", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
-      { numberValue: "654322", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
-      { numberValue: "987653", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() },
-    ];
-    const prizes = receiptGames.map((game) => calculateNumberPrizeCents(game, "000001"));
-    expect(prizes).toEqual([100, 0, 0]);
-    expect(prizes.reduce((total, prize) => total + prize, 0)).toBe(100);
-  });
-  it("keeps the unit prize at 100% of the wager even if the saved unit multiplier changes", () => {
-    const wager = { ...line("123456"), ruleSnapshot: createNumericPrizeRuleSnapshot({ ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 9 }) };
-    expect(calculateNumberPrizeCents(wager, "999996")).toBe(600);
-  });
-  it("preserves legacy v1 unit calculation for existing bets", () => {
-    const legacyMultipliers = { ...DEFAULT_NUMERIC_PRIZE_MULTIPLIERS, unit: 5 };
-    const wager = { numberValue: "123456", ...allocateNumberStake(100), ruleVersion: LEGACY_NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: { version: LEGACY_NUMERIC_PRIZE_RULE_VERSION, multipliers: legacyMultipliers } };
-    expect(calculateNumberPrizeCents(wager, "999996")).toBe(100);
+  it("pays only Sena on an exact six-digit match", () => expect(calculateNumberPrizeCents(line("123456"), "123456")).toBe(120 * 200_000));
+  it("pays only Quina on the final five digits", () => expect(calculateNumberPrizeCents(line("123456"), "923456")).toBe(120 * 20_000));
+  it("pays only Milhar on the final four digits", () => expect(calculateNumberPrizeCents(line("123456"), "993456")).toBe(120 * 2_000));
+  it("pays only Centena on the final three digits", () => expect(calculateNumberPrizeCents(line("123456"), "999456")).toBe(120 * 200));
+  it("pays only Dezena on the final two digits", () => expect(calculateNumberPrizeCents(line("123456"), "999956")).toBe(120 * 20));
+  it("does not pay a one-digit-only match", () => expect(calculateNumberPrizeCents(line("123456"), "999996")).toBe(0));
+  it("uses the Dezena remainder only for the Dezena prize", () => {
+    const wager = line("123456", 103);
+    expect(wager.tensCents).toBe(23);
+    expect(calculateNumberPrizeCents(wager, "999956")).toBe(460);
+    expect(calculateNumberPrizeCents(wager, "999456")).toBe(4_000);
   });
   it("returns zero when no suffix matches", () => expect(calculateNumberPrizeCents(line("123456"), "999994")).toBe(0));
-  it("uses leading zeroes literally", () => expect(calculateNumberPrizeCents(line("000007"), "123007")).toBe(allocateNumberStake(600).hundredsCents * 200));
+  it("uses leading zeroes literally", () => expect(calculateNumberPrizeCents(line("000007"), "123007")).toBe(120 * 200));
   it("rejects invalid snapshots and allocations", () => {
     const valid = line("123456");
     expect(() => calculateNumberPrizeCents({ ...valid, ruleSnapshot: null }, "123456")).toThrow(/snapshot/i);
