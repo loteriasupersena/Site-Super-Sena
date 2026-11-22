@@ -5,21 +5,21 @@ import { getNumericPrizeReview } from "./numeric-prize-review";
 function line(numberValue: string) { return { numberValue, ...allocateNumberStake(600), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() }; }
 
 describe("getNumericPrizeReview", () => {
-  it("identifies the highest matching category and treats Unidade as a full-stake return", () => {
-    expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 600, multiplier: null, calculatedPrizeCents: 600, calculationConsistent: true });
+  it("identifies the highest matching category and keeps the commercial unit multiplier at six", () => {
+    expect(getNumericPrizeReview(line("123456"), "999996")).toMatchObject({ category: "unit", stakeCents: 600, multiplier: 6, calculatedPrizeCents: 600, calculationConsistent: true });
   });
-  it("returns the full wager for v2 unit prizes, not six times the unit allocation", () => {
+  it("returns the full wager for v2 unit prizes and displays the six-times multiplier", () => {
     const oneReal = { numberValue: "506414", ...allocateNumberStake(100), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(oneReal.unitCents).toBe(20);
     expect(getNumericPrizeReview(oneReal, "096034")).toMatchObject({
-      category: "unit", stakeCents: 100, multiplier: null, calculatedPrizeCents: 100, calculationConsistent: true,
+      category: "unit", stakeCents: 100, multiplier: 6, calculatedPrizeCents: 100, calculationConsistent: true,
     });
   });
-  it("returns exactly R$10.00 for a R$10.00 unit hit, regardless of the unit allocation", () => {
+  it("returns exactly R$10.00 for a R$10.00 unit hit, regardless of the unit allocation remainder", () => {
     const tenReais = { numberValue: "123456", ...allocateNumberStake(1000), ruleVersion: NUMERIC_PRIZE_RULE_VERSION, ruleSnapshot: createNumericPrizeRuleSnapshot() };
     expect(tenReais.unitCents).toBe(170);
     expect(getNumericPrizeReview(tenReais, "999996")).toMatchObject({
-      category: "unit", stakeCents: 1000, multiplier: null, calculatedPrizeCents: 1000, calculationConsistent: true,
+      category: "unit", stakeCents: 1000, multiplier: 6, calculatedPrizeCents: 1000, calculationConsistent: true,
     });
   });
   it("reviews a unit hit per six-digit game, not against the receipt total", () => {
