@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         participation: {
           is: {
             status: "CONFIRMED",
-            round: { is: { status: "COMPLETED" } },
+            round: { is: { status: "COMPLETED", resultPublishedAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
             purchase: { is: { status: "CONFIRMED", cashierId: { not: null }, playerId: null } },
           },
         },
