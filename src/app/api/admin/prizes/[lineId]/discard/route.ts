@@ -67,7 +67,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         throw new Error("PAYMENT_IN_PROGRESS");
       }
       if (paymentRequest?.batch && (
-        ["PAID", "PROCESSING", "TRANSFER_PENDING", "TRANSFERRED"].includes(paymentRequest.batch.status) ||
+        ["PAID", "PROCESSING"].includes(paymentRequest.batch.status) ||
         Boolean(paymentRequest.batch.providerTransferId)
       )) {
         throw new Error("PAYMENT_IN_PROGRESS");
