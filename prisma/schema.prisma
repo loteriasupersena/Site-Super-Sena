@@ -263,6 +263,7 @@ model NumericParticipationLine {
   ruleSnapshot     Json
   prizeCents       Int?
   prizeCreditedAt  DateTime?
+  prizeExpiredAt   DateTime?
   createdAt        DateTime @default(now())
   participation    PurchaseParticipation @relation(fields: [participationId], references: [id], onDelete: Restrict)
   prizePayout      NumericPrizePayout?
