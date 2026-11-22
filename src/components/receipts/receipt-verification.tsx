@@ -80,7 +80,7 @@ function PrizePixRequestForm({ receiptCode, participationLineId, paymentRequest,
 
   return <div style={{ margin: "8px 0" }}>
     {paymentRequest?.status === "REJECTED" && <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A transferência anterior não foi concluída. Seu prêmio continua disponível. Informe sua chave Pix para solicitar novamente.</p>}
-    {paymentRequest?.status === "PENDING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação recebida. O pagamento será realizado e confirmado pela administração.</p> : paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Pagamento em processamento. Aguarde a atualização do status antes de enviar outra solicitação.</p>
+    {paymentRequest?.status === "PENDING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Solicitação em análise.</p> : paymentRequest?.status === "PROCESSING" ? <p role="status" style={{ color: "#92400e", fontWeight: 700 }}>Pagamento em processamento. Aguarde a atualização do status antes de enviar outra solicitação.</p>
       : paymentRequest?.status === "PAID" ? <p role="status" style={{ color: "#166534", fontWeight: 700 }}>Prêmio pago com sucesso via Pix.</p>
       : paymentRequest?.status === "FAILED" || paymentRequest?.status === "CANCELLED"
         ? <p role="alert" style={{ color: "#92400e", fontWeight: 700 }}>A solicitação anterior precisa ser conferida pela administração. Após a liberação, você poderá enviar uma nova solicitação.</p>
