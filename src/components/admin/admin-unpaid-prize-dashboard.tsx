@@ -11,6 +11,8 @@ type PrizeGroup = {
   requestedCount: number;
 };
 
+type ReviewItem = { id: string; prizeCents: number; category: string; receiptCode: string | null };
+
 type Summary = {
   count: number;
   totalGrossCents: number;
@@ -19,6 +21,7 @@ type Summary = {
   requestedCount: number;
   inconsistentCount: number;
   breakdown: PrizeGroup[];
+  reviewItems: ReviewItem[];
   updatedAt: string;
 };
 
@@ -30,6 +33,8 @@ export function AdminUnpaidPrizeDashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [discardingId, setDiscardingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -45,6 +50,24 @@ export function AdminUnpaidPrizeDashboard() {
     }
   }, []);
 
+  const discardPrize = async (item: ReviewItem) => {
+    if (!window.confirm("Remover este prêmio inconsistente de R$ 1,00? A aposta será preservada. Esta ação não pode ser desfeita.")) return;
+    setDiscardingId(item.id);
+    setNotice("");
+    try {
+      const response = await fetch(`/api/admin/prizes/${encodeURIComponent(item.id)}/discard`, { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível remover o prêmio.");
+      setNotice("Prêmio de teste removido. A aposta foi preservada.");
+      setLoading(true);
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível remover o prêmio.");
+    } finally {
+      setDiscardingId(null);
+    }
+  };
+
   useEffect(() => {
     const initial = window.setTimeout(() => { void load(); }, 0);
     const poll = window.setInterval(() => { void load(); }, 10_000);
@@ -59,6 +82,7 @@ export function AdminUnpaidPrizeDashboard() {
         <span className="admin-payment-status">ATUALIZAÇÃO AUTOMÁTICA</span>
       </div>
       {error && <p role="alert" className="note-inline">{error}</p>}
+      {notice && <p role="status" className="note-inline">{notice}</p>}
       {loading && !summary ? <p>Carregando premiações…</p> : summary && <>
         <div className="admin-prize-summary-grid">
           <div className="admin-prize-summary-metric">
@@ -97,6 +121,22 @@ export function AdminUnpaidPrizeDashboard() {
             Atenção: {summary.inconsistentCount} prêmio(s) precisam de conferência do cálculo.
           </p>
         )}
+        {summary.reviewItems?.length > 0 && (
+          <div className="admin-prize-review-tools">
+            <h3>Prêmio inconsistente para conferência</h3>
+            {summary.reviewItems.map((item) => (
+              <div className="admin-prize-review-row" key={item.id}>
+                <div>
+                  <strong>{money(item.prizeCents)}</strong>
+                  <span>{item.category} · Recibo: {item.receiptCode ?? "não informado"}</span>
+                </div>
+                <button type="button" className="secondary-button" disabled={discardingId !== null} onClick={() => void discardPrize(item)}>
+                  {discardingId === item.id ? "Removendo…" : "Remover prêmio de teste"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <p className="admin-prize-summary-footnote">
           O total considera prêmios apurados ainda sem baixa de pagamento ou crédito. Prêmios com solicitação continuam na conta até o pagamento ser registrado.
         </p>
@@ -116,6 +156,10 @@ export function AdminUnpaidPrizeDashboard() {
         .admin-prize-summary-table th:nth-child(2), .admin-prize-summary-table td:nth-child(2) { text-align: center; }
         .admin-prize-summary-table th:last-child, .admin-prize-summary-table td:last-child { text-align: right; white-space: nowrap; }
         .admin-prize-summary-table tfoot th { border-bottom: 0; font-weight: 700; }
+        .admin-prize-review-tools { margin: 18px 0; padding: 14px; border: 1px solid #8a6d3b; border-radius: 12px; }
+        .admin-prize-review-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; }
+        .admin-prize-review-row > div { display: flex; flex-direction: column; gap: 4px; color: #f4f6fb; }
+        .admin-prize-review-row span { font-size: 12px; color: #cbd5e1; overflow-wrap: anywhere; }
         .admin-prize-summary-footnote { margin-top: 12px; color: #cbd5e1; font-size: 12px; opacity: 1; line-height: 1.45; }
         @media (max-width: 420px) { .admin-prize-summary-grid { grid-template-columns: 1fr; } }
       `}</style>
