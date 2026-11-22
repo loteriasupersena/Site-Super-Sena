@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --background: #001584;
+  --background: #0066ff;
   --surface: #141b26;
   --text: #f4f6fb;
   --muted: #a0adbf;
@@ -5221,4 +5221,23 @@ body {
     transition-duration: .01ms !important;
     animation-duration: .01ms !important;
   }
+}
+
+/* SUPER SENA — IDENTIDADE GLOBAL: AZUL DA IMAGEM PRINCIPAL */
+:root {
+  --background: #0066ff;
+}
+
+body {
+  background: #0066ff !important;
+}
+
+.site-header.site-header-scenery,
+.home-header,
+.home-footer {
+  background: #0066ff !important;
+}
+
+.site-header.site-header-scenery {
+  border-bottom-color: rgb(250 204 21 / 65%) !important;
 }
