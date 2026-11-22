@@ -80,8 +80,7 @@ export function AdminPrizeCreditReconciliation() {
   return <section className="feature-card" aria-labelledby="admin-prize-reconciliation-heading">
     <span className="feature-label">PRÊMIOS ONLINE</span>
     <h2 id="admin-prize-reconciliation-heading">Corrigir créditos de prêmios online</h2>
-    <p>Esta ferramenta procura prêmios positivos de jogadores online em rodadas concluídas cujo registro no livro-razão esteja ausente ou divergente, ou cuja marcação de crédito esteja incompleta. Prêmios já pagos por outro canal não aparecem para correção. O prazo de sete dias não se aplica a falhas técnicas de crédito online. Cada correção recalcula o prêmio com as regras históricas, verifica o livro-razão e registra auditoria; divergências são bloqueadas.</p>
-    <p className="note-inline">Use apenas para falhas técnicas confirmadas. Prêmios manuais de vendas de cambista não aparecem nesta lista.</p>
+    <p className="note-inline">Correção de créditos online. Divergências no livro-razão são bloqueadas.</p>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
     {loading ? <p>Consultando créditos pendentes…</p> : items.length === 0 ? <p>Não há créditos corretivos pendentes identificados no momento.</p> : <div className="admin-round-list">
@@ -92,8 +91,8 @@ export function AdminPrizeCreditReconciliation() {
         {item.ledgerEntryExists && !item.ledgerMatches
           ? <p role="alert" className="note-inline">Divergência no livro-razão. A correção está bloqueada e exige auditoria.</p>
           : item.ledgerEntryExists
-            ? <p>Existe lançamento financeiro compatível; a ação apenas reconciliará o registro sem duplicar o crédito.</p>
-            : <p>Não foi localizado o lançamento idempotente esperado para este prêmio.</p>}
+            ? <p>Lançamento existente; a reconciliação não duplica o crédito.</p>
+            : <p>Lançamento do prêmio não localizado.</p>}
         <label>Motivo e referência da verificação
           <textarea rows={3} maxLength={500} value={reasons[item.lineId] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [item.lineId]: event.target.value }))} placeholder="Ex.: falha de crédito confirmada ao revisar a apuração e o livro-razão." />
         </label>
