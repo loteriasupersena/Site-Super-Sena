@@ -45,7 +45,7 @@ const purchase = () => ({
   id: "purchase-1", receiptCode: null, status: "PENDING_PAYMENT",
   payment: { status: "PENDING", idempotencyKey: "payment-key", providerPaymentId: null },
   totalCents: 100, currency: "BRL",
-  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 } },
+  numericIntent: { roundCount: 1, numbers: ["012345"], allocation: { tensCents: 20, hundredsCents: 20, milharCents: 20, quinaCents: 20, senaCents: 20 } },
   participations: [],
 });
 
@@ -99,7 +99,7 @@ describe("POST /api/player/purchases", () => {
     expect(mocks.createNumericPurchase).not.toHaveBeenCalled();
   });
 
-  it("creates a pending numeric purchase with server-owned multipliers and six-part allocation", async () => {
+  it("creates a pending numeric purchase with server-owned multipliers and five-category allocation", async () => {
     const response = await POST(request(validBody()));
     expect(response.status).toBe(201);
     expect(response.headers.get("cache-control")).toBe("no-store");

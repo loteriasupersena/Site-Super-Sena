@@ -7,13 +7,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const SETTING_KEY = "numeric_prize_multipliers";
 const schema = z.object({
-  unit: z.number().int().min(0).max(1_000_000),
   tens: z.number().int().min(0).max(1_000_000),
   hundreds: z.number().int().min(0).max(1_000_000),
   milhar: z.number().int().min(0).max(1_000_000),
   quina: z.number().int().min(0).max(1_000_000),
   sena: z.number().int().min(0).max(1_000_000),
-}).strict().refine((value) => value.unit === 6, { message: "O multiplicador da Unidade deve ser 6." });
+}).strict();
 
 async function admin(request: NextRequest) {
   const user = await getSessionUser(request.cookies.get(SESSION_COOKIE)?.value);
@@ -41,7 +40,6 @@ export async function GET(request: NextRequest) {
     const setting = await authPrisma.setting.findUnique({ where: { key: SETTING_KEY } });
     const value = setting ? parseNumericPrizeMultipliers(JSON.parse(setting.value)) : DEFAULT_NUMERIC_PRIZE_MULTIPLIERS;
     if (!value) throw new Error("Invalid stored multiplier configuration");
-    value.unit = 6;
     return NextResponse.json({ multipliers: value, updatedAt: setting?.updatedAt.toISOString() ?? null }, { headers: { "Cache-Control": "no-store, private" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível carregar os multiplicadores salvos." }, { status: 500, headers: { "Cache-Control": "no-store" } });

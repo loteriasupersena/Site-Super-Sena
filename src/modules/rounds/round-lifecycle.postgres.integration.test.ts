@@ -75,11 +75,10 @@ suite("PostgreSQL numeric round lifecycle", () => {
       data: {
         participationId: participation.id,
         numberValue: "123456",
-        unitCents: 20,
-        tensCents: 16,
-        hundredsCents: 16,
-        milharCents: 16,
-        quinaCents: 16, senaCents: 16,
+        tensCents: 20,
+        hundredsCents: 20,
+        milharCents: 20,
+        quinaCents: 20, senaCents: 20,
         ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
         ruleSnapshot: snapshot as Prisma.InputJsonValue,
       },
@@ -153,7 +152,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
       where: { idempotencyKey: `numeric-prize-credit:${line.id}` },
     })).toBe(1);
     const saved = await prisma.numericParticipationLine.findUniqueOrThrow({ where: { id: line.id } });
-    expect(saved.prizeCents).toBe(3_200_000);
+    expect(saved.prizeCents).toBe(4_000_000);
     expect(saved.prizeCreditedAt).not.toBeNull();
     expect(await prisma.auditEvent.count({
       where: { entityType: "Round", entityId: round.id, action: "NUMERIC_ROUND_PRIZES_SETTLED_AUTOMATICALLY" },
@@ -164,7 +163,7 @@ suite("PostgreSQL numeric round lifecycle", () => {
     const round = await createRound(RoundStatus.COMPLETED, "123456");
     const { line, purchase } = await createLine(round.id, {
       version: "invalid-version",
-      multipliers: { unit: 3, tens: 30, hundreds: 300, milhar: 3000, quina: 30000, sena: 300000 },
+      multipliers: { tens: 30, hundreds: 300, milhar: 3000, quina: 30000, sena: 300000 },
     });
     await expect(settleNumericRoundPrizes(prisma, round.id)).rejects.toMatchObject({
       code: "INVALID_RULE_SNAPSHOT",

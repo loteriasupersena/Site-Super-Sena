@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
             round: { select: { code: true, status: true, resultNumber: true, resultAt: true } },
             numericLines: {
               select: {
-                id: true, numberValue: true, unitCents: true, tensCents: true,
+                id: true, numberValue: true, tensCents: true,
                 hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
                 ruleVersion: true, ruleSnapshot: true, prizeCents: true, prizeCreditedAt: true,
                 prizePayout: { select: { channel: true, amountCents: true, paidAt: true } },
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       const round = participation.round;
       const review = round.status === "COMPLETED" ? getNumericPrizeReview({
         numberValue: line.numberValue,
-        unitCents: line.unitCents, tensCents: line.tensCents,
+        tensCents: line.tensCents,
         hundredsCents: line.hundredsCents, milharCents: line.milharCents, senaCents: line.senaCents,
         quinaCents: line.quinaCents, ruleVersion: line.ruleVersion,
         ruleSnapshot: line.ruleSnapshot,
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       return {
         id: line.id,
         numberValue: line.numberValue,
-        stakeCents: line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
+        stakeCents: line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
         prizeCategory: review?.category ?? null,
         prizeCategoryLabel: review ? NUMERIC_PRIZE_CATEGORY_LABELS[review.category] : null,
         categoryStakeCents: review?.stakeCents ?? null,

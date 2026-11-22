@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         },
       },
       select: {
-        id: true, numberValue: true, unitCents: true, tensCents: true,
+        id: true, numberValue: true, tensCents: true,
         hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true, prizeCents: true,
         prizePaymentRequest: { select: { status: true, netCents: true } },
@@ -49,8 +49,7 @@ export async function GET(request: NextRequest) {
     for (const line of lines) {
       const review = getNumericPrizeReview({
         numberValue: line.numberValue,
-        unitCents: line.unitCents,
-        tensCents: line.tensCents,
+                tensCents: line.tensCents,
         hundredsCents: line.hundredsCents,
         milharCents: line.milharCents,
         quinaCents: line.quinaCents,
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
       totalDueCents += dueCents;
     }
 
-    const order = ["Unidade", "Dezena", "Centena", "Quadra", "Quina", "Sena"];
+    const order = ["Dezena", "Centena", "Milhar", "Quina", "Sena"];
     const breakdown = [...groups.values()].sort((a, b) => {
       const ai = order.indexOf(a.category);
       const bi = order.indexOf(b.category);

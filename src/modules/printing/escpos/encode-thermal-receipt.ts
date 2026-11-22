@@ -200,7 +200,7 @@ export function encodeThermalReceipt(receipt: ThermalReceiptForEncoding, profile
     for (const part of wrap("Rodada " + entry.roundCode, columns)) bytes.push(...line(part, profile));
   }
 
-  for (const part of wrap("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", columns)) {
+  for (const part of wrap("O valor de cada aposta será dividido entre cinco categorias. Sobras de centavos são destinadas à Dezena.", columns)) {
     bytes.push(...line(part, profile));
   }
   bytes.push(ESC, 0x45, 0x01);

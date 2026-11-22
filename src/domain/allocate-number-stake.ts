@@ -1,15 +1,21 @@
 export type NumberStakeAllocation = {
-  unitCents: number; tensCents: number; hundredsCents: number;
-  milharCents: number; quinaCents: number; senaCents: number;
+  tensCents: number;
+  hundredsCents: number;
+  milharCents: number;
+  quinaCents: number;
+  senaCents: number;
 };
 
-/** Splits the stake equally across six prize categories; remainder goes to unit. */
+/** Splits the stake across five prize categories; every remainder cent goes to Dezena. */
 export function allocateNumberStake(totalCents: number): NumberStakeAllocation {
   if (!Number.isSafeInteger(totalCents) || totalCents < 100) throw new Error("Number stake must be a safe integer of at least 100 cents");
-  const baseCents = Math.floor(totalCents / 6);
-  const remainderCents = totalCents % 6;
+  const baseCents = Math.floor(totalCents / 5);
+  const remainderCents = totalCents % 5;
   return {
-    unitCents: baseCents + remainderCents, tensCents: baseCents, hundredsCents: baseCents,
-    milharCents: baseCents, quinaCents: baseCents, senaCents: baseCents,
+    tensCents: baseCents + remainderCents,
+    hundredsCents: baseCents,
+    milharCents: baseCents,
+    quinaCents: baseCents,
+    senaCents: baseCents,
   };
 }

@@ -78,7 +78,7 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
           create: {
             roundCount: 1,
             numbers: ["123456"],
-            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 },
+            allocation: { tensCents: 20, hundredsCents: 20, milharCents: 20, quinaCents: 20, senaCents: 20 },
             ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
             ruleSnapshot: createNumericPrizeRuleSnapshot(),
           },
@@ -114,7 +114,7 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
     expect(audits).toBe(1);
   });
 
-  it("preserves the immutable six-category allocation and rule snapshot", async () => {
+  it("preserves the immutable five-category allocation and rule snapshot", async () => {
     const now = Date.now();
     const round = await prisma.round.create({
       data: {
@@ -126,8 +126,8 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
     roundIds.push(round.id);
     const ruleSnapshot = createNumericPrizeRuleSnapshot();
     const allocation = {
-      unitCents: 25, tensCents: 15, hundredsCents: 15,
-      milharCents: 15, quinaCents: 15, senaCents: 15,
+      tensCents: 20, hundredsCents: 20,
+      milharCents: 20, quinaCents: 20, senaCents: 20,
     };
     const purchase = await prisma.purchase.create({
       data: {
@@ -164,7 +164,7 @@ suite("PostgreSQL paid purchase allocation concurrency", () => {
           create: {
             roundCount: 1,
             numbers: ["123456"],
-            allocation: { unitCents: 20, tensCents: 16, hundredsCents: 16, milharCents: 16, quinaCents: 16, senaCents: 16 },
+            allocation: { tensCents: 20, hundredsCents: 20, milharCents: 20, quinaCents: 20, senaCents: 20 },
             ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
             ruleSnapshot: createNumericPrizeRuleSnapshot(),
           },

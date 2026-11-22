@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         prizeCents: { gt: 0 }, prizeCreditedAt: null, prizePayout: null,
       }, select: {
         id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
-        unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
+        tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true,
         participation: { select: { round: { select: { resultNumber: true } } } },
         prizePaymentRequest: { select: { id: true, status: true, batchId: true, batch: { select: { status: true } } } },
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const feeLines = candidates.map(line => {
         const grossCents = line.prizeCents ?? 0;
         const review = getNumericPrizeReview({
-          numberValue: line.numberValue, unitCents: line.unitCents, tensCents: line.tensCents,
+          numberValue: line.numberValue, tensCents: line.tensCents,
           hundredsCents: line.hundredsCents, milharCents: line.milharCents,
           quinaCents: line.quinaCents, senaCents: line.senaCents,
           ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,

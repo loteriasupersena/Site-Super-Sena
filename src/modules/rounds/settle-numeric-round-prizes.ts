@@ -43,7 +43,6 @@ export async function settleNumericRoundPrizes(prisma: PrismaClient, roundId: st
           try {
             prize = calculateNumberPrizeCents({
               numberValue: line.numberValue,
-              unitCents: line.unitCents,
               tensCents: line.tensCents,
               hundredsCents: line.hundredsCents,
               milharCents: line.milharCents,

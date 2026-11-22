@@ -355,7 +355,7 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
             <strong>{number}</strong> — {money(Object.values(purchase.numericIntent!.allocationCents).reduce((sum, value) => sum + value, 0))}
           </div>) : purchase.participations.flatMap((part) => part.lines.map((line, index) => <div key={part.roundId + line.numberValue + index}>
             <strong>{line.numberValue}</strong> — {money(line.totalCents)}
-            <small>Unidade {money(line.allocationCents.unit)} · Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Milhar {money(line.allocationCents.milhar)} · Quina {money(line.allocationCents.quina)} · Sena {money(line.allocationCents.sena)}</small>
+            <small>Dezena {money(line.allocationCents.tens)} · Centena {money(line.allocationCents.hundreds)} · Milhar {money(line.allocationCents.milhar)} · Quina {money(line.allocationCents.quina)} · Sena {money(line.allocationCents.sena)}</small>
           </div>))}
           {!reconciliationRequired && pixCheckout?.qrCodeBase64 && <div className="pix-checkout">
             <img src={"data:image/png;base64," + pixCheckout.qrCodeBase64} alt="QR Code para pagar a compra via Pix" width={240} height={240} />

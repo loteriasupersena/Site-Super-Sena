@@ -57,15 +57,17 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           const sameOwner = existing.paymentMethod === paymentMethod && existing.playerId === (input.playerId ?? null) &&
             existing.cashierId === (input.cashierId ?? null) && existing.customerId === (input.customerId ?? null);
           const intent = existing.numericIntent;
+          const savedAllocation = intent?.allocation && typeof intent.allocation === "object" && !Array.isArray(intent.allocation)
+            ? intent.allocation as Record<string, unknown> : null;
           const sameIntent = intent
             ? intent.roundCount === roundCount && JSON.stringify(intent.numbers) === JSON.stringify(numbers) &&
-              JSON.stringify(intent.allocation) === JSON.stringify(allocation) && existing.totalCents === totalCents
+              savedAllocation !== null && Object.keys(savedAllocation).length === 5 &&
+              Object.entries(allocation).every(([key, value]) => savedAllocation[key] === value) &&
+              existing.totalCents === totalCents
             : existing.participations.length === roundCount &&
-              existing.participations.every((part) => part.numericLines.length === numbers.length) &&
-              existing.participations.flatMap((part) => part.numericLines.map((line) => line.numberValue + "|" +
-                (line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents)))
-                .sort().join("\n") === Array.from({ length: roundCount }, () => numbers.map((n) => n + "|" + input.stakeCents))
-                .flat().sort().join("\n");
+              existing.participations.every((part) => part.totalCents === perRoundCents &&
+                part.numericLines.length === numbers.length &&
+                part.numericLines.map((line) => line.numberValue).sort().join("\n") === [...numbers].sort().join("\n"));
           if (!sameOwner || !sameIntent) throw new PurchaseServiceError("The idempotency key was already used for a different purchase", "IDEMPOTENCY_CONFLICT");
           return existing;
         }
@@ -78,11 +80,10 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           catch { throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION"); }
           const validated = parseNumericPrizeMultipliers(parsedValue);
           if (!validated) throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION");
-          currentMultipliers = { ...validated, unit: 6 };
+          currentMultipliers = validated;
         }
         const snapshot = createNumericPrizeRuleSnapshot(currentMultipliers);
         const maximumLinePrizeCents = Math.max(
-          allocation.unitCents * currentMultipliers.unit,
           allocation.tensCents * currentMultipliers.tens,
           allocation.hundredsCents * currentMultipliers.hundreds,
           allocation.milharCents * currentMultipliers.milhar,

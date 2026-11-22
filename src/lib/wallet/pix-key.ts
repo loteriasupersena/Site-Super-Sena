@@ -40,7 +40,7 @@ export function parsePixKeyInput(value: unknown): { pixKey: string; pixKeyType: 
   return valid ? { pixKey, pixKeyType: pixKeyType as PixKeyType } : null;
 }
 
-/** Comparison only. Keep the original key for storage and the Asaas request. */
+/** Normalizes Pix keys for consistent comparisons without changing the stored value. */
 export function normalizePixKeyForComparison(value: string, type: PixKeyType) {
   if (type === "PHONE") {
     const digits = value.replace(/\D/g, "");
