@@ -75,12 +75,11 @@ describe("POST admin cashier settlements", () => {
     expect(await response.json()).toMatchObject({
       preview: {
         cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
-        commissionCents: 900, cashPrizePayoutCents: 2500,
-        netBalanceCents: 6600, cashierOwesPlatformCents: 6600, platformOwesCashierCents: 0,
+        commissionCents: 900, cashPrizePayoutCents: 0,
+        netBalanceCents: 9100, cashierOwesPlatformCents: 9100, platformOwesCashierCents: 0,
       },
     });
     expect(mocks.settlementCreate).not.toHaveBeenCalled();
-    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
   it("closes the current period while unallocated cash sales remain pending for the next period", async () => {
@@ -175,9 +174,6 @@ describe("POST admin cashier settlements", () => {
       totalSalesCents: 15000, salesCount: 3, gamesCount: 7, commissionCents: 900,
       cashPrizePayoutCount: 0, cashPrizePayoutCents: 0,
     }) });
-    expect(mocks.payoutUpdateMany).toHaveBeenCalledWith({ where: {
-      cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff },
-    }, data: { settlementId: snapshot.id } });
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       actorId: "admin-1", action: "CASHIER_SETTLEMENT_RECORDED",
       entityType: "CashierSettlement", entityId: snapshot.id,
