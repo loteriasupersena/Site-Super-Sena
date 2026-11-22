@@ -64,13 +64,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
       }
       const paymentRequest = line.prizePaymentRequest;
       if (paymentRequest && ["PAID", "PROCESSING"].includes(paymentRequest.status)) {
-        throw new Error("PAYMENT_IN_PROGRESS");
+        throw new Error("PAYMENT_IN_PROGRESS:" + paymentRequest.status + ":REQUEST");
       }
       if (paymentRequest?.batch && (
         ["PAID", "PROCESSING"].includes(paymentRequest.batch.status) ||
         Boolean(paymentRequest.batch.providerTransferId)
       )) {
-        throw new Error("PAYMENT_IN_PROGRESS");
+        throw new Error("PAYMENT_IN_PROGRESS:" + paymentRequest.batch.status + (paymentRequest.batch.providerTransferId ? ":TRANSFER_ID" : ":BATCH"));
       }
 
       // Remove somente os vínculos de uma solicitação ainda não paga/em processamento.
@@ -109,8 +109,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
     if (error instanceof Error && error.message === "PRIZE_NOT_INCONSISTENT") {
       return NextResponse.json({ error: "O prêmio está consistente com a apuração e não pode ser removido por esta ação." }, { status: 409, headers });
     }
-    if (error instanceof Error && error.message === "PAYMENT_IN_PROGRESS") {
-      return NextResponse.json({ error: "Há uma solicitação ou vínculo de pagamento. A remoção foi bloqueada para preservar o histórico financeiro." }, { status: 409, headers });
+    if (error instanceof Error && error.message.startsWith("PAYMENT_IN_PROGRESS:")) {
+      const parts = error.message.split(":");
+      const status = parts[1] ?? "DESCONHECIDO";
+      const source = parts[2] ?? "BATCH";
+      const label = source === "REQUEST" ? "solicitação individual" : source === "TRANSFER_ID" ? "transferência identificada pelo provedor" : "lote de pagamento";
+      return NextResponse.json({ error: "A remoção foi bloqueada porque a " + label + " está marcada como " + status + ".", nextStep: "Confira no banco/provedor se houve transferência. Se não houve, o vínculo precisará ser cancelado com segurança antes de remover o prêmio." }, { status: 409, headers });
     }
     console.error("[admin-prize-discard] failed", {
       lineId,
