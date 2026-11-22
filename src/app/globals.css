@@ -4016,30 +4016,45 @@ body,
 }
 
 
-/* Atalhos de valor da aposta — formulário compartilhado entre jogador e cambista. */
-.numeric-stake-presets{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:7px;
-  margin-top:8px;
+/* Atalhos de valor da aposta — linha própria abaixo do valor e total. */
+.numeric-stake-summary-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:end!important;
+  row-gap:10px;
 }
-.numeric-stake-presets button{
-  min-width:0;
-  min-height:40px;
-  padding:7px 5px;
-  border:1px solid #facc15;
-  border-radius:9px;
-  background:#082d86;
-  color:#fff;
-  font:800 0.92rem/1.1 inherit;
+.numeric-stake-presets{
+  grid-column:1 / -1;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  width:100%;
+  margin-top:0;
+}
+.numeric-game-purchase .numeric-stake-presets > button{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  width:100%!important;
+  min-width:0!important;
+  min-height:46px;
+  box-sizing:border-box;
+  padding:8px 6px!important;
+  border:1px solid #facc15!important;
+  border-radius:10px!important;
+  background:#082d86!important;
+  color:#fff!important;
+  font-family:inherit;
+  font-size:clamp(.82rem,3.5vw,1rem)!important;
+  font-weight:800!important;
+  line-height:1.1;
+  white-space:nowrap;
   cursor:pointer;
 }
-.numeric-stake-presets button.is-active{
-  background:#facc15;
-  color:#08245f;
-  border-color:#facc15;
+.numeric-game-purchase .numeric-stake-presets > button.is-active{
+  background:#facc15!important;
+  color:#08245f!important;
 }
-.numeric-stake-presets button:disabled{
+.numeric-game-purchase .numeric-stake-presets > button:disabled{
   opacity:.55;
   cursor:not-allowed;
 }
