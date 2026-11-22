@@ -27,7 +27,7 @@ export async function registerNumericPrizePayout(
       numberValue: true,
       prizeCents: true,
       prizeCreditedAt: true,
-      unitCents: true, tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
+      tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
       ruleVersion: true, ruleSnapshot: true,
       participation: {
         select: {
@@ -71,7 +71,7 @@ export async function registerNumericPrizePayout(
 
   const prizeReview = getNumericPrizeReview({
     numberValue: line.numberValue,
-    unitCents: line.unitCents, tensCents: line.tensCents,
+    tensCents: line.tensCents,
     hundredsCents: line.hundredsCents, milharCents: line.milharCents,
     quinaCents: line.quinaCents, senaCents: line.senaCents, ruleVersion: line.ruleVersion,
     ruleSnapshot: line.ruleSnapshot,
