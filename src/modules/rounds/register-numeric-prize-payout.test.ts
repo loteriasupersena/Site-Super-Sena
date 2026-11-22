@@ -5,10 +5,10 @@ import { createNumericPrizeRuleSnapshot, NUMERIC_PRIZE_RULE_VERSION } from "../.
 function makeLine(overrides: Record<string, unknown> = {}) {
   return {
     id: "line-12345678",
-    numberValue: "012349",
+    numberValue: "012319",
     prizeCents: 500,
     prizeCreditedAt: null,
-    unitCents: 500, tensCents: 0, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0,
+    tensCents: 25, hundredsCents: 0, milharCents: 0, quinaCents: 0, senaCents: 0,
     ruleVersion: NUMERIC_PRIZE_RULE_VERSION,
     ruleSnapshot: createNumericPrizeRuleSnapshot(),
     prizePayout: null,
