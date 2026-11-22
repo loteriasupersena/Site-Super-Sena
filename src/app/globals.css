@@ -3996,21 +3996,23 @@ body:has(.home-page-compact) {
 
 
 
-/* SUPER SENA — FUNDO AZUL UNIFICADO EM TODAS AS ÁREAS */
+/* SUPER SENA — FUNDO GLOBAL EXTRAÍDO DA ARTE DE DIVULGAÇÃO */
 :root {
-  --ss-royal: #0066ff;
-  --sena-royal: #0066ff;
-  --background: #0066ff;
+  --ss-royal: #012183;
+  --sena-royal: #012183;
+  --background: #012183;
+  --site-background: #012183;
 }
 
 html,
 body,
 .home-page.home-page-compact,
+.home-page-compact .home-entry,
 .home-page-compact .home-entry > .home-how-infographic,
 .site-header.site-header-scenery,
 .home-header,
 .home-footer,
 .landing-footer {
-  background: #0066ff !important;
+  background-color: #012183 !important;
   background-image: none !important;
 }
