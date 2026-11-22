@@ -57,9 +57,13 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           const sameOwner = existing.paymentMethod === paymentMethod && existing.playerId === (input.playerId ?? null) &&
             existing.cashierId === (input.cashierId ?? null) && existing.customerId === (input.customerId ?? null);
           const intent = existing.numericIntent;
+          const savedAllocation = intent?.allocation && typeof intent.allocation === "object" && !Array.isArray(intent.allocation)
+            ? intent.allocation as Record<string, unknown> : null;
           const sameIntent = intent
             ? intent.roundCount === roundCount && JSON.stringify(intent.numbers) === JSON.stringify(numbers) &&
-              JSON.stringify(intent.allocation) === JSON.stringify(allocation) && existing.totalCents === totalCents
+              savedAllocation !== null && Object.keys(savedAllocation).length === 5 &&
+              Object.entries(allocation).every(([key, value]) => savedAllocation[key] === value) &&
+              existing.totalCents === totalCents
             : existing.participations.length === roundCount &&
               existing.participations.every((part) => part.totalCents === perRoundCents &&
                 part.numericLines.length === numbers.length &&
