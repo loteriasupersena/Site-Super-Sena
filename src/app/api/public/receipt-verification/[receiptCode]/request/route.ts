@@ -50,12 +50,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       const selected = await tx.numericParticipationLine.findFirst({ where: {
         id: input.participationLineId,
         participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
-      }, select: { id: true, prizeCents: true, prizeCreditedAt: true, prizePaymentRequest: { select: { requestedAt: true } }, participation: { select: { round: { select: { resultPublishedAt: true } } } } } });
+      }, select: { id: true, prizeCents: true, prizeCreditedAt: true, prizeExpiredAt: true, prizePaymentRequest: { select: { requestedAt: true } }, participation: { select: { round: { select: { resultPublishedAt: true } } } } } });
       if (!selected) throw new Error("PRIZE_NOT_FOUND");
       const selectedDeadline = selected.participation.round.resultPublishedAt
         ? selected.participation.round.resultPublishedAt.getTime() + 7 * 24 * 60 * 60 * 1000 : null;
       const alreadyRequestedInTime = Boolean(selected.prizePaymentRequest?.requestedAt && selectedDeadline && selected.prizePaymentRequest.requestedAt.getTime() <= selectedDeadline);
-      if (selectedDeadline !== null && Date.now() >= selectedDeadline && !alreadyRequestedInTime && !selected.prizeCreditedAt) throw new Error("PRIZE_EXPIRED");
+      if (selected.prizeExpiredAt || (selectedDeadline !== null && Date.now() >= selectedDeadline && !alreadyRequestedInTime && !selected.prizeCreditedAt)) throw new Error("PRIZE_EXPIRED");
 
       const openBatch = await tx.prizePaymentBatch.findFirst({ where: {
         purchaseId: purchase.id, status: { in: ["PENDING", "PROCESSING"] },
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
       const candidates = await tx.numericParticipationLine.findMany({ where: {
         participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null }, resultPublishedAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
-        prizeCents: { gt: 0 }, prizeCreditedAt: null, prizePayout: null,
+        prizeCents: { gt: 0 }, prizeExpiredAt: null, prizeCreditedAt: null, prizePayout: null,
       }, select: {
         id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
         tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
