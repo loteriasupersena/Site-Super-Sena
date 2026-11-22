@@ -184,6 +184,7 @@ model Round {
 
   @@index([status, startsAt])
   @@index([resultAt])
+  @@index([resultPublishedAt])
   @@index([cutoffAt, status])
 }
 
