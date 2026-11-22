@@ -49,7 +49,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
       const selected = await tx.numericParticipationLine.findFirst({ where: {
         id: input.participationLineId,
-        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
+        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null }, resultPublishedAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
       }, select: { id: true } });
       if (!selected) throw new Error("PRIZE_NOT_FOUND");
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
         tensCents: true, hundredsCents: true, milharCents: true, quinaCents: true, senaCents: true,
         ruleVersion: true, ruleSnapshot: true,
-        participation: { select: { round: { select: { resultNumber: true } } } },
+        participation: { select: { round: { select: { resultNumber: true, resultPublishedAt: true } } } },
         prizePaymentRequest: { select: { id: true, status: true, batchId: true, batch: { select: { status: true } } } },
       }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
       if (!candidates.length || !candidates.some(line => line.id === selected.id)) throw new Error("PRIZE_NOT_AVAILABLE");
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           quinaCents: line.quinaCents, senaCents: line.senaCents,
           ruleVersion: line.ruleVersion, ruleSnapshot: line.ruleSnapshot,
         }, line.participation.round.resultNumber);
-        if (grossCents <= 0 || line.prizeCreditedAt || !review?.calculationConsistent ||
+        if (grossCents <= 0 || line.prizeCreditedAt || !line.participation.round.resultPublishedAt || Date.now() >= line.participation.round.resultPublishedAt.getTime() + 7 * 24 * 60 * 60 * 1000 || !review?.calculationConsistent ||
             review.calculatedPrizeCents !== grossCents) throw new Error("PRIZE_CALCULATION_MISMATCH");
         return { id: line.id, grossCents, oldRequestId: line.prizePaymentRequest?.id ?? null };
       });
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       PHYSICAL_RECEIPT_ONLY: ["Solicitações Pix por recibo estão disponíveis somente para vendas físicas.", 403],
       PAYMENT_NOT_CONFIRMED: ["O pagamento deste recibo ainda não está confirmado.", 409],
       PRIZE_NOT_FOUND: ["O prêmio informado não pertence a este recibo.", 404],
-      PRIZE_NOT_AVAILABLE: ["Não há prêmios elegíveis para pagamento neste recibo.", 409],
+      PRIZE_NOT_AVAILABLE: ["Não há prêmios elegíveis para pagamento neste recibo. Prêmios não resgatados em até 7 dias da publicação do resultado estão expirados.", 409],
       PRIZE_CALCULATION_MISMATCH: ["Um dos valores premiados diverge do recálculo oficial. O lote inteiro foi bloqueado para conferência.", 409],
       REQUEST_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado.", 409],
       BATCH_ALREADY_EXISTS: ["Este recibo já possui uma solicitação em análise ou pagamento registrado. Consulte o andamento no próprio recibo.", 409],
