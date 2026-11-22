@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string; batch?: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number } | null } | null };
+type VerifiedNumber = { participationLineId: string; numberValue: string; resultStatus: "AGUARDANDO" | "PREMIADA" | "NAO_PREMIADA" | "AGUARDANDO_APURACAO" | "EXPIRADO"; prizeCents: number | null; prizePaid: boolean; paidAt?: string | null; payoutChannel?: "PLATFORM_PIX" | "CASHIER_CASH" | null; paymentRequest?: { status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number; pixKeyMasked: string; batch?: { id: string; status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED" | "CANCELLED"; grossCents: number; administrativeFeeCents: number; transactionFeeCents: number; netCents: number } | null } | null };
 
 type VerifiedRound = {
   resultNumber: string | null;
@@ -196,12 +196,13 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
                     {round.numbers.map((number, index) => {
                       const status = number.resultStatus === "PREMIADA" ? (number.prizePaid ? "PRÊMIO PAGO" : "PRÊMIO DISPONÍVEL")
                         : number.resultStatus === "NAO_PREMIADA" ? "Não premiada"
+                          : number.resultStatus === "EXPIRADO" ? "PRÊMIO EXPIRADO"
                           : number.resultStatus === "AGUARDANDO_APURACAO" ? "Aguardando apuração"
                             : round.status === "RODADA_CANCELADA" ? "Rodada cancelada" : round.status === "SORTEIO_AGUARDANDO" ? "Aguardando sorteio" : "Aguardando resultado";
-                      const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" ? "#991b1b" : "#1d4ed8";
+                      const color = number.resultStatus === "PREMIADA" ? "#166534" : number.resultStatus === "NAO_PREMIADA" || number.resultStatus === "EXPIRADO" ? "#991b1b" : "#1d4ed8";
                       return <div key={round.roundCode + number.numberValue + index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6", border: "1px solid #d1d5db" }}>
                         <strong style={{ color: "#111827", fontSize: 18, letterSpacing: "0.1em" }}>{number.numberValue}</strong>
-                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.resultStatus === "PREMIADA" && number.prizeCents !== null && number.prizeCents > 0 && <span style={{ display: "block", marginTop: 2, color: "#166534", fontWeight: 800, fontSize: 14 }}>{money(number.prizeCents)}</span>}{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
+                        <div style={{ textAlign: "right" }}><span style={{ display: "block", color, fontWeight: 800, fontSize: 14 }}>{status}</span>{number.resultStatus === "EXPIRADO" && <p style={{ margin: "6px 0 0", color: "#991b1b", fontSize: 13, fontWeight: 700 }}>O prazo de 7 dias corridos para resgate terminou, contado da publicação do resultado oficial. Conforme o regulamento da Super Sena, este prêmio não foi solicitado dentro do prazo e está expirado. Não é mais possível solicitar o pagamento.</p>}{number.resultStatus === "PREMIADA" && number.prizeCents !== null && number.prizeCents > 0 && <span style={{ display: "block", marginTop: 2, color: "#166534", fontWeight: 800, fontSize: 14 }}>{money(number.prizeCents)}</span>}{number.prizePaid && number.paidAt && <span style={{ display: "block", marginTop: 2, color: "#4b5563", fontSize: 12 }}>Pago em {formatDate(number.paidAt)}</span>}</div>
                       </div>;
                     })}
                   </div>
