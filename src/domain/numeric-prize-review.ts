@@ -29,13 +29,15 @@ export function getNumericPrizeReview(line: NumericLineForPrizeReview, resultNum
       .map((field) => line[field]);
     const validAllocations = allocations.every((amount) => Number.isSafeInteger(amount) && amount >= 0);
     const totalStakeCents = allocations.reduce((total, amount) => total + amount, 0);
-    // Unidade devolve a aposta inteira. Sua parcela contábil e o multiplicador legado não entram no cálculo.
+    // O multiplicador 6 é a representação comercial da divisão em seis partes.
+    // Para preservar o retorno exato da aposta, o prêmio é calculado pelo total,
+    // absorvendo eventual resto de centavos sem multiplicar a parcela arredondada.
     return {
       category,
       stakeCents: totalStakeCents,
-      multiplier: null,
+      multiplier: multipliers.unit,
       calculatedPrizeCents: totalStakeCents,
-      calculationConsistent: validAllocations && Number.isSafeInteger(totalStakeCents)
+      calculationConsistent: multipliers.unit === 6 && validAllocations && Number.isSafeInteger(totalStakeCents)
         && totalStakeCents > 0 && totalStakeCents <= 2_147_483_647,
     };
   }
