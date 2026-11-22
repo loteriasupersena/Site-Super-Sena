@@ -1,9 +1,15 @@
 ALTER TABLE "Round" ADD COLUMN "resultPublishedAt" TIMESTAMP(3);
 
--- Historical completed rounds use their scheduled result timestamp as the
--- best available publication reference; new draws record the actual DB time.
-UPDATE "Round"
-SET "resultPublishedAt" = COALESCE("resultAt", "updatedAt")
-WHERE "status" = 'COMPLETED' AND "resultNumber" IS NOT NULL;
+-- Recover the actual publication moment from the draw audit event when possible.
+-- Older rounds without that event fall back to the round update timestamp,
+-- not the scheduled resultAt time, because the deadline starts when drawn.
+UPDATE "Round" AS r
+SET "resultPublishedAt" = COALESCE(
+  (SELECT MIN(a."createdAt") FROM "AuditEvent" a
+   WHERE a."entityType" = 'Round' AND a."entityId" = r."id"
+     AND a."action" IN ('NUMERIC_ROUND_DRAWN', 'NUMERIC_ROUND_DRAWN_AUTOMATICALLY')),
+  r."updatedAt"
+)
+WHERE r."status" = 'COMPLETED' AND r."resultNumber" IS NOT NULL;
 
 CREATE INDEX "Round_resultPublishedAt_idx" ON "Round"("resultPublishedAt");
