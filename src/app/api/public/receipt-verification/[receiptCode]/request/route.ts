@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       if (openBatch) throw new Error("BATCH_ALREADY_EXISTS");
 
       const candidates = await tx.numericParticipationLine.findMany({ where: {
-        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null } } },
+        participation: { purchaseId: purchase.id, status: "CONFIRMED", round: { status: "COMPLETED", resultNumber: { not: null }, resultPublishedAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
         prizeCents: { gt: 0 }, prizeCreditedAt: null, prizePayout: null,
       }, select: {
         id: true, numberValue: true, prizeCents: true, prizeCreditedAt: true,
