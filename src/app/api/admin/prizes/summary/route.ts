@@ -40,6 +40,26 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const expiredLines = await authPrisma.numericParticipationLine.findMany({
+      where: { prizeExpiredAt: { not: null }, prizeExpiryReviewedAt: null },
+      select: {
+        id: true, prizeCents: true, prizeExpiredAt: true,
+        participation: { select: {
+          round: { select: { code: true, resultNumber: true, resultPublishedAt: true } },
+          purchase: { select: { receiptCode: true } },
+        } },
+      },
+      orderBy: [{ prizeExpiredAt: "asc" }, { id: "asc" }],
+      take: 200,
+    });
+    const expiredItems = expiredLines.map(line => ({
+      id: line.id, prizeCents: line.prizeCents ?? 0,
+      receiptCode: line.participation.purchase.receiptCode,
+      roundCode: line.participation.round.code,
+      resultNumber: line.participation.round.resultNumber,
+      expiredAt: line.prizeExpiredAt!.toISOString(),
+    }));
+
     const groups = new Map<string, { category: string; count: number; grossCents: number; dueCents: number; unrequestedCount: number; requestedCount: number }>();
     const reviewItems: { id: string; prizeCents: number; category: string; receiptCode: string | null }[] = [];
     let totalGrossCents = 0;
@@ -102,6 +122,7 @@ export async function GET(request: NextRequest) {
       requestedCount,
       inconsistentCount,
       reviewItems,
+      expiredItems,
       breakdown,
       updatedAt: new Date().toISOString(),
     }, { headers });
