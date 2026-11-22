@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), queryRaw: vi.fn(), userFindFirst: vi.fn(), settlementFindFirst: vi.fn(),
   purchaseAggregate: vi.fn(), purchaseFindMany: vi.fn(), commissionAggregate: vi.fn(), lineCount: vi.fn(),
-  payoutAggregate: vi.fn(), settlementCreate: vi.fn(), payoutUpdateMany: vi.fn(),
+  settlementCreate: vi.fn(),
   auditCreate: vi.fn(), transaction: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
@@ -49,9 +49,7 @@ describe("POST admin cashier settlements", () => {
     ]);
     mocks.commissionAggregate.mockResolvedValue({ _sum: { amountCents: 900 } });
     mocks.lineCount.mockResolvedValue(7);
-    mocks.payoutAggregate.mockResolvedValue({ _sum: { amountCents: 2500 }, _count: { _all: 2 } });
     mocks.settlementCreate.mockResolvedValue(snapshot);
-    mocks.payoutUpdateMany.mockResolvedValue({ count: 2 });
     mocks.auditCreate.mockResolvedValue({});
     mocks.transaction.mockImplementation(async (callback) => callback({
       $queryRaw: mocks.queryRaw,
@@ -60,7 +58,6 @@ describe("POST admin cashier settlements", () => {
       purchase: { aggregate: mocks.purchaseAggregate, findMany: mocks.purchaseFindMany },
       cashierCommission: { aggregate: mocks.commissionAggregate },
       numericParticipationLine: { count: mocks.lineCount },
-      numericPrizePayout: { aggregate: mocks.payoutAggregate, updateMany: mocks.payoutUpdateMany },
       auditEvent: { create: mocks.auditCreate },
     }));
   });
