@@ -63,7 +63,7 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
             : existing.participations.length === roundCount &&
               existing.participations.every((part) => part.numericLines.length === numbers.length) &&
               existing.participations.flatMap((part) => part.numericLines.map((line) => line.numberValue + "|" +
-                (line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents)))
+                (line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents)))
                 .sort().join("\n") === Array.from({ length: roundCount }, () => numbers.map((n) => n + "|" + input.stakeCents))
                 .flat().sort().join("\n");
           if (!sameOwner || !sameIntent) throw new PurchaseServiceError("The idempotency key was already used for a different purchase", "IDEMPOTENCY_CONFLICT");
@@ -78,12 +78,10 @@ export async function createNumericPurchase(prisma: PrismaClient, input: Numeric
           catch { throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION"); }
           const validated = parseNumericPrizeMultipliers(parsedValue);
           if (!validated) throw new PurchaseServiceError("A configuração de multiplicadores está inválida. Contate o administrador.", "INVALID_PRIZE_CONFIGURATION");
-          currentMultipliers = { ...validated, unit: 6 };
+          currentMultipliers = validated;
         }
         const snapshot = createNumericPrizeRuleSnapshot(currentMultipliers);
-        // Unidade returns the full stake; its accounting allocation and legacy multiplier do not set the prize.
         const maximumLinePrizeCents = Math.max(
-          input.stakeCents,
           allocation.tensCents * currentMultipliers.tens,
           allocation.hundredsCents * currentMultipliers.hundreds,
           allocation.milharCents * currentMultipliers.milhar,
