@@ -3,11 +3,11 @@
 import { useState, type CSSProperties } from "react";
 
 const categories = [
-  { key: "sena", label: "Sena", digits: 6, initial: "300000" },
-  { key: "quina", label: "Quina", digits: 5, initial: "30000" },
-  { key: "milhar", label: "Milhar", digits: 4, initial: "3000" },
-  { key: "centena", label: "Centena", digits: 3, initial: "300" },
-  { key: "dezena", label: "Dezena", digits: 2, initial: "30" },
+  { key: "sena", label: "Sena", digits: 6, initial: "200000" },
+  { key: "quina", label: "Quina", digits: 5, initial: "20000" },
+  { key: "milhar", label: "Milhar", digits: 4, initial: "2000" },
+  { key: "centena", label: "Centena", digits: 3, initial: "200" },
+  { key: "dezena", label: "Dezena", digits: 2, initial: "20" },
 ] as const;
 
 type CategoryKey = (typeof categories)[number]["key"];
@@ -63,11 +63,11 @@ export function AdminGameSimulator() {
   const [attempts, setAttempts] = useState("10000");
   const [stake, setStake] = useState("1,00");
   const [multipliers, setMultipliers] = useState<Record<CategoryKey, string>>({
-    sena: "300000",
-    quina: "30000",
-    milhar: "3000",
-    centena: "300",
-    dezena: "30",
+    sena: "200000",
+    quina: "20000",
+    milhar: "2000",
+    centena: "200",
+    dezena: "20",
   });
   const [commission, setCommission] = useState("0");
   const [seed, setSeed] = useState("");
