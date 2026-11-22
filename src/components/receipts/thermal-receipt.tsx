@@ -125,7 +125,6 @@ export function ThermalReceipt({
         numberValue: entry.numberValue,
         repetition: repetitionNumbers[index] ?? 1,
         stakeCents: entry.stakeCents,
-        unitCents: entry.unitCents ?? 0,
         tensCents: entry.tensCents ?? 0,
         hundredsCents: entry.hundredsCents ?? 0,
         milharCents: entry.milharCents ?? 0,
@@ -201,7 +200,7 @@ export function ThermalReceipt({
               </div>
             );
           })}
-          <p>O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.</p>
+          <p>O valor de cada aposta será dividido entre cinco categorias. Sobras de centavos são destinadas integralmente à Dezena.</p>
         </section>
 
         <div className="thermal-receipt-divider" />
