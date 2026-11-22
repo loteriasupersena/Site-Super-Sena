@@ -177,6 +177,7 @@ model Round {
   status          RoundStatus               @default(SCHEDULED)
   /// Six-digit result for numeric rounds, stored as text to preserve leading zeroes.
   resultNumber    String?
+  resultPublishedAt DateTime?
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
   participations  PurchaseParticipation[]
