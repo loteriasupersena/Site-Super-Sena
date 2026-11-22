@@ -101,8 +101,8 @@ export async function POST(request: NextRequest) {
           roundId: part.roundId, totalCents: part.totalCents,
           lines: part.numericLines.map((line) => ({
             numberValue: line.numberValue,
-            totalCents: line.unitCents + line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
-            allocationCents: { unit: line.unitCents, tens: line.tensCents, hundreds: line.hundredsCents, milhar: line.milharCents, quina: line.quinaCents, sena: line.senaCents },
+            totalCents: line.tensCents + line.hundredsCents + line.milharCents + line.quinaCents + line.senaCents,
+            allocationCents: { tens: line.tensCents, hundreds: line.hundredsCents, milhar: line.milharCents, quina: line.quinaCents, sena: line.senaCents },
           })),
         })),
       },
