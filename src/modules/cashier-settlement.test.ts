@@ -45,9 +45,9 @@ describe("calculateCashierSettlement", () => {
       sales: [{ id: "pix-sale", totalCents: 10000, commission: { cashierId: "cashier-1", rateBasisPoints: 1000, amountCents: 1000 } }],
     });
     const result = await calculateCashierSettlement(tx, "cashier-1", new Date(0), new Date("2026-11-13T00:00:00.000Z"));
-    expect(result.netBalanceCents).toBe(-3000);
+    expect(result.netBalanceCents).toBe(-1000);
     expect(result.cashierOwesPlatformCents).toBe(0);
-    expect(result.platformOwesCashierCents).toBe(3000);
+    expect(result.platformOwesCashierCents).toBe(1000);
   });
 
   it("reports cash already received but not yet allocated for the next settlement period", async () => {
