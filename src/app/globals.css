@@ -5245,19 +5245,18 @@ body {
 /* SUPER SENA — FUNDO AZUL UNIFICADO EM TODAS AS ÁREAS */
 :root {
   --ss-royal: #0066ff;
+  --sena-royal: #0066ff;
   --background: #0066ff;
 }
 
+html,
 body,
-.home-page.home-page-compact:not(.landing-page),
+.home-page.home-page-compact,
 .home-page-compact .home-entry > .home-how-infographic,
-.landing-footer {
-  background-color: #0066ff !important;
-}
-
 .site-header.site-header-scenery,
 .home-header,
 .home-footer,
 .landing-footer {
-  background-color: #0066ff !important;
+  background: #0066ff !important;
+  background-image: none !important;
 }
