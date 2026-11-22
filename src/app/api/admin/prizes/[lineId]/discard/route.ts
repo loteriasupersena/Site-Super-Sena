@@ -63,8 +63,23 @@ export async function POST(request: NextRequest, context: { params: Promise<{ li
         throw new Error("PRIZE_NOT_INCONSISTENT");
       }
       const paymentRequest = line.prizePaymentRequest;
-      if (paymentRequest || line.prizePaymentBatchItems.length > 0) {
+      if (paymentRequest && ["PAID", "PROCESSING"].includes(paymentRequest.status)) {
         throw new Error("PAYMENT_IN_PROGRESS");
+      }
+      if (paymentRequest?.batch && (
+        ["PAID", "PROCESSING", "TRANSFER_PENDING", "TRANSFERRED"].includes(paymentRequest.batch.status) ||
+        Boolean(paymentRequest.batch.providerTransferId)
+      )) {
+        throw new Error("PAYMENT_IN_PROGRESS");
+      }
+
+      // Remove somente os vínculos de uma solicitação ainda não paga/em processamento.
+      // Outros itens de um lote compartilhado permanecem intactos.
+      if (line.prizePaymentBatchItems.length > 0) {
+        await tx.prizePaymentBatchItem.deleteMany({ where: { participationLineId: line.id } });
+      }
+      if (paymentRequest) {
+        await tx.prizePaymentRequest.delete({ where: { id: paymentRequest.id } });
       }
 
       await tx.numericParticipationLine.update({
