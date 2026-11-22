@@ -1,13 +1,12 @@
 import { AreaShell } from "@/components/area-shell";
-import { AdminPrizePayout } from "@/components/admin/admin-prize-payout";
 import { AdminUnpaidPrizeDashboard } from "@/components/admin/admin-unpaid-prize-dashboard";
 import { AdminPrizeCreditReconciliation } from "@/components/admin/admin-prize-credit-reconciliation";
-import { AdminWithdrawalManager } from "@/components/admin/admin-withdrawal-manager";
 import { AdminCashierManager } from "@/components/admin/admin-cashier-manager";
 import { AdminTestWalletCredit } from "@/components/admin/admin-test-wallet-credit";
 import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
+import { AdminPaymentRequests } from "@/components/admin/admin-payment-requests";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +16,12 @@ export default async function AdminPage() {
   return (
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
       <div className="admin-page-layout">
+        <AdminPaymentRequests />
         <div className="admin-accordion-list">
           <details className="admin-accordion">
             <summary><span>Prêmios</span></summary>
             <div className="admin-accordion-content">
-              <AdminPrizePayout />
               <AdminUnpaidPrizeDashboard />
-              <AdminWithdrawalManager />
               <AdminPrizeCreditReconciliation />
               <AdminTestWalletCredit />
             </div>
