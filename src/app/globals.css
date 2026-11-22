@@ -3998,7 +3998,7 @@ body:has(.home-page-compact) {
 
 /* Nova identidade visual Super Sena — landing page e navegação global. */
 :root {
-  --ss-royal: #001584;
+  --ss-royal: #0066ff;
   --ss-sapphire: #082b91;
   --ss-sapphire-light: #123da8;
   --ss-gold: #facc15;
@@ -5240,4 +5240,24 @@ body {
 
 .site-header.site-header-scenery {
   border-bottom-color: rgb(250 204 21 / 65%) !important;
+}
+
+/* SUPER SENA — FUNDO AZUL UNIFICADO EM TODAS AS ÁREAS */
+:root {
+  --ss-royal: #0066ff;
+  --background: #0066ff;
+}
+
+body,
+.home-page.home-page-compact:not(.landing-page),
+.home-page-compact .home-entry > .home-how-infographic,
+.landing-footer {
+  background-color: #0066ff !important;
+}
+
+.site-header.site-header-scenery,
+.home-header,
+.home-footer,
+.landing-footer {
+  background-color: #0066ff !important;
 }
