@@ -216,7 +216,7 @@ object ReceiptBitmapGenerator {
             y += 7f
         }
         infoLines.drop(2).forEach(::drawLine)
-        drawLine(TextLine("O valor de cada aposta será dividido entre os 6 prêmios do 1º ao 6º prêmio.", 18f, false, 4f))
+        drawLine(TextLine("O valor de cada aposta será dividido entre os 5 prêmios do 1º ao 5º.", 18f, false, 4f))
 
         val totalPaint = paint(28f)
         val total = money(data.optInt("totalCents"))
