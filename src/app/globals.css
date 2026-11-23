@@ -4065,6 +4065,23 @@ footer {
   line-height:1.1;
   white-space:nowrap;
   cursor:pointer;
+  position:relative;
+}
+.numeric-game-purchase .numeric-stake-presets > button > span{
+  display:block;
+  transform:translateY(-4px);
+}
+.numeric-game-purchase .numeric-stake-preset-caption{
+  position:absolute;
+  left:4px;
+  right:4px;
+  bottom:5px;
+  display:block;
+  font-size:clamp(.52rem,2.2vw,.68rem);
+  font-weight:700;
+  line-height:1;
+  text-align:center;
+  white-space:nowrap;
 }
 .numeric-game-purchase .numeric-stake-presets > button.is-active{
   background:#facc15!important;
