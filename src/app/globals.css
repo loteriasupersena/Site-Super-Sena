@@ -4048,13 +4048,15 @@ footer {
 }
 .numeric-game-purchase .numeric-stake-presets > button{
   display:flex!important;
+  flex-direction:column!important;
   align-items:center;
   justify-content:center;
+  gap:2px;
   width:100%!important;
   min-width:0!important;
   min-height:46px;
   box-sizing:border-box;
-  padding:8px 6px!important;
+  padding:4px 6px!important;
   border:1px solid #facc15!important;
   border-radius:10px!important;
   background:#082d86!important;
@@ -4062,22 +4064,17 @@ footer {
   font-family:inherit;
   font-size:clamp(.82rem,3.5vw,1rem)!important;
   font-weight:800!important;
-  line-height:1.1;
+  line-height:1.05;
   white-space:nowrap;
   cursor:pointer;
-  position:relative;
 }
 .numeric-game-purchase .numeric-stake-presets > button > span{
   display:block;
-  transform:translateY(-4px);
+  transform:none;
 }
 .numeric-game-purchase .numeric-stake-preset-caption{
-  position:absolute;
-  left:4px;
-  right:4px;
-  bottom:5px;
   display:block;
-  font-size:clamp(.52rem,2.2vw,.68rem);
+  font-size:clamp(.52rem,2.2vw,.62rem);
   font-weight:700;
   line-height:1;
   text-align:center;
