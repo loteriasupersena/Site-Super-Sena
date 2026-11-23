@@ -20,11 +20,11 @@ export default async function AdminPage() {
           <span className="feature-label">Solicitações de pagamento</span>
           <AdminPaymentRequests />
         </div>
+        <AdminUnpaidPrizeDashboard />
         <div className="admin-accordion-list">
           <details className="admin-accordion">
             <summary><span>Prêmios</span></summary>
             <div className="admin-accordion-content">
-              <AdminUnpaidPrizeDashboard />
               <AdminPrizeCreditReconciliation />
               <AdminTestWalletCredit />
             </div>
