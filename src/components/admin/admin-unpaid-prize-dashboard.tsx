@@ -100,6 +100,7 @@ export function AdminUnpaidPrizeDashboard() {
 
   return (
     <section className="feature-card admin-unpaid-prize-dashboard" aria-labelledby="admin-unpaid-prize-heading">
+      <h2 id="admin-unpaid-prize-heading">Contagem de prêmios</h2>
       {error && <p role="alert" className="note-inline">{error}</p>}
       {loading && !summary ? <p>Carregando premiações…</p> : summary && <>
         <div className="admin-prize-summary-grid">
@@ -147,10 +148,12 @@ export function AdminUnpaidPrizeDashboard() {
         )}
       </>}
       <style jsx>{`
-        .admin-prize-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0 10px; }
-        .admin-prize-summary-metric { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; background: #172638; color: #f4f6fb; min-width: 0; }
-        .admin-prize-summary-metric span { color: #cbd5e1; font-size: 13px; opacity: 1; }
-        .admin-prize-summary-metric strong { color: #ffffff; font-size: clamp(24px, 4vw, 32px); line-height: 1.15; overflow-wrap: anywhere; }
+        .admin-unpaid-prize-dashboard { padding: 12px 14px !important; }
+        .admin-unpaid-prize-dashboard > h2 { margin: 0 0 8px; color: #59d5f2; font-size: 1rem; font-weight: 800; letter-spacing: .04em; line-height: 1.2; }
+        .admin-prize-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+        .admin-prize-summary-metric { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 64px; padding: 8px 10px; border: 1px solid var(--border, #d7dce2); border-radius: 10px; background: #172638; color: #f4f6fb; min-width: 0; }
+        .admin-prize-summary-metric span { color: #cbd5e1; font-size: 11px; line-height: 1.2; opacity: 1; }
+        .admin-prize-summary-metric strong { color: #ffffff; font-size: clamp(18px, 4vw, 24px); line-height: 1.1; overflow-wrap: anywhere; }
         .admin-prize-summary-meta { color: #e2e8f0; display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 8px 0 18px; font-size: 13px; }
         .admin-prize-summary-table-wrap { width: 100%; overflow-x: auto; }
         .admin-prize-summary-table { width: 100%; border-collapse: collapse; color: #f4f6fb; font-size: 14px; }
@@ -163,7 +166,6 @@ export function AdminUnpaidPrizeDashboard() {
         .admin-prize-review-row > div { display: flex; flex-direction: column; gap: 4px; color: #f4f6fb; }
         .admin-prize-review-row span { font-size: 12px; color: #cbd5e1; overflow-wrap: anywhere; }
         .admin-prize-summary-footnote { margin-top: 12px; color: #cbd5e1; font-size: 12px; opacity: 1; line-height: 1.45; }
-        @media (max-width: 420px) { .admin-prize-summary-grid { grid-template-columns: 1fr; } }
       `}</style>
     </section>
   );
