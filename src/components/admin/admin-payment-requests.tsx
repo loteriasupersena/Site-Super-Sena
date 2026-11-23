@@ -102,7 +102,7 @@ export function AdminPaymentRequests() {
 
   return <section className="feature-card admin-payment-requests" aria-labelledby="admin-payment-requests-heading">
     <div className="admin-payment-card-heading">
-      <h2 id="admin-payment-requests-heading" className="sr-only">Solicitações de pagamento</h2>
+      <h2 id="admin-payment-requests-heading">Solicitações de pagamento</h2>
     </div>
     {error && <p role="alert" className="note-inline">{error}</p>}
     {notice && <p role="status" className="note-inline">{notice}</p>}
@@ -141,6 +141,7 @@ export function AdminPaymentRequests() {
       </div>}
     <button type="button" className="secondary-button admin-payment-refresh" disabled={loading || busy !== null} onClick={() => { setLoading(true); void load(); }}>Atualizar agora</button>
     <style jsx>{`
+      .admin-payment-card-heading h2 { margin: 0 0 14px; color: #59d5f2; font-size: 1rem; font-weight: 800; letter-spacing: .06em; line-height: 1.25; text-transform: uppercase; }
       .admin-payment-list { display: grid; gap: 12px; }
       .admin-payment-item { border: 1px solid #40516a; border-radius: 12px; padding: 14px; background: #203247; color: #f4f6fb; }
       .admin-payment-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
