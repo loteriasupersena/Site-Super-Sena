@@ -319,7 +319,8 @@ export function NumericGamePurchaseForm({ mode }: { mode: Mode }) {
               <button key={value} type="button" className={stake === `${value},00` ? "is-active" : ""}
                 disabled={Boolean(purchase)} aria-pressed={stake === `${value},00`}
                 onClick={() => setStake(`${value},00`)}>
-                R$ {value},00
+                <span>R$ {value},00</span>
+                {value === 5 && <small className="numeric-stake-preset-caption">Mais escolhido</small>}
               </button>
             ))}
           </div>
