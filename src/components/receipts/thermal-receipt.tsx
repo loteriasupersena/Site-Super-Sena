@@ -200,7 +200,7 @@ export function ThermalReceipt({
               </div>
             );
           })}
-          <p>O valor de cada aposta será dividido entre cinco categorias. Sobras de centavos são destinadas integralmente à Dezena.</p>
+          <p>O valor de cada aposta será dividido entre os cinco prêmios do primeiro ao quinto prêmio.</p>
         </section>
 
         <div className="thermal-receipt-divider" />
