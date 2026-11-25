@@ -8,9 +8,8 @@ datasource db {
 }
 
 enum UserRole {
-  PLAYER
-  CASHIER
   ADMIN
+  ESTABLISHMENT_STAFF
 }
 
 enum AccountStatus {
@@ -19,84 +18,70 @@ enum AccountStatus {
   PENDING
 }
 
-enum RoundStatus {
+enum EstablishmentStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum SaleStatus {
+  RECORDED
+  CANCELLED
+}
+
+enum CouponStatus {
+  ACTIVE
+  REDEEMED
+  CANCELLED
+  EXPIRED
+}
+
+enum DrawStatus {
   SCHEDULED
   OPEN
   CLOSED
-  COMPLETED
+  PUBLISHED
   CANCELLED
 }
 
-enum PurchaseStatus {
-  PENDING_PAYMENT
-  CONFIRMED
+enum AwardStatus {
+  AVAILABLE
+  RESERVED
+  REDEEMED
   CANCELLED
-  REFUNDED
-}
-
-enum ParticipationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  PIX
-  WALLET
-  CASH
-}
-
-enum PaymentStatus {
-  PENDING
-  CONFIRMED
-  FAILED
   EXPIRED
-  REFUNDED
+}
+
+enum RedemptionStatus {
+  INITIATED
+  CONFIRMED
   CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum ProviderEventStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
 }
 
 enum LedgerEntryType {
-  DEPOSIT
-  PURCHASE_DEBIT
-  PRIZE_CREDIT
-  WITHDRAWAL_RESERVE
-  WITHDRAWAL_RELEASE
-  WITHDRAWAL_PAID
-  REFUND
-  ADJUSTMENT
-}
-
-enum NumericPrizePayoutChannel {
-  PLATFORM_PIX
-  CASHIER_CASH
-}
-
-enum PrizePaymentRequestStatus {
-  PENDING
-  PROCESSING
-  PAID
-  REJECTED
-  FAILED
-  CANCELLED
-}
-
-enum WithdrawalStatus {
-  PENDING
-  APPROVED
-  PROCESSING
-  PAID
-  REJECTED
-  FAILED
-}
-
-enum PrintJobPurpose {
-  AUTO_RECEIPT
-  MANUAL_REPRINT
+  SALE_CONTRIBUTION
+  ESTABLISHMENT_PAYOUT
+  PAYOUT_REVERSAL
+  MANUAL_ADJUSTMENT
 }
 
 enum PrintJobStatus {
-  RESERVED
+  QUEUED
   SENDING
   SENT
   FAILED
@@ -104,363 +89,283 @@ enum PrintJobStatus {
 }
 
 model User {
-  id                    String        @id @default(cuid())
-  username              String        @unique
-  fullName              String?
-  whatsapp              String?
-  city                  String?
-  address               String?
-  referencePoint        String?
-  suppliesMaterial      Boolean       @default(false)
-  commissionRateBasisPoints Int       @default(0)
-  passwordHash          String
-  role                  UserRole      @default(PLAYER)
-  status                AccountStatus @default(ACTIVE)
-  mustChangePassword    Boolean       @default(false)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  sessions              Session[]
-  purchasesAsPlayer     Purchase[]    @relation("PlayerPurchases")
-  purchasesAsCashier    Purchase[]    @relation("CashierPurchases")
-  ledgerEntries         LedgerEntry[]
-  withdrawals           Withdrawal[]  @relation("WithdrawalOwner")
-  reviewedWithdrawals   Withdrawal[]  @relation("WithdrawalReviewer")
-  auditEvents           AuditEvent[]  @relation("AuditActor")
-  settingsChanged       SettingChange[] @relation("SettingChanger")
-  commissions           CashierCommission[]
-  customersCreated      Customer[]              @relation("CustomerCreator")
-  withdrawalHistoryActions WithdrawalStatusHistory[] @relation("WithdrawalHistoryActor")
-  cashierSettlementsAsCashier CashierSettlement[] @relation("CashierSettlementCashier")
-  cashierSettlementsCreated CashierSettlement[] @relation("CashierSettlementAdmin")
-  numericPrizePayoutsCreated NumericPrizePayout[] @relation("NumericPrizePayoutActor")
-  numericPrizePayoutsAsCashier NumericPrizePayout[] @relation("NumericPrizePayoutCashier")
-  printJobsRequested PrintJob[] @relation("PrintJobRequester")
-  prizePaymentRequestsReviewed PrizePaymentRequest[] @relation("PrizePaymentRequestReviewer")
-  prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
+  id                 String        @id @default(cuid())
+  username           String        @unique
+  fullName           String
+  passwordHash       String
+  role               UserRole      @default(ESTABLISHMENT_STAFF)
+  status             AccountStatus @default(ACTIVE)
+  mustChangePassword Boolean       @default(false)
+  sessions           Session[]
+  memberships        EstablishmentUser[]
+  auditEvents        AuditEvent[]  @relation("AuditActor")
+  reviewedPayouts    EstablishmentPayout[] @relation("PayoutReviewer")
+  printJobs          PrintJob[]    @relation("PrintRequester")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   @@index([role, status])
 }
 
 model Session {
-  id        String    @id @default(cuid())
-  tokenHash String    @unique
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
   userId    String
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
   @@index([expiresAt])
 }
 
-model Customer {
-  id          String   @id @default(cuid())
-  name        String
-  phone       String?
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  purchases   Purchase[]
-  createdBy   User?    @relation("CustomerCreator", fields: [createdById], references: [id], onDelete: Restrict)
+model LoginAttemptBucket {
+  keyHash         String   @id
+  attempts        Int      @default(0)
+  windowStartedAt DateTime @default(now())
+  blockedUntil    DateTime?
+  updatedAt       DateTime @updatedAt
 
-  @@index([phone])
-  @@index([createdAt])
+  @@index([blockedUntil])
 }
 
-model Round {
-  id              String                   @id @default(cuid())
-  code            String                   @unique
-  startsAt        DateTime
-  cutoffAt        DateTime
-  resultAt        DateTime
-  status          RoundStatus               @default(SCHEDULED)
-  /// Six-digit result for numeric rounds, stored as text to preserve leading zeroes.
-  resultNumber    String?
-  resultPublishedAt DateTime?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-  participations  PurchaseParticipation[]
+model Establishment {
+  id                    String              @id @default(cuid())
+  code                  String              @unique
+  legalName             String
+  tradeName             String
+  documentNumber        String?             @unique
+  phone                 String?
+  email                 String?
+  postalCode            String?
+  street                String?
+  streetNumber          String?
+  addressComplement     String?
+  neighborhood          String?
+  city                  String?
+  state                 String?
+  contributionRateBps   Int
+  status                EstablishmentStatus @default(PENDING)
+  pixKeyCiphertext      String?
+  pixKeyType            String?
+  pixKeyMasked          String?
+  pixHolderName         String?
+  pixHolderDocumentMasked String?
+  pixUpdatedAt          DateTime?
+  pixUpdatedById        String?
+  memberships           EstablishmentUser[]
+  sales                 CommercialSale[]
+  redemptions           Redemption[]        @relation("RedeemingEstablishment")
+  payouts               EstablishmentPayout[]
+  ledgerEntries         FinancialLedgerEntry[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
-  @@index([status, startsAt])
-  @@index([resultAt])
-  @@index([resultPublishedAt])
-  @@index([cutoffAt, status])
+  @@index([status, tradeName])
+  @@index([city, state])
 }
 
-model Purchase {
-  id                String        @id @default(cuid())
-  playerId          String?
-  cashierId         String?
-  customerId        String?
-  status            PurchaseStatus @default(PENDING_PAYMENT)
-  paymentMethod     PaymentMethod
-  totalCents        Int
-  currency          String        @default("BRL")
-  receiptCode       String?       @unique
-  idempotencyKey    String        @unique
-  createdAt         DateTime      @default(now())
-  confirmedAt       DateTime?
-  player            User?         @relation("PlayerPurchases", fields: [playerId], references: [id], onDelete: Restrict)
-  cashier           User?         @relation("CashierPurchases", fields: [cashierId], references: [id], onDelete: Restrict)
-  customer          Customer?     @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  participations    PurchaseParticipation[]
-  numericIntent     NumericPurchaseIntent?
-  payment           Payment?
-  ledgerEntries     LedgerEntry[]
-  commission        CashierCommission?
-  printJobs         PrintJob[]
-  prizePaymentRequests PrizePaymentRequest[]
-  prizePaymentBatches PrizePaymentBatch[]
+model EstablishmentUser {
+  id              String        @id @default(cuid())
+  establishmentId String
+  userId          String
+  isManager       Boolean       @default(false)
+  active          Boolean       @default(true)
+  establishment  Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt       DateTime      @default(now())
 
-  @@index([playerId, createdAt])
-  @@index([cashierId, createdAt])
-  @@index([customerId, createdAt])
-  @@index([status, createdAt])
-  @@index([status, paymentMethod, id])
+  @@unique([establishmentId, userId])
+  @@index([userId, active])
 }
 
-model NumericPurchaseIntent {
-  id           String   @id @default(cuid())
-  purchaseId   String   @unique
-  roundCount   Int
-  numbers      Json
-  allocation   Json
-  ruleVersion  String
-  ruleSnapshot Json
-  createdAt    DateTime @default(now())
-  purchase     Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-}
-
-model PurchaseParticipation {
-  id             String              @id @default(cuid())
-  purchaseId     String
-  roundId        String
-  status         ParticipationStatus @default(PENDING)
-  totalCents     Int
-  createdAt      DateTime            @default(now())
-  confirmedAt    DateTime?
-  purchase       Purchase            @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  round          Round               @relation(fields: [roundId], references: [id], onDelete: Restrict)
-  numericLines   NumericParticipationLine[]
-  ledgerEntries  LedgerEntry[]
-
-  @@unique([purchaseId, roundId])
-  @@index([roundId, status, createdAt])
-  @@index([purchaseId, status])
-}
-
-model NumericParticipationLine {
-  id               String   @id @default(cuid())
-  participationId  String
-  numberValue      String
-  tensCents        Int
-  hundredsCents    Int
-  milharCents      Int
-  quinaCents       Int
-  senaCents        Int
-  ruleVersion      String
-  ruleSnapshot     Json
-  prizeCents       Int?
-  prizeCreditedAt  DateTime?
-  prizeExpiredAt   DateTime?
-  prizeExpiryReviewedAt DateTime?
-  createdAt        DateTime @default(now())
-  participation    PurchaseParticipation @relation(fields: [participationId], references: [id], onDelete: Restrict)
-  prizePayout      NumericPrizePayout?
-  prizePaymentRequest PrizePaymentRequest?
-  prizePaymentBatchItems PrizePaymentBatchItem[]
-
-  @@index([numberValue])
-  @@index([participationId])
-  @@index([prizeExpiredAt])
-  @@index([prizeExpiryReviewedAt])
-}
-
-model Payment {
+model CommercialSale {
   id                    String        @id @default(cuid())
-  purchaseId            String        @unique
-  provider              String
-  providerPaymentId     String?
-  providerQrCodeId      String? @unique
-  pixCopyPaste           String?
-  pixQrCodeBase64        String?
-  pixTicketUrl           String?
-  providerStatus         String?
-  providerStatusDetail   String?
+  establishmentId       String
+  recordedById           String
+  saleAmountCents       Int
+  contributionRateBps   Int
+  contributionAmountCents Int
+  status                SaleStatus    @default(RECORDED)
   idempotencyKey        String        @unique
-  status                PaymentStatus @default(PENDING)
-  amountCents           Int
-  confirmedAt           DateTime?
-  expiresAt             DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  purchase              Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  webhookEvents         WebhookEvent[]
+  recordedAt            DateTime      @default(now())
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  establishment         Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  coupon                Coupon?
+  ledgerEntries         FinancialLedgerEntry[]
 
-  @@unique([provider, providerPaymentId])
-  @@index([status, createdAt])
-  @@index([provider, status, updatedAt, createdAt])
+  @@index([establishmentId, recordedAt])
+  @@index([status, recordedAt])
+  @@index([recordedById, recordedAt])
 }
 
-model WebhookEvent {
-  id                String   @id @default(cuid())
+model Coupon {
+  id              String       @id @default(cuid())
+  publicCode      String       @unique
+  qrTokenHash     String       @unique
+  saleId          String       @unique
+  status          CouponStatus @default(ACTIVE)
+  issuedAt        DateTime     @default(now())
+  redeemedAt      DateTime?
+  sale            CommercialSale @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  participation   DrawParticipation?
+  award           PrizeAward?
+  redemption      Redemption?
+  printJobs       PrintJob[]
+
+  @@index([status, issuedAt])
+}
+
+model Draw {
+  id              String     @id @default(cuid())
+  code            String     @unique
+  title           String
+  scheduledAt     DateTime
+  closedAt        DateTime?
+  publishedAt     DateTime?
+  status          DrawStatus @default(SCHEDULED)
+  resultReference String?
+  ruleVersion     String
+  ruleSnapshot    Json
+  participations  DrawParticipation[]
+  awards          PrizeAward[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status, scheduledAt])
+}
+
+model DrawParticipation {
+  id             String   @id @default(cuid())
+  drawId         String
+  couponId       String   @unique
+  internalNumber String
+  createdAt      DateTime @default(now())
+  draw           Draw     @relation(fields: [drawId], references: [id], onDelete: Restrict)
+  coupon         Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+
+  @@unique([drawId, internalNumber])
+  @@index([drawId, createdAt])
+}
+
+model PrizeAward {
+  id              String      @id @default(cuid())
+  drawId          String
+  couponId        String      @unique
+  amountCents     Int
+  status          AwardStatus @default(AVAILABLE)
+  determinedAt   DateTime    @default(now())
+  expiresAt       DateTime?
+  draw            Draw        @relation(fields: [drawId], references: [id], onDelete: Restrict)
+  coupon          Coupon      @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  redemption      Redemption?
+
+  @@index([drawId, status])
+  @@index([status, determinedAt])
+}
+
+model Redemption {
+  id                       String        @id @default(cuid())
+  awardId                  String        @unique
+  couponId                 String        @unique
+  redeemingEstablishmentId String
+  confirmedById            String
+  status                   RedemptionStatus @default(INITIATED)
+  amountCents              Int
+  idempotencyKey           String        @unique
+  initiatedAt              DateTime      @default(now())
+  confirmedAt              DateTime?
+  award                    PrizeAward    @relation(fields: [awardId], references: [id], onDelete: Restrict)
+  coupon                   Coupon        @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  redeemingEstablishment   Establishment @relation("RedeemingEstablishment", fields: [redeemingEstablishmentId], references: [id], onDelete: Restrict)
+  payout                   EstablishmentPayout?
+
+  @@index([redeemingEstablishmentId, initiatedAt])
+  @@index([status, initiatedAt])
+}
+
+model EstablishmentPayout {
+  id                       String       @id @default(cuid())
+  redemptionId             String       @unique
+  establishmentId          String
+  amountCents              Int
+  currency                 String       @default("BRL")
+  status                   PayoutStatus @default(PENDING)
+  provider                 String?
+  providerTransferId       String?      @unique
+  providerReference        String       @unique
+  providerStatus           String?
+  failureReason            String?
+  requestedAt              DateTime     @default(now())
+  paidAt                   DateTime?
+  reviewedById             String?
+  redemption               Redemption   @relation(fields: [redemptionId], references: [id], onDelete: Restrict)
+  establishment            Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  reviewedBy               User?        @relation("PayoutReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  ledgerEntry              FinancialLedgerEntry?
+
+  @@index([establishmentId, status, requestedAt])
+  @@index([status, requestedAt])
+}
+
+model ProviderEvent {
+  id                String              @id @default(cuid())
   provider          String
   providerEventId   String
   eventType         String
   payloadDigest     String
-  receivedAt        DateTime @default(now())
+  status            ProviderEventStatus @default(RECEIVED)
+  receivedAt        DateTime            @default(now())
   processedAt       DateTime?
   processingError   String?
-  paymentId         String?
-  payment           Payment? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  relatedReference  String?
 
   @@unique([provider, providerEventId])
-  @@index([processedAt, receivedAt])
+  @@index([status, receivedAt])
 }
 
-model LedgerEntry {
+model FinancialLedgerEntry {
   id               String          @id @default(cuid())
-  userId           String
-  purchaseId       String?
-  participationId  String?
-  withdrawalId     String?
+  establishmentId  String
+  saleId           String?
+  payoutId         String?         @unique
   type             LedgerEntryType
   amountCents      Int
   currency         String          @default("BRL")
   idempotencyKey   String          @unique
   description      String
   createdAt        DateTime        @default(now())
-  user             User            @relation(fields: [userId], references: [id], onDelete: Restrict)
-  purchase         Purchase?       @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  participation    PurchaseParticipation? @relation(fields: [participationId], references: [id], onDelete: Restrict)
-  withdrawal       Withdrawal?     @relation(fields: [withdrawalId], references: [id], onDelete: Restrict)
+  establishment    Establishment   @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  sale             CommercialSale? @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  payout           EstablishmentPayout? @relation(fields: [payoutId], references: [id], onDelete: Restrict)
 
-  @@index([userId, createdAt])
-  @@index([purchaseId])
-  @@index([participationId])
-  @@index([withdrawalId])
+  @@index([establishmentId, createdAt])
+  @@index([saleId])
+  @@index([type, createdAt])
 }
 
-model CashierCommission {
-  id                    String   @id @default(cuid())
-  purchaseId            String   @unique
-  cashierId             String
-  rateBasisPoints       Int
-  amountCents           Int
-  createdAt             DateTime @default(now())
-  purchase              Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  cashier               User     @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+model PrintJob {
+  id            String         @id @default(cuid())
+  couponId      String
+  requestedById String?
+  status        PrintJobStatus @default(QUEUED)
+  deviceName    String?
+  errorCode     String?
+  createdAt     DateTime       @default(now())
+  completedAt   DateTime?
+  coupon        Coupon         @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  requestedBy   User?          @relation("PrintRequester", fields: [requestedById], references: [id], onDelete: Restrict)
 
-  @@index([cashierId, createdAt])
-}
-
-model CashierSettlement {
-  id                    String   @id @default(cuid())
-  cashierId             String
-  adminId               String
-  settledAt             DateTime @default(now())
-  cashSalesCents        Int
-  pixSalesCents         Int
-  totalSalesCents       Int
-  salesCount            Int
-  gamesCount            Int      @default(0)
-  commissionCents       Int
-  cashPrizePayoutCount  Int      @default(0)
-  cashPrizePayoutCents  Int      @default(0)
-  pendingCashSalesCount Int      @default(0)
-  pendingCashSalesCents Int      @default(0)
-  cashier               User     @relation("CashierSettlementCashier", fields: [cashierId], references: [id], onDelete: Restrict)
-  admin                 User     @relation("CashierSettlementAdmin", fields: [adminId], references: [id], onDelete: Restrict)
-  cashPrizePayouts      NumericPrizePayout[]
-
-  @@index([cashierId, settledAt])
-  @@index([adminId, settledAt])
-}
-
-model NumericPrizePayout {
-  id                   String                    @id @default(cuid())
-  participationLineId String                    @unique
-  channel              NumericPrizePayoutChannel
-  amountCents          Int
-  actorId              String?
-  cashierId            String?
-  settlementId         String?
-  reference            String?
-  paidAt               DateTime                  @default(now())
-  participationLine    NumericParticipationLine  @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
-  actor                User?                     @relation("NumericPrizePayoutActor", fields: [actorId], references: [id], onDelete: Restrict)
-  cashier              User?                     @relation("NumericPrizePayoutCashier", fields: [cashierId], references: [id], onDelete: Restrict)
-  settlement           CashierSettlement?        @relation(fields: [settlementId], references: [id], onDelete: Restrict)
-
-  @@index([cashierId, paidAt])
-  @@index([settlementId])
-}
-
-model Withdrawal {
-  id                  String                 @id @default(cuid())
-  userId              String
-  amountCents         Int
-  pixKey              String?
-  pixKeyEncrypted     String? // legado: ciphertext de saques anteriores
-  pixKeyType          String?
-  holderName          String?
-  holderNameEncrypted String? // legado
-  holderCpfEncrypted  String? // legado
-  holderCpfMasked     String?
-  pixKeyMasked        String?
-  paymentReference    String?                @unique
-  providerTransferId     String?                @unique
-  providerTransferStatus String?
-  providerTransferFailureReason String?
-  transferRequestedAt DateTime?
-  status              WithdrawalStatus       @default(PENDING)
-  idempotencyKey      String                 @unique
-  reviewedById        String?
-  providerRef         String?
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
-  user                User                   @relation("WithdrawalOwner", fields: [userId], references: [id], onDelete: Restrict)
-  reviewedBy          User?                  @relation("WithdrawalReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
-  statusHistory       WithdrawalStatusHistory[]
-  ledgerEntries       LedgerEntry[]
-
-  @@index([userId, status, createdAt])
-  @@index([reviewedById, updatedAt])
-}
-
-model WithdrawalStatusHistory {
-  id            String           @id @default(cuid())
-  withdrawalId  String
-  fromStatus    WithdrawalStatus?
-  toStatus      WithdrawalStatus
-  actorId       String?
-  note          String?
-  createdAt     DateTime         @default(now())
-  withdrawal    Withdrawal      @relation(fields: [withdrawalId], references: [id], onDelete: Restrict)
-  actor         User?            @relation("WithdrawalHistoryActor", fields: [actorId], references: [id], onDelete: Restrict)
-
-  @@index([withdrawalId, createdAt])
+  @@index([couponId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Setting {
   key        String   @id
-  value      String
+  value      Json
   updatedAt  DateTime @updatedAt
-  changes    SettingChange[]
-}
-
-model SettingChange {
-  id           String   @id @default(cuid())
-  settingKey   String
-  oldValue     String?
-  newValue     String
-  changedById  String
-  changedAt    DateTime @default(now())
-  setting      Setting  @relation(fields: [settingKey], references: [key], onDelete: Restrict)
-  changedBy    User     @relation("SettingChanger", fields: [changedById], references: [id], onDelete: Restrict)
-
-  @@index([settingKey, changedAt])
 }
 
 model AuditEvent {
@@ -475,128 +380,4 @@ model AuditEvent {
 
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
-}
-
-
-model LoginAttemptBucket {
-  keyHash         String   @id
-  attempts        Int      @default(0)
-  windowStartedAt DateTime @default(now())
-  blockedUntil    DateTime?
-  updatedAt       DateTime @updatedAt
-
-  @@index([blockedUntil])
-  @@index([windowStartedAt])
-}
-
-model PrintJob {
-  id             String          @id @default(cuid())
-  purchaseId     String
-  purpose        PrintJobPurpose
-  /// For AUTO_RECEIPT, equals purchaseId; unique nullable key permits unlimited audited manual reprints.
-  autoReceiptKey String?         @unique
-  status         PrintJobStatus  @default(RESERVED)
-  requestedById  String?
-  deviceName     String?
-  errorCode      String?
-  reservedAt     DateTime        @default(now())
-  sendingAt      DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  purchase       Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  requestedBy    User?           @relation("PrintJobRequester", fields: [requestedById], references: [id], onDelete: Restrict)
-
-  @@index([purchaseId, createdAt])
-  @@index([status, updatedAt])
-  @@index([requestedById, createdAt])
-}
-
-
-model PrizePaymentRequest {
-  id                     String   @id @default(cuid())
-  participationLineId    String   @unique
-  purchaseId             String
-  batchId                String?
-  pixKey                 String?
-  pixKeyEncrypted        String? // legado: solicitações criadas antes da remoção da criptografia
-  pixKeyMasked           String
-  pixKeyType             String?
-  holderName             String?
-  holderNameEncrypted    String? // legado
-  holderCpfEncrypted     String? // legado
-  holderCpfMasked        String?
-  grossCents             Int
-  administrativeFeeCents Int      @default(0)
-  transactionFeeCents    Int      @default(0)
-  netCents               Int
-  feeRuleVersion         String
-  status                 PrizePaymentRequestStatus @default(PENDING)
-  requestedAt            DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  reviewedAt             DateTime?
-  reviewerId             String?
-  paymentReference       String?
-  providerTransferId        String? @unique
-  providerTransferStatus    String?
-  providerTransferReceiptUrl String?
-  providerTransferFailureReason String?
-  transferRequestedAt   DateTime?
-  note                   String?
-  participationLine      NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
-  purchase               Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  batch                  PrizePaymentBatch? @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  reviewer               User? @relation("PrizePaymentRequestReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
-
-  @@index([status, requestedAt])
-  @@index([purchaseId, requestedAt])
-  @@index([reviewerId, reviewedAt])
-  @@index([batchId, status])
-}
-
-model PrizePaymentBatch {
-  id                       String   @id @default(cuid())
-  purchaseId               String
-  pixKey                   String?
-  pixKeyEncrypted          String? // legado
-  pixKeyMasked             String
-  pixKeyType               String
-  holderName               String?
-  holderNameEncrypted      String? // legado
-  holderCpfEncrypted       String? // legado
-  holderCpfMasked          String
-  grossCents               Int
-  administrativeFeeCents   Int      @default(0)
-  transactionFeeCents      Int      @default(0)
-  netCents                 Int
-  feeRuleVersion           String
-  status                   PrizePaymentRequestStatus @default(PENDING)
-  requestedAt              DateTime @default(now())
-  reviewedAt               DateTime?
-  reviewerId               String?
-  paymentReference         String?  @unique
-  providerTransferId          String?  @unique
-  providerTransferStatus      String?
-  providerTransferReceiptUrl  String?
-  providerTransferFailureReason String?
-  transferRequestedAt      DateTime?
-  purchase                 Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  reviewer                 User? @relation("PrizePaymentBatchReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
-  requests                 PrizePaymentRequest[]
-  items                    PrizePaymentBatchItem[]
-
-  @@index([purchaseId, requestedAt])
-  @@index([status, requestedAt])
-}
-
-model PrizePaymentBatchItem {
-  id               String   @id @default(cuid())
-  batchId          String
-  participationLineId String
-  amountCents      Int
-  batch            PrizePaymentBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  participationLine NumericParticipationLine @relation(fields: [participationLineId], references: [id], onDelete: Restrict)
-
-  @@unique([batchId, participationLineId])
-  @@index([batchId])
 }
