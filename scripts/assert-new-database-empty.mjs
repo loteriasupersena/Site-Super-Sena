@@ -23,7 +23,7 @@ if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
 
 const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, "").split("/")[0] ?? "");
 if (!databaseName) throw new Error("DATABASE_URL não informa o nome do banco.");
-if (/super.?sena|placa|production|prod/i.test(databaseName)) {
+if (/(^|[-_])(super.?sena|placas?|production|prod)([-_]|$)/i.test(databaseName)) {
   throw new Error("Bloqueado: o nome do banco parece pertencer ao sistema anterior ou à produção.");
 }
 
