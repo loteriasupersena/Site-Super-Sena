@@ -98,6 +98,9 @@ model User {
   mustChangePassword Boolean       @default(false)
   sessions           Session[]
   memberships        EstablishmentUser[]
+  salesRecorded      CommercialSale[] @relation("SaleRecorder")
+  pixKeysUpdated     Establishment[] @relation("EstablishmentPixUpdater")
+  redemptionsConfirmed Redemption[] @relation("RedemptionConfirmer")
   auditEvents        AuditEvent[]  @relation("AuditActor")
   reviewedPayouts    EstablishmentPayout[] @relation("PayoutReviewer")
   printJobs          PrintJob[]    @relation("PrintRequester")
@@ -154,6 +157,7 @@ model Establishment {
   pixHolderDocumentMasked String?
   pixUpdatedAt          DateTime?
   pixUpdatedById        String?
+  pixUpdatedBy          User?               @relation("EstablishmentPixUpdater", fields: [pixUpdatedById], references: [id], onDelete: Restrict)
   memberships           EstablishmentUser[]
   sales                 CommercialSale[]
   redemptions           Redemption[]        @relation("RedeemingEstablishment")
@@ -193,6 +197,7 @@ model CommercialSale {
   cancelledAt           DateTime?
   cancellationReason    String?
   establishment         Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  recordedBy             User          @relation("SaleRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
   coupon                Coupon?
   ledgerEntries         FinancialLedgerEntry[]
 
@@ -278,6 +283,7 @@ model Redemption {
   initiatedAt              DateTime      @default(now())
   confirmedAt              DateTime?
   award                    PrizeAward    @relation(fields: [awardId], references: [id], onDelete: Restrict)
+  confirmedBy              User          @relation("RedemptionConfirmer", fields: [confirmedById], references: [id], onDelete: Restrict)
   coupon                   Coupon        @relation(fields: [couponId], references: [id], onDelete: Restrict)
   redeemingEstablishment   Establishment @relation("RedeemingEstablishment", fields: [redeemingEstablishmentId], references: [id], onDelete: Restrict)
   payout                   EstablishmentPayout?
