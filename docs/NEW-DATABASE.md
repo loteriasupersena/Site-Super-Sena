@@ -22,6 +22,8 @@ Esta branch deve usar um banco PostgreSQL novo, vazio e exclusivo. Não usar o b
 
 ## Limite atual
 
-A separação do caminho de migrações e da configuração de ambiente foi iniciada, mas o schema Prisma e os módulos da aplicação ainda estão em processo de substituição. **Não conectar este código a um ambiente público nem executar migrações até que o novo schema e a migração inicial estejam revisados.**
+O schema Prisma foi substituído por entidades da plataforma comercial: usuários e sessões, estabelecimentos e funcionários, vendas, cupons, sorteios, contemplações, resgates, pagamentos aos estabelecimentos, eventos de webhook, livro financeiro, impressão, configurações e auditoria.
+
+A migração SQL inicial ainda não foi gerada nem validada pelo Prisma. As rotas e módulos da aplicação também ainda precisam ser adaptados ao novo schema. **Não conectar este código a um ambiente público nem executar migrações até concluir essas duas etapas e validar `prisma validate`, geração do client, build e testes.**
 
 Nunca usar `prisma migrate reset` como método de limpeza. A preparação correta é criar um banco vazio novo, não apagar o banco existente.
