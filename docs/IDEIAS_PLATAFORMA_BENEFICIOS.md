@@ -186,14 +186,24 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 - O servidor deve validar automaticamente se o prêmio está ativo, dentro do prazo e ainda não resgatado. Não haverá necessidade de autorização em tempo real do administrador geral ou do dono da loja.
 - A operação fica vinculada à loja credenciada que efetivamente realizou o resgate, à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
 
-### 11.3 Modalidades de recebimento conforme acordo comercial
+### 11.3 Saque e escolha da modalidade de pagamento
 
-- A modalidade disponível será definida pelo acordo comercial entre a plataforma e cada estabelecimento. O sistema deverá respeitar as modalidades habilitadas para a loja que está realizando o atendimento.
-- **Mercados e lojas com produtos:** a orientação preferencial poderá ser que o ganhador escolha mercadorias no estabelecimento, até o limite do valor do prêmio. No caixa, o valor do prêmio será aplicado como desconto na compra.
-- O consumidor poderá escolher os produtos que desejar, respeitando o limite do prêmio e as condições comerciais informadas.
-- **Estabelecimentos em que a entrega de mercadoria ou serviço não seja adequada**, como determinados serviços profissionais ou lojas especializadas, poderão habilitar recebimento em dinheiro/Pix, desde que isso esteja previsto no acordo comercial.
-- Um estabelecimento poderá oferecer mercadoria/desconto, dinheiro/Pix ou ambas as opções, conforme o convênio.
-- A modalidade acordada deve ser apresentada no APK antes da conclusão do resgate e informada ao consumidor nos termos da promoção.
+- Na tela do prêmio validado no APK da maquininha, haverá a ação **Sacar prêmio**.
+- O saque será direcionado à chave/conta Pix do proprietário do estabelecimento que está realizando o resgate, previamente cadastrada e validada na plataforma.
+- O saque é realizado pela maquininha, independentemente de o estabelecimento entregar mercadorias/desconto ou dinheiro ao consumidor. Em ambos os casos, o valor do prêmio é transferido para a conta Pix cadastrada do dono da loja, que realiza a entrega correspondente ao ganhador.
+- Ao acionar **Sacar prêmio**, o APK abre uma etapa de confirmação com duas opções mutuamente exclusivas:
+  1. **Pagar em mercadoria** — o estabelecimento entrega produtos ou concede desconto em uma compra até o limite do prêmio.
+  2. **Pagar em dinheiro** — o estabelecimento entrega o valor ao consumidor em dinheiro ou por Pix, conforme o atendimento acordado.
+- O funcionário seleciona somente uma das duas opções. O sistema não permite selecionar ambas.
+- Antes de concluir, o APK apresenta uma confirmação clara, por exemplo: **“Confirma o saque deste prêmio e o registro como pago em mercadoria?”** ou **“Confirma o saque deste prêmio e o registro como pago em dinheiro?”**
+- A confirmação final executa o saque para a conta Pix cadastrada do proprietário e registra a modalidade escolhida no histórico do prêmio.
+- A escolha da modalidade e a confirmação final constituem uma única operação. Após concluída, a modalidade não pode ser trocada, o saque não pode ser repetido e não pode ser registrada uma segunda forma de pagamento para o mesmo prêmio.
+- Se o funcionário cancelar antes da confirmação final, o prêmio permanece ativo e sem baixa, permitindo que a operação seja iniciada novamente.
+- Depois da confirmação e da conclusão do saque, o servidor registra a baixa definitiva do prêmio e bloqueia novas tentativas de resgate em qualquer loja ou maquininha.
+- O acordo comercial define se a loja pode pagar em mercadoria, dinheiro ou ambas as modalidades. O APK só apresenta opções habilitadas para o estabelecimento que está realizando o resgate.
+- O histórico deve permitir auditoria da modalidade escolhida: mercadoria/desconto ou dinheiro. Também deve registrar o valor, estabelecimento, maquininha, funcionário, chave/conta de destino identificada de forma protegida, data/hora e identificador da transação Pix.
+- A operação deve impedir resgates simultâneos ou duplicados, inclusive quando duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
+- **Ponto financeiro ainda pendente:** detalhar a origem dos recursos transferidos via Pix, a liquidação do saque e a conciliação/compensação financeira entre plataforma e estabelecimento. A regra funcional já definida é que a transferência do saque vai para a conta Pix previamente cadastrada do dono da loja que realizou o resgate.
 
 ### 11.4 Recuperação do prêmio quando o consumidor perde o cupom
 
