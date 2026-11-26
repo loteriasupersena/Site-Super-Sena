@@ -158,13 +158,67 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 - O QR Code impresso permite ao consumidor consultar o estado do cupom e verificar se foi contemplado.
 - A página pública de consulta não deve exibir o telefone nem outros dados pessoais do consumidor.
 - Se o consumidor perder o cupom ou esquecer de consultar o resultado, a loja deverá conseguir localizar o ganhador pelo contato registrado e comunicar que existe um prêmio a resgatar.
-- O administrador da loja acompanha os ganhadores dos sorteios da própria loja e registra as tentativas de contato e o andamento do resgate.
+- O administrador da loja acompanha os ganhadores dos sorteios da própria loja e registra as tentativas de contato e o andamento do resgate, mas não pode aprovar sozinho a entrega nem dar baixa definitiva no prêmio.
 - O administrador geral acompanha os mesmos indicadores e o status de todos os estabelecimentos.
-- O sistema deve registrar quando o ganhador foi avisado, quando compareceu e quando o prêmio foi efetivamente entregue.
+- O sistema deve registrar quando o ganhador foi avisado, quando compareceu, qual funcionário realizou a entrega e quando o prêmio foi efetivamente recebido e confirmado pelo consumidor.
 - A forma de entrega — dinheiro ou crédito/mercadoria na loja — e os procedimentos de validação da identidade do ganhador serão definidos em etapa posterior.
 - O resgate não deve ser considerado concluído apenas porque o sorteio foi realizado; é necessário registrar a entrega efetiva do prêmio.
 
-## 11. Regras essenciais de segurança e auditoria
+## 11. Controle antifraude e autorização de resgate de prêmios
+
+**Regra central: o administrador da loja não pode aprovar, liquidar ou dar baixa definitiva em um prêmio por conta própria. A conclusão do resgate depende do controle da plataforma e de evidências de confirmação do ganhador.**
+
+### 11.1 Acompanhamento do ganhador pela plataforma
+
+- Assim que um sorteio for concluído, o resultado e os dados do cupom ganhador devem aparecer no painel do administrador geral.
+- O painel deve destacar a loja responsável, o número/identificador do cupom, o valor integral da compra associado ao prêmio, a data/hora do sorteio e o contato cadastrado do consumidor.
+- O prêmio começa com status **aguardando contato/resgate**.
+- O administrador geral é responsável por acompanhar o ganhador e pode iniciar o contato diretamente com ele.
+- O administrador da loja pode visualizar o prêmio e acompanhar o processo, mas não pode ocultar o resultado, trocar o ganhador, alterar o contato cadastrado sem trilha de auditoria, nem marcar o prêmio como definitivamente entregue.
+
+### 11.2 Solicitação de resgate na loja
+
+- O ganhador pode comparecer à loja por iniciativa própria, mesmo que ainda não tenha sido contatado.
+- Nesse caso, a loja inicia uma **solicitação de resgate** no sistema, sem poder concluir a baixa.
+- A solicitação deve identificar o cupom premiado e a loja, e ficar registrada com data/hora e usuário/caixa que iniciou o atendimento.
+- O sistema deve verificar que o cupom é realmente o ganhador daquele sorteio e que o prêmio ainda não foi resgatado nem está bloqueado por outra solicitação.
+- A apresentação do QR Code impresso, isoladamente, não deve ser considerada prova suficiente de identidade do ganhador.
+
+### 11.3 Confirmação da identidade e do recebimento pelo consumidor
+
+- A confirmação deve usar o contato que foi registrado na emissão do cupom, por meio de código de uso único enviado ao telefone ou outro canal validado.
+- O código de confirmação deve ter validade limitada, ser de uso único e estar vinculado àquela solicitação de resgate. Não deve ser reutilizável em outro prêmio.
+- A loja deve conferir o código no fluxo de atendimento, mas a confirmação deve ficar registrada centralmente e ser visível ao administrador geral.
+- Depois da entrega física do dinheiro ou da mercadoria, o consumidor deve realizar uma segunda confirmação de recebimento, também de uso único, ou outro mecanismo equivalente aprovado pela plataforma.
+- A confirmação do consumidor é evidência de recebimento; não deve ser substituída por uma declaração unilateral do lojista.
+- Se o consumidor não tiver acesso ao telefone cadastrado, o caso deve ficar pendente e ser encaminhado ao administrador geral para verificação alternativa. A loja não pode dispensar a confirmação por conta própria.
+
+### 11.4 Autorização e baixa definitiva
+
+- O administrador da loja e seus funcionários não têm permissão para dar baixa definitiva, cancelar ou marcar o prêmio como pago/resgatado.
+- A plataforma mantém o controle central da situação do prêmio.
+- O administrador geral é o único perfil autorizado a aprovar a conclusão e registrar a baixa definitiva do prêmio, após verificar a confirmação do consumidor e os registros da entrega.
+- O sistema deve impedir tecnicamente que contas da loja executem essa ação, não bastando apenas uma orientação operacional.
+- A baixa deve guardar quem autorizou, quando autorizou, qual prêmio foi encerrado e quais evidências de confirmação foram utilizadas.
+- Cada prêmio só pode ser resgatado uma vez. Solicitações simultâneas, códigos repetidos ou tentativas de baixa duplicada devem ser bloqueados e registrados.
+
+### 11.5 Estados e alertas do prêmio
+
+O acompanhamento deve distinguir, no mínimo, os seguintes estados:
+
+1. **Sorteado — aguardando contato:** resultado gerado, ainda sem contato confirmado com o ganhador.
+2. **Contato realizado:** a plataforma registrou tentativa ou confirmação de aviso ao ganhador.
+3. **Solicitação de resgate aberta:** o ganhador compareceu ou iniciou o processo na loja.
+4. **Identidade em confirmação:** aguardando validação do código ou procedimento alternativo.
+5. **Aguardando entrega:** identidade confirmada, prêmio ainda não entregue.
+6. **Entrega informada pela loja:** a loja registrou que entregou, aguardando confirmação do consumidor e validação da plataforma.
+7. **Aguardando baixa da plataforma:** evidências recebidas, pendentes de análise pelo administrador geral.
+8. **Resgatado/encerrado:** baixa definitiva autorizada pelo administrador geral.
+9. **Em análise/contestação:** divergência, suspeita de fraude ou reclamação registrada.
+
+O painel geral deve destacar prêmios sem contato, solicitações pendentes, entregas sem confirmação do consumidor, casos em análise e prêmios aguardando baixa.
+
+## 12. Regras essenciais de segurança e auditoria
 
 1. A separação dos dados deve ser feita por loja; cada estabelecimento só acessa seus próprios registros.
 2. Cada maquininha/caixa possui credenciais próprias e só pode emitir cupons para a loja à qual está vinculada.
@@ -177,7 +231,7 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 9. Deve existir trilha de auditoria para emissões, fechamentos, pagamentos, liberações, formação dos lotes e sorteios.
 10. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
 
-## 12. Exemplo ilustrativo do fluxo
+## 13. Exemplo ilustrativo do fluxo
 
 1. Um supermercado possui cinco caixas, cada um com uma maquininha e credenciais próprias.
 2. Em cada caixa, o funcionário registra o valor da compra e emite o cupom com QR Code.
@@ -189,7 +243,7 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 8. O servidor processa o fechamento automaticamente e realiza 8 sorteios independentes, um para cada lote de 100 cupons.
 9. Outra loja mantém sua própria fila, seus próprios pagamentos e seus próprios sorteios, sem compartilhar cupons.
 
-## 13. Pontos que ainda precisam ser definidos
+## 14. Pontos que ainda precisam ser definidos
 
 - Se o percentual será único para todas as lojas ou configurável individualmente por estabelecimento, respeitando a faixa pretendida de 3% a 5%.
 - Se haverá limites ou regras comerciais específicas para a quantidade de lotes que uma loja pode fechar por vez.
@@ -198,6 +252,8 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 - Qual provedor Pix será utilizado e como ocorrerá a conciliação automática por webhook.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
 - Como será realizada a entrega do prêmio ao consumidor, em dinheiro ou mercadoria.
+- Qual canal será utilizado para enviar os códigos de uso único ao consumidor e qual procedimento alternativo será aceito quando ele não tiver acesso ao contato cadastrado.
+- Quais evidências adicionais poderão ser exigidas pela plataforma antes da baixa definitiva, especialmente para prêmios de maior valor.
 - Quais serão os dados e procedimentos de identificação do ganhador.
 
 ---
