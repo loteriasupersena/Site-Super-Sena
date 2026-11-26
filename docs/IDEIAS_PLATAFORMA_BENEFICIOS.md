@@ -72,8 +72,8 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Somente cupons pagos e liberados podem compor um lote.
 - O administrador da loja poderá escolher fechar um ou vários lotes de uma só vez, desde que existam cupons elegíveis suficientes. Por exemplo, poderá fechar 1 lote com 100 cupons ou 8 lotes com 800 cupons.
 - Cada lote de 100 cupons gera seu próprio sorteio e exatamente um ganhador.
-- O sorteio não depende de data, horário ou calendário periódico. Ele é disparado automaticamente após a confirmação do pagamento do fechamento correspondente.
-- A frequência prática dos sorteios será determinada pelo ritmo de emissão dos cupons e pelas decisões de fechamento e pagamento de cada loja, não por uma agenda fixa da plataforma.
+- Não haverá sorteios agendados por data ou horário no servidor. O sorteio será acionado automaticamente pelo webhook que confirmar o pagamento do fechamento.
+- A frequência dos sorteios será consequência do fluxo de cupons e das decisões de fechamento e pagamento de cada loja, conforme acordo comercial com a plataforma. A frequência acordada orienta a operação e a comunicação aos clientes, mas não agenda o sorteio no servidor.
 - O valor do prêmio associado ao cupom sorteado corresponde ao valor integral da compra registrada naquele cupom.
 - Os cupons elegíveis que ainda não foram incluídos em um fechamento permanecem disponíveis para fechamentos posteriores. Não podem ser usados em mais de um lote.
 
