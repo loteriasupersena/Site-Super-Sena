@@ -151,73 +151,81 @@ O painel deve apresentar, no mínimo:
 
 O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar seus caixas, cupons, fechamentos, lotes, sorteios e prêmios. A visualização dos dados operacionais não implica acesso às senhas dos usuários ou maquininhas.
 
-## 10. Consulta do cupom, contato e prazo para resgate
+## 10. Consulta do QR Code, comunicação e prazo do prêmio
 
-- O QR Code permite ao consumidor consultar o estado do cupom e verificar se foi contemplado.
+- A leitura do QR Code por um celular comum ou navegador serve **somente para consultar o resultado**: informa se o cupom foi premiado ou não e, se foi, apresenta o valor do prêmio e a orientação para resgatá-lo em um estabelecimento credenciado.
+- Na consulta pública do QR Code não haverá botão para iniciar resgate, confirmar recebimento, solicitar saque ou executar qualquer outra ação.
+- A mensagem para o ganhador deve orientar: **“Dirija-se preferencialmente à loja onde você recebeu este cupom para resgatar seu prêmio.”** A orientação favorece o estabelecimento que emitiu o cupom, mas não restringe o resgate a ele.
+- O prêmio poderá ser resgatado em qualquer estabelecimento credenciado que possua maquininha com o aplicativo autorizado para leitura e resgate. O estabelecimento de origem é recomendado, não obrigatório.
 - A consulta pública não deve exibir telefone nem outros dados pessoais do consumidor.
-- O contato informado na emissão fica vinculado ao cupom, protegido e com acesso restrito.
-- Quando houver um prêmio não resgatado, a plataforma poderá entrar em contato com o ganhador e orientá-lo a procurar um estabelecimento credenciado para realizar o resgate.
-- O consumidor não precisa necessariamente voltar à loja onde fez a compra: poderá procurar qualquer estabelecimento credenciado que esteja habilitado a realizar resgates, conforme as regras comerciais e operacionais cadastradas.
+- O contato informado na emissão fica vinculado ao cupom, protegido e com acesso restrito, para que a plataforma possa localizar e avisar o ganhador caso ele não procure o resgate.
 - O prazo para resgatar começa no momento em que o sorteio é realizado. O prêmio fica disponível por **30 dias corridos**.
-- Ao completar 30 dias sem resgate, o prêmio muda automaticamente para **expirado**. A expiração é executada por regra automática do sistema, sem depender de ação ou autorização manual.
-- Um prêmio expirado não pode ser resgatado pela apresentação posterior do QR Code.
-- A plataforma não pode antecipar, forçar ou registrar manualmente a baixa/expiração de um prêmio. A expiração ocorre exclusivamente pelo prazo automático definido.
-- Ainda será necessário definir um procedimento seguro para localizar e validar o ganhador que perdeu o cupom físico, sem expor dados pessoais na consulta pública.
+- Ao completar 30 dias sem resgate, o prêmio muda automaticamente para **expirado**. A expiração ocorre exclusivamente por regra automática do sistema, sem ação ou autorização manual de qualquer administrador.
+- Um prêmio expirado não pode ser resgatado pela leitura do QR Code original nem por uma segunda via.
+- Quando o prazo estiver próximo do fim e o prêmio ainda não tiver sido resgatado, a plataforma deverá tentar entrar em contato com o ganhador para avisá-lo e orientá-lo sobre o resgate. O momento exato dessa comunicação ainda será definido.
+- O procedimento de contato e recuperação para quem perdeu o cupom está descrito na seção 11.4.
 
-## 11. Resgate do prêmio no estabelecimento
+## 11. Resgate do prêmio exclusivamente pela maquininha credenciada
 
-**Princípio operacional: o resgate deve ser simples e funcionar no próprio estabelecimento, sem depender da disponibilidade do administrador geral da plataforma ou do dono da loja.**
+**Regra central: somente o aplicativo (APK) autorizado de uma maquininha vinculada a estabelecimento credenciado pode executar o resgate e dar baixa no prêmio. A consulta por celular comum é apenas informativa.**
 
-### 11.1 Início pelo consumidor
+### 11.1 Leitura informativa pelo consumidor
 
-- Ao consultar o QR Code e verificar que foi contemplado, o consumidor poderá clicar em **Iniciar resgate**.
-- A plataforma informa que o prêmio está disponível e orienta o consumidor a comparecer a um estabelecimento credenciado para recebê-lo.
-- O início do resgate não exige aprovação em tempo real do administrador geral.
-- O consumidor apresenta o QR Code premiado ao funcionário do estabelecimento credenciado.
+- O consumidor pode ler o QR Code com a câmera do celular ou abrir o endereço de consulta em um navegador.
+- A página apresenta apenas o resultado do cupom: não premiado ou premiado, o valor correspondente e a orientação para procurar um estabelecimento credenciado.
+- A página não oferece botões de iniciar resgate, confirmar recebimento, dar baixa ou sacar.
+- O QR Code de consulta não concede ao consumidor permissão para concluir a operação de resgate.
 
-### 11.2 Leitura e validação pela loja
+### 11.2 Leitura e resgate pelo aplicativo da loja
 
-- Um funcionário autorizado realiza a leitura do QR Code usando a maquininha/caixa ou outro dispositivo autorizado do estabelecimento.
-- A tela deve confirmar se o prêmio é válido, mostrar o valor correspondente e informar se está dentro do prazo de 30 dias e ainda não foi resgatado.
-- A validação deve ocorrer automaticamente pelo sistema. O funcionário não precisa ligar para o administrador geral nem aguardar uma liberação manual.
-- A leitura deve identificar o estabelecimento, a maquininha/caixa e o usuário que realizou a operação.
+- O ganhador apresenta o QR Code original ou sua representação digital na tela do celular.
+- Um funcionário usa o APK da maquininha de qualquer estabelecimento credenciado para ler o QR Code.
+- O APK consulta o servidor e apresenta a situação do prêmio, seu valor, validade e modalidades de resgate permitidas para o estabelecimento que está atendendo.
+- **Qualquer maquininha autorizada de qualquer estabelecimento credenciado poderá resgatar o prêmio**, não apenas a maquininha da loja que emitiu o cupom.
+- A loja de origem deve ser recomendada na mensagem ao ganhador, mas não pode ser uma restrição técnica para o resgate.
+- O servidor deve validar automaticamente se o prêmio está ativo, dentro do prazo e ainda não resgatado. Não haverá necessidade de autorização em tempo real do administrador geral ou do dono da loja.
+- A operação fica vinculada à loja credenciada que efetivamente realizou o resgate, à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
 
-### 11.3 Forma de recebimento conforme acordo com o estabelecimento
+### 11.3 Modalidades de recebimento conforme acordo comercial
 
-- A forma de recebimento será definida no acordo comercial entre a plataforma e cada estabelecimento. Não haverá uma única modalidade obrigatória para todos os tipos de comércio.
-- **Mercados e lojas com produtos:** a orientação preferencial poderá ser que o ganhador escolha mercadorias no próprio estabelecimento, até o limite do valor do prêmio. No caixa, o valor do prêmio será aplicado como desconto na compra.
-- O consumidor poderá escolher os produtos que desejar, respeitando o limite do prêmio e as condições comerciais informadas. O valor do prêmio deve estar explícito na consulta do cupom.
-- **Estabelecimentos em que a entrega de mercadoria ou serviço não seja adequada**, como determinados serviços profissionais ou lojas especializadas, poderão operar com recebimento em dinheiro/Pix, desde que essa modalidade esteja prevista no acordo com a plataforma.
-- Um estabelecimento poderá ter regras comerciais próprias de recebimento, inclusive oferecer ao ganhador a opção entre mercadoria e dinheiro, se isso estiver previsto no convênio.
-- As condições aplicáveis devem ser informadas ao consumidor nos termos da promoção e na consulta do prêmio, antes de ele se dirigir ao estabelecimento.
+- A modalidade disponível será definida pelo acordo comercial entre a plataforma e cada estabelecimento. O sistema deverá respeitar as modalidades habilitadas para a loja que está realizando o atendimento.
+- **Mercados e lojas com produtos:** a orientação preferencial poderá ser que o ganhador escolha mercadorias no estabelecimento, até o limite do valor do prêmio. No caixa, o valor do prêmio será aplicado como desconto na compra.
+- O consumidor poderá escolher os produtos que desejar, respeitando o limite do prêmio e as condições comerciais informadas.
+- **Estabelecimentos em que a entrega de mercadoria ou serviço não seja adequada**, como determinados serviços profissionais ou lojas especializadas, poderão habilitar recebimento em dinheiro/Pix, desde que isso esteja previsto no acordo comercial.
+- Um estabelecimento poderá oferecer mercadoria/desconto, dinheiro/Pix ou ambas as opções, conforme o convênio.
+- A modalidade acordada deve ser apresentada no APK antes da conclusão do resgate e informada ao consumidor nos termos da promoção.
 
-### 11.4 Pagamento em dinheiro/Pix e operação da maquininha
+### 11.4 Recuperação do prêmio quando o consumidor perde o cupom
 
-- Quando o acordo do estabelecimento permitir pagamento em dinheiro/Pix, a operação será iniciada exclusivamente pela maquininha/caixa autorizada.
-- A maquininha terá a função específica de **Sacar/Resgatar prêmio**, vinculada ao prêmio validado e ao estabelecimento que está realizando o atendimento.
-- O destino Pix será uma conta previamente cadastrada e validada do proprietário do estabelecimento. Não poderá ser escolhido livremente pelo operador no momento do saque.
-- O administrador geral da plataforma e o administrador da loja não terão um botão ou permissão para realizar esse saque manualmente; a operação deverá partir da maquininha autorizada.
-- A operação deve estar vinculada ao QR Code premiado, ao valor, à loja, à maquininha e ao funcionário responsável.
-- A conclusão do saque deve impedir novo resgate do mesmo prêmio e registrar a operação para auditoria.
-- **Ponto técnico a esclarecer antes da implementação:** o fluxo financeiro exato desse saque, incluindo quem recebe o Pix, quem efetivamente entrega o dinheiro ao consumidor e como a plataforma compensa/reembolsa o estabelecimento, precisa ser especificado. O destino informado nesta decisão é a conta Pix previamente cadastrada do proprietário da loja.
+- A plataforma acompanhará os prêmios que continuam sem resgate e poderá entrar em contato diretamente com o ganhador usando o contato registrado na emissão.
+- A mensagem informará que o consumidor foi contemplado, indicará o valor do prêmio e avisará que ele ainda está disponível para resgate em qualquer estabelecimento credenciado habilitado.
+- A mensagem poderá ser enviada pelo WhatsApp e conter um link individual e seguro para consultar o resultado do prêmio.
+- Ao abrir o link, o consumidor verá a página com o resultado premiado e uma **segunda via digital do QR Code original**, correspondente ao mesmo cupom e ao mesmo prêmio.
+- O consumidor poderá manter o link ou apresentar a tela/print da segunda via na loja. O funcionário fará a leitura desse QR Code pelo APK da maquininha, como faria com o QR Code impresso original.
+- A segunda via não cria um novo cupom, não altera o identificador, não aumenta o valor e não reinicia o prazo. É apenas outra forma de apresentar o mesmo QR Code já emitido.
+- O link deve ser individual, difícil de adivinhar e protegido contra alteração ou reutilização para criar um prêmio novo. A validade do link de recuperação e os controles adicionais de identidade ainda serão especificados.
+- A recuperação do QR Code não permite resgate por celular comum: a baixa continua restrita ao APK de uma maquininha credenciada.
 
-### 11.5 Baixa do prêmio, prevenção de duplicidade e divergências
+### 11.5 Baixa automática pela operação de resgate
 
-- A baixa operacional do prêmio ocorre como consequência de uma operação válida de resgate registrada pela maquininha/caixa, seja pela aplicação do desconto na compra, seja pelo fluxo de dinheiro/Pix habilitado para aquele estabelecimento.
-- Não haverá uma ação discricionária do administrador geral para marcar um prêmio como resgatado ou expirado.
-- A plataforma não poderá dar baixa manual em um prêmio apenas por decisão administrativa.
-- O sistema deve impedir tecnicamente que o mesmo prêmio seja utilizado duas vezes, inclusive em estabelecimentos diferentes ou em operações simultâneas.
-- Cada tentativa e operação de resgate deve gerar registro de auditoria com data/hora, loja, maquininha, funcionário, modalidade, valor e resultado.
-- Se houver divergência entre consumidor e estabelecimento, a ocorrência deverá ser registrada para análise, sem permitir uma segunda utilização do prêmio enquanto a situação estiver sendo verificada. O procedimento de contestação e seus efeitos ainda precisam ser detalhados.
-- O resgate deve funcionar automaticamente em qualquer estabelecimento credenciado habilitado, sem exigir que o administrador geral esteja disponível naquele momento.
+- A baixa do prêmio acontece no servidor como consequência de uma operação válida concluída pelo APK da maquininha.
+- Não haverá botão ou permissão para o administrador geral ou o administrador da loja dar baixa manualmente em um prêmio.
+- No caso de mercadorias/desconto, o funcionário registra a aplicação do valor do prêmio na compra e conclui o resgate no APK.
+- No caso de dinheiro/Pix, o funcionário usa a função de saque/resgate disponível no APK, respeitando o acordo e a conta de destino previamente cadastrada para o estabelecimento que está atendendo.
+- O saque em dinheiro/Pix só pode ser iniciado pelo APK da maquininha autorizada. Não poderá ser iniciado pelo painel do administrador geral, pelo painel da loja ou por um celular comum.
+- A conclusão da operação deve invalidar imediatamente novas tentativas de resgate daquele prêmio em qualquer outra loja ou maquininha.
+- O servidor deve impedir resgates simultâneos ou duplicados, mesmo se duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
+- Cada operação deve gerar trilha de auditoria com data/hora, identificador do prêmio, estabelecimento que resgatou, maquininha, funcionário, modalidade, valor e resultado.
+- **Ponto financeiro ainda pendente:** detalhar como o saque Pix é liquidado, quem recebe os valores em cada etapa e como o estabelecimento que realizou o resgate é compensado. A conta de destino deve ser previamente cadastrada e validada para aquele estabelecimento.
 
 ## 12. Acordos comerciais por estabelecimento
 
 - Cada estabelecimento terá um acordo comercial com a plataforma que definirá as modalidades de resgate aceitas naquele local: mercadorias/desconto, dinheiro/Pix ou ambas.
 - A modalidade poderá variar conforme a natureza do negócio. Exemplo: supermercado pode priorizar mercadorias com desconto; uma autopeça ou consultório pode habilitar pagamento em dinheiro/Pix quando não fizer sentido entregar outro produto ou serviço.
-- A regra comercial acordada deve ser cadastrada na plataforma para que a consulta do prêmio e a maquininha apresentem somente as opções válidas para aquele estabelecimento.
-- O acordo deve deixar claras as condições ao consumidor, inclusive se há escolha entre modalidades ou uma modalidade preferencial/única.
-- O funcionamento técnico deve respeitar o acordo cadastrado, mas a escolha do modelo comercial de cada loja será formalizada entre o estabelecimento e a plataforma.
+- O acordo comercial da loja que efetivamente realizar o resgate determina quais modalidades seu APK poderá oferecer.
+- O prêmio pode ser resgatado em qualquer estabelecimento credenciado habilitado, independentemente de qual loja emitiu o cupom.
+- A mensagem ao ganhador deve recomendar primeiro a loja de origem, sem impedir que ele procure outra loja credenciada.
+- As condições do acordo devem estar claras para o consumidor nos termos da promoção e na consulta do prêmio.
 
 ## 12. Regras essenciais de segurança e auditoria
 
@@ -252,10 +260,10 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 - Se será permitido pagamento parcial. A regra descrita pressupõe pagamento integral do fechamento antes do processamento dos lotes nele incluídos.
 - Qual provedor Pix será utilizado e como ocorrerá a conciliação automática por webhook.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
-- Como será realizada a entrega do prêmio ao consumidor, em dinheiro ou mercadoria.
-- Qual canal será utilizado para enviar os códigos de uso único ao consumidor e qual procedimento alternativo será aceito quando ele não tiver acesso ao contato cadastrado.
-- Quais evidências adicionais poderão ser exigidas pela plataforma antes da baixa definitiva, especialmente para prêmios de maior valor.
-- Quais serão os dados e procedimentos de identificação do ganhador.
+- Como será liquidado financeiramente o saque Pix e como será compensado o estabelecimento que realizou o resgate.
+- Com quantos dias de antecedência do vencimento a plataforma tentará avisar o ganhador.
+- Como será validado o acesso ao link individual de recuperação do QR Code e por quanto tempo esse link ficará disponível.
+- Como tratar tecnicamente uma contestação de resgate sem permitir duplicidade ou baixa manual.
 
 ---
 
