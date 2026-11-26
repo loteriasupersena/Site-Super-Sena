@@ -14,6 +14,14 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 
 ### 2.1 Administrador geral da plataforma
 
+- O administrador geral possui acesso global à plataforma e é responsável por cadastrar, ativar, editar, suspender e administrar os estabelecimentos.
+- A hierarquia de cadastro é obrigatória: **o administrador geral cadastra as lojas; cada loja cadastra e administra suas próprias maquininhas/caixas**. A loja não cadastra outras lojas.
+- O administrador geral deve ter visão operacional de todas as lojas, incluindo os dados e resultados produzidos por suas maquininhas.
+- O administrador geral pode consultar quantas maquininhas cada loja possui, quantos cupons cada maquininha emitiu, o total emitido por loja, os valores acumulados, os lotes disponíveis, os fechamentos, os pagamentos, os sorteios e a situação dos prêmios.
+- O administrador geral deve conseguir acompanhar se cada loja está realizando fechamentos e pagamentos, se os sorteios foram processados corretamente pelo servidor e se existem prêmios aguardando contato ou entrega.
+- O administrador geral precisa de acesso aos resultados operacionais e indicadores das maquininhas, mas não precisa visualizar as senhas dos caixas. As credenciais individuais são administradas pela loja e devem permanecer protegidas.
+- O administrador geral não deve depender do administrador da loja para obter os indicadores operacionais: essas informações devem ser registradas centralmente e apresentadas no painel geral.
+
 - Existe um administrador geral, responsável pela administração central da plataforma.
 - O administrador geral cadastra e gerencia os administradores dos estabelecimentos.
 - O administrador geral controla as configurações gerais e os parâmetros permitidos da plataforma.
@@ -25,7 +33,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Cada estabelecimento possui sua própria área administrativa, acessível pelo celular ou outro dispositivo autorizado.
 - O administrador da loja é o responsável pelo estabelecimento e pode acompanhar somente os dados da própria loja.
 - Essa área é destinada à administração da loja: acompanhar movimento, vendas registradas, cupons emitidos, lotes, valores devidos, pagamentos e histórico de sorteios.
-- O administrador da loja administra os caixas/maquininhas vinculados ao estabelecimento, criando ou gerenciando seus acessos.
+- O administrador da loja cadastra e administra exclusivamente as maquininhas/caixas vinculados ao próprio estabelecimento, incluindo seus acessos.
 - O administrador da loja escolhe quantos lotes completos deseja incluir em cada fechamento, respeitando a quantidade de cupons elegíveis e ainda não fechados.
 - A área administrativa da loja não é a interface usada no caixa para registrar compras e emitir cupons.
 
@@ -36,7 +44,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Cada emissão fica vinculada à loja e ao caixa/maquininha que a realizou, permitindo identificar a origem de cada cupom.
 - Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado.
 - Uma loja pequena também pode operar com apenas uma maquininha.
-- O dono pode ser o único administrador da loja e, se também realizar vendas, utilizar separadamente um acesso de caixa/maquininha para emitir cupons.
+- O dono pode ser o único administrador da loja. Se também realizar vendas e emitir cupons, deverá utilizar o acesso operacional de uma maquininha/caixa, separado do acesso administrativo.
 - O acesso administrativo da loja pode ser feito pelo celular; a emissão de cupons ocorre pela interface de caixa/maquininha.
 - As funções administrativas e as funções de emissão não devem ser misturadas em uma única área.
 
@@ -47,11 +55,13 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área de administração geral.
 - A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador geral. Ainda será definido se a configuração será geral ou individual por loja.
 - Exemplo: compra de **R$ 100,00** com percentual de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
+- Antes de emitir o cupom, a interface de caixa registra o contato fornecido pelo consumidor, além do valor da compra. O contato deve permitir que a loja localize o cliente caso ele perca o cupom ou não consulte o resultado.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
 - O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
 - O valor devido à plataforma não reduz o valor do prêmio. No exemplo, se o cupom for sorteado, o valor de referência do prêmio será **R$ 100,00**, e não R$ 5,00.
 - A forma de entrega do prêmio — dinheiro ou mercadoria — será definida posteriormente e não faz parte das regras técnicas de sorteio desta etapa.
 - Cada cupom deve ser individual e não pode ser duplicado.
+- O contato do consumidor deve ficar associado ao cupom com proteção adequada, acesso restrito e finalidade limitada à comunicação sobre o resultado e o resgate do prêmio. O contato não deve ficar exposto publicamente na consulta do QR Code.
 
 ## 4. Regra única de sorteio: lotes fechados de 100 cupons
 
@@ -121,7 +131,40 @@ O administrador da loja deve conseguir consultar:
 - Cadastro, situação e acessos das maquininhas/caixas vinculados à loja.
 - Opção para escolher a quantidade de lotes, realizar o fechamento e gerar o QR Code Pix da cobrança.
 
-## 9. Regras essenciais de segurança e auditoria
+## 9. Painel do administrador geral
+
+O administrador geral precisa de um painel central de acompanhamento de toda a operação. As informações essenciais devem estar visíveis em indicadores e listas, sem exigir que ele procure manualmente em cada área.
+
+O painel deve apresentar, no mínimo:
+
+- Quantidade de lojas cadastradas, ativas e suspensas.
+- Para cada loja: quantidade de maquininhas cadastradas e situação de cada uma.
+- Quantidade de cupons emitidos por loja e por maquininha, com filtros por período.
+- Valores das compras registrados, percentual devido à plataforma, valores em aberto e valores pagos.
+- Quantidade de cupons pendentes de pagamento, elegíveis e já utilizados em lotes.
+- Quantidade de lotes disponíveis, em fechamento, aguardando pagamento, pagos e sorteados.
+- Histórico de fechamentos e pagamentos de cada loja.
+- Histórico de sorteios por loja e por lote, incluindo status do processamento e resultado.
+- Identificação do cupom ganhador, valor da compra associado e contato do consumidor, com acesso restrito.
+- Situação do contato com o ganhador e do resgate/entrega do prêmio: pendente de contato, avisado, aguardando comparecimento, entregue ou ocorrência registrada.
+- Alertas para pagamentos pendentes, falhas de processamento, sorteios que não foram concluídos e prêmios ainda não resgatados.
+
+O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar seus caixas, cupons, fechamentos, lotes, sorteios e prêmios. A visualização dos dados operacionais não implica acesso às senhas dos usuários ou maquininhas.
+
+## 10. Contato do consumidor, consulta do cupom e resgate do prêmio
+
+- No registro da compra para emissão do cupom, a interface da maquininha deve solicitar um meio de contato do consumidor, como telefone celular. O campo e o formato exatos ainda serão definidos.
+- O contato fica vinculado ao cupom e deve ser armazenado com proteção e acesso restrito.
+- O QR Code impresso permite ao consumidor consultar o estado do cupom e verificar se foi contemplado.
+- A página pública de consulta não deve exibir o telefone nem outros dados pessoais do consumidor.
+- Se o consumidor perder o cupom ou esquecer de consultar o resultado, a loja deverá conseguir localizar o ganhador pelo contato registrado e comunicar que existe um prêmio a resgatar.
+- O administrador da loja acompanha os ganhadores dos sorteios da própria loja e registra as tentativas de contato e o andamento do resgate.
+- O administrador geral acompanha os mesmos indicadores e o status de todos os estabelecimentos.
+- O sistema deve registrar quando o ganhador foi avisado, quando compareceu e quando o prêmio foi efetivamente entregue.
+- A forma de entrega — dinheiro ou crédito/mercadoria na loja — e os procedimentos de validação da identidade do ganhador serão definidos em etapa posterior.
+- O resgate não deve ser considerado concluído apenas porque o sorteio foi realizado; é necessário registrar a entrega efetiva do prêmio.
+
+## 11. Regras essenciais de segurança e auditoria
 
 1. A separação dos dados deve ser feita por loja; cada estabelecimento só acessa seus próprios registros.
 2. Cada maquininha/caixa possui credenciais próprias e só pode emitir cupons para a loja à qual está vinculada.
@@ -134,7 +177,7 @@ O administrador da loja deve conseguir consultar:
 9. Deve existir trilha de auditoria para emissões, fechamentos, pagamentos, liberações, formação dos lotes e sorteios.
 10. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
 
-## 10. Exemplo ilustrativo do fluxo
+## 12. Exemplo ilustrativo do fluxo
 
 1. Um supermercado possui cinco caixas, cada um com uma maquininha e credenciais próprias.
 2. Em cada caixa, o funcionário registra o valor da compra e emite o cupom com QR Code.
@@ -146,7 +189,7 @@ O administrador da loja deve conseguir consultar:
 8. O servidor processa o fechamento automaticamente e realiza 8 sorteios independentes, um para cada lote de 100 cupons.
 9. Outra loja mantém sua própria fila, seus próprios pagamentos e seus próprios sorteios, sem compartilhar cupons.
 
-## 11. Pontos que ainda precisam ser definidos
+## 13. Pontos que ainda precisam ser definidos
 
 - Se o percentual será único para todas as lojas ou configurável individualmente por estabelecimento, respeitando a faixa pretendida de 3% a 5%.
 - Se haverá limites ou regras comerciais específicas para a quantidade de lotes que uma loja pode fechar por vez.
