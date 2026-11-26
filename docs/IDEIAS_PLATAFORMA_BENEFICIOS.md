@@ -8,124 +8,154 @@ Criar uma plataforma de promoções para estabelecimentos comerciais. A loja reg
 
 O valor informado da compra serve como base para calcular o percentual devido à plataforma e também fica associado ao cupom como valor do prêmio correspondente. Não haverá apostas por dezenas, centenas ou outras faixas numéricas.
 
-## 2. Cadastro e hierarquia da loja
+## 2. Hierarquia de usuários e áreas do sistema
 
-- A plataforma cadastra cada estabelecimento na área **Administração**.
-- Cada loja possui uma conta própria, com um usuário responsável: o dono ou administrador da loja.
-- O administrador da loja pode cadastrar e gerenciar os funcionários que trabalham naquele estabelecimento.
-- Cada funcionário possui seu próprio acesso e fica vinculado exclusivamente à loja que o cadastrou.
-- O dono/administrador também pode registrar compras e emitir cupons usando o próprio acesso.
-- Funcionários de uma loja não podem visualizar ou operar dados de outra loja.
+A plataforma terá áreas separadas, com funções e permissões distintas.
+
+### 2.1 Administrador geral da plataforma
+
+- Existe um administrador geral, responsável pela administração central da plataforma.
+- O administrador geral cadastra e gerencia os administradores dos estabelecimentos.
+- O administrador geral controla as configurações gerais e os parâmetros permitidos da plataforma.
+- O administrador geral pode consultar e administrar os estabelecimentos conforme suas permissões.
+- Um administrador de loja não pode acessar a administração geral nem os dados administrativos de outras lojas.
+
+### 2.2 Administrador da loja
+
+- Cada estabelecimento possui sua própria área administrativa, acessível pelo celular ou outro dispositivo autorizado.
+- O administrador da loja é o responsável pelo estabelecimento e pode acompanhar somente os dados da própria loja.
+- Essa área é destinada à administração da loja: acompanhar movimento, vendas registradas, cupons emitidos, lotes, valores devidos, pagamentos e histórico de sorteios.
+- O administrador da loja administra os caixas/maquininhas vinculados ao estabelecimento, criando ou gerenciando seus acessos.
+- O administrador da loja escolhe quantos lotes completos deseja incluir em cada fechamento, respeitando a quantidade de cupons elegíveis e ainda não fechados.
+- A área administrativa da loja não é a interface usada no caixa para registrar compras e emitir cupons.
+
+### 2.3 Caixas/maquininhas e funcionários
+
+- Cada maquininha ou caixa terá seu próprio login e senha.
+- O acesso da maquininha é usado pelo funcionário responsável para registrar o valor da compra e emitir o cupom com QR Code.
+- Cada emissão fica vinculada à loja e ao caixa/maquininha que a realizou, permitindo identificar a origem de cada cupom.
+- Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado.
+- Uma loja pequena também pode operar com apenas uma maquininha.
+- O dono pode ser o único administrador da loja e, se também realizar vendas, utilizar separadamente um acesso de caixa/maquininha para emitir cupons.
+- O acesso administrativo da loja pode ser feito pelo celular; a emissão de cupons ocorre pela interface de caixa/maquininha.
+- As funções administrativas e as funções de emissão não devem ser misturadas em uma única área.
 
 ## 3. Registro de compras, percentual e emissão de cupons
 
-- No momento da venda, o funcionário ou responsável informa na plataforma o valor da compra realizada pelo consumidor.
+- No momento da venda, o funcionário ou responsável informa na maquininha o valor da compra realizada pelo consumidor.
 - O valor informado representa o valor integral da compra e fica associado ao cupom.
-- A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área **Administração**.
-- A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador. Ainda será definido se a configuração será geral ou individual por loja.
+- A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área de administração geral.
+- A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador geral. Ainda será definido se a configuração será geral ou individual por loja.
 - Exemplo: compra de **R$ 100,00** com percentual de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
-- O consumidor recebe um cupom com QR Code. O cupom registra, entre outros dados, o valor integral da compra, a loja, a data/hora e um identificador único.
+- A maquininha emite um cupom individual com QR Code para o consumidor.
+- O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
 - O valor devido à plataforma não reduz o valor do prêmio. No exemplo, se o cupom for sorteado, o valor de referência do prêmio será **R$ 100,00**, e não R$ 5,00.
 - A forma de entrega do prêmio — dinheiro ou mercadoria — será definida posteriormente e não faz parte das regras técnicas de sorteio desta etapa.
 - Cada cupom deve ser individual e não pode ser duplicado.
 
-## 4. Regra única de sorteio: grupos de 100 cupons
+## 4. Regra única de sorteio: lotes fechados de 100 cupons
 
 - Não haverá mais as modalidades antigas de Unidade, Dezena, Centena, Milhar, Quina ou Sena.
 - Não haverá multiplicadores.
-- A promoção terá uma única regra de premiação: **1 ganhador para cada grupo completo de 100 cupons válidos**.
-- Os grupos serão formados somente com cupons elegíveis, isto é, cupons cuja parte financeira tenha sido paga e confirmada.
-- Cada grupo completo de 100 cupons elegíveis terá um sorteio e exatamente um ganhador.
-- Os grupos serão organizados separadamente para cada estabelecimento. Cupons de lojas diferentes nunca serão misturados no mesmo grupo ou sorteio.
-- A periodicidade dos sorteios ainda não está definida. Poderá ser diária, semanal, mensal ou outra frequência acordada entre a plataforma e cada estabelecimento.
-- O sistema deverá permitir configurar a periodicidade por estabelecimento, conforme o acordo comercial, sem fixar agora uma frequência única para todos.
-- O sorteio não poderá incluir cupons emitidos que ainda estejam pendentes de pagamento.
-- O valor do prêmio associado a cada cupom corresponde ao valor integral da compra registrada naquele cupom.
+- A promoção terá uma única regra: **cada lote fechado contém 100 cupons elegíveis e gera um ganhador**.
+- Os lotes são exclusivos de cada estabelecimento. Cupons de lojas diferentes nunca serão misturados no mesmo lote ou sorteio.
+- Somente cupons pagos e liberados podem compor um lote.
+- O administrador da loja poderá escolher fechar um ou vários lotes de uma só vez, desde que existam cupons elegíveis suficientes. Por exemplo, poderá fechar 1 lote com 100 cupons ou 8 lotes com 800 cupons.
+- Cada lote de 100 cupons gera seu próprio sorteio e exatamente um ganhador.
+- O sorteio não depende de data, horário ou calendário periódico. Ele é disparado automaticamente após a confirmação do pagamento do fechamento correspondente.
+- A frequência prática dos sorteios será determinada pelo ritmo de emissão dos cupons e pelas decisões de fechamento e pagamento de cada loja, não por uma agenda fixa da plataforma.
+- O valor do prêmio associado ao cupom sorteado corresponde ao valor integral da compra registrada naquele cupom.
+- Os cupons elegíveis que ainda não foram incluídos em um fechamento permanecem disponíveis para fechamentos posteriores. Não podem ser usados em mais de um lote.
 
 ## 5. Fechamentos financeiros e pagamento da loja
 
-- A loja poderá registrar vendas continuamente durante o período acordado: por exemplo, durante um dia, uma semana ou um mês.
-- No momento combinado, o dono/administrador fará o fechamento financeiro dos cupons emitidos e ainda não pagos.
-- A plataforma calculará o total devido com base na soma dos percentuais aplicados aos valores das compras incluídas no fechamento.
-- O fechamento gera uma cobrança Pix, apresentada por QR Code, para a loja pagar à plataforma.
-- Cada fechamento deve manter sua própria identificação, relação de cupons, valores, data e situação do pagamento.
-- A loja poderá deixar valores acumularem por mais de um período e quitá-los posteriormente, conforme o acordo entre a plataforma e o estabelecimento.
-- Cupons pendentes não expiram automaticamente por falta de pagamento. Permanecem registrados e fora dos sorteios até que o pagamento correspondente seja confirmado.
-- Quando a loja quitar um fechamento acumulado, os cupons incluídos nele poderão ser liberados, mesmo que tenham sido emitidos em períodos anteriores.
-- A periodicidade de pagamento e a periodicidade dos sorteios serão definidas no acordo entre a plataforma e cada estabelecimento.
+- A loja poderá registrar compras e emitir cupons continuamente.
+- Na área administrativa, o dono acompanha quantos cupons estão disponíveis e quantos lotes completos podem ser fechados.
+- O administrador da loja decide quantos lotes deseja fechar e pagar de uma vez: por exemplo, 100 cupons (1 lote), 200 (2 lotes) ou 800 (8 lotes).
+- O sistema deve permitir selecionar somente quantidades correspondentes a lotes completos de 100 cupons elegíveis.
+- O sistema calcula o valor devido à plataforma com base na soma dos percentuais aplicados aos valores das compras dos cupons incluídos no fechamento.
+- Antes de pagar, o administrador visualiza a quantidade de lotes, a lista ou relação dos cupons incluídos e o valor total da cobrança.
+- Ao confirmar o fechamento, a plataforma gera uma cobrança Pix com QR Code para pagamento.
+- Cada fechamento mantém identificação própria, quantidade de lotes, relação exata dos cupons, valores, data e situação do pagamento.
+- Os cupons que não forem incluídos naquele fechamento permanecem disponíveis na fila da mesma loja para um fechamento futuro.
+- Cupons emitidos e ainda não pagos não expiram automaticamente. Permanecem registrados e fora dos sorteios até serem incluídos em fechamento pago.
+- A loja poderá acumular cupons por quanto tempo for necessário antes de fechar e pagar, conforme o acordo comercial entre a plataforma e o estabelecimento.
 
-## 6. Confirmação do pagamento e liberação dos cupons
+## 6. Confirmação do pagamento e disparo automático dos sorteios
 
 - A geração do QR Code Pix, por si só, não confirma o pagamento.
-- A plataforma deve confirmar o recebimento por meio da integração com o provedor de pagamento.
-- Após a confirmação efetiva, o sistema associa o pagamento ao fechamento correspondente.
-- **Somente os cupons incluídos no fechamento efetivamente pago são liberados** para participar dos sorteios.
-- Cupons de fechamentos ainda não pagos permanecem emitidos, registrados e pendentes, mas não podem entrar nos grupos de sorteio.
-- Se uma loja deixar de pagar durante uma ou mais semanas ou períodos, seus cupons continuam acumulados e válidos, sem participar dos sorteios enquanto não houver pagamento.
-- Quando o pagamento atrasado for confirmado, os cupons daquele fechamento passam a ficar elegíveis para formar grupos de 100 daquela mesma loja.
+- A plataforma deve confirmar o recebimento por meio da integração com o provedor de pagamento, usando o webhook de confirmação.
+- **O fechamento só é considerado pago após a confirmação efetiva do provedor.**
+- Quando o webhook confirmar o pagamento, o servidor deverá processar automaticamente o fechamento correspondente.
+- O sistema libera os cupons incluídos naquele fechamento e executa automaticamente um sorteio independente para cada lote de 100 cupons incluído.
+- Exemplo: se o fechamento pago contiver 800 cupons, o sistema processará 8 lotes e realizará 8 sorteios, cada um com 100 cupons e um ganhador.
+- Não será necessário que o administrador da loja acione manualmente o sorteio depois do pagamento.
+- Cupons que não fazem parte daquele fechamento não podem ser liberados nem sorteados por causa daquele pagamento.
 - O pagamento de uma loja não libera cupons de outro estabelecimento.
-- Um pagamento não pode liberar cupons de outro fechamento nem ser utilizado duas vezes.
-- A confirmação deve ser registrada de forma segura, com identificação da transação e histórico de auditoria.
+- Um pagamento não pode ser utilizado duas vezes nem disparar novamente sorteios já processados.
+- O processamento do webhook deve ser idempotente: notificações repetidas não podem duplicar pagamentos, lotes ou sorteios.
+- Cada sorteio deve guardar o lote exato de 100 cupons participantes, o resultado, a data/hora de processamento e os registros técnicos necessários para auditoria.
 
 ## 7. Separação por estabelecimento
 
-- Cada estabelecimento terá sua própria base lógica de cupons, fila de participação, grupos de 100 e sorteios.
-- Os consumidores de uma loja concorrem somente nos grupos formados com cupons elegíveis daquela mesma loja.
-- Os cupons da Loja X não podem ser usados para completar um grupo da Loja Y, e vice-versa.
-- Se a Loja X não pagar, os cupons dela permanecem fora dos sorteios, mesmo que outras lojas estejam em dia e realizando seus sorteios normalmente.
+- Cada estabelecimento terá sua própria fila de cupons elegíveis, seus próprios lotes, fechamentos, pagamentos e sorteios.
+- Os consumidores de uma loja concorrem somente nos lotes formados com cupons daquela mesma loja.
+- Os cupons da Loja X não podem ser usados para completar um lote da Loja Y, e vice-versa.
+- Se a Loja X não pagar, seus cupons permanecem fora dos sorteios, mesmo que outras lojas estejam em dia e realizando seus sorteios normalmente.
 - O funcionamento de uma loja não deve bloquear nem alterar a participação de outra.
 - A elegibilidade deve ser verificada por cupom, estabelecimento e confirmação financeira correspondente.
 
 ## 8. Painel do administrador da loja
 
-O dono/administrador deve conseguir consultar:
+O administrador da loja deve conseguir consultar:
 
 - Total de compras registradas pela loja.
-- Quantidade de cupons emitidos, pendentes e liberados.
-- Histórico de compras e cupons.
-- Funcionário responsável por cada emissão.
+- Quantidade de cupons emitidos, pendentes de pagamento e elegíveis.
+- Quantidade de lotes completos disponíveis para fechamento.
+- Quantos lotes foram fechados, pagos e sorteados.
+- Histórico de compras e cupons, identificando a maquininha/caixa e o funcionário responsável.
 - Valores acumulados e percentual devido à plataforma.
-- Fechamentos realizados, com seus respectivos cupons e valores.
-- Situação de cada fechamento: pendente, aguardando confirmação ou pago/liberado.
-- Grupos de 100 formados, cupons participantes e histórico de sorteios da própria loja.
-- Periodicidade de pagamento e de sorteio acordada para a loja.
-- Opção para iniciar um novo fechamento e gerar o QR Code Pix da cobrança.
+- Fechamentos realizados, com seus respectivos lotes, cupons e valores.
+- Situação de cada fechamento: aberto, aguardando pagamento, pago/processado.
+- Histórico dos sorteios e respectivos ganhadores da própria loja.
+- Cadastro, situação e acessos das maquininhas/caixas vinculados à loja.
+- Opção para escolher a quantidade de lotes, realizar o fechamento e gerar o QR Code Pix da cobrança.
 
 ## 9. Regras essenciais de segurança e auditoria
 
 1. A separação dos dados deve ser feita por loja; cada estabelecimento só acessa seus próprios registros.
-2. Cada cupom deve estar vinculado a uma loja, a uma compra, a uma emissão e ao fechamento financeiro correspondente.
-3. O sistema não deve liberar cupons com base apenas em comprovante enviado ou informação visual de pagamento.
-4. A liberação depende da confirmação da transação pelo provedor de pagamento.
-5. O processamento da confirmação deve ser idempotente: notificações repetidas não podem duplicar pagamentos nem liberar cupons novamente.
-6. Deve existir trilha de auditoria para emissões, fechamentos, pagamentos, liberações e eventuais cancelamentos.
-7. A apuração deve considerar apenas cupons pagos, confirmados e pertencentes ao estabelecimento daquele sorteio.
-8. Um cupom não pode participar mais de uma vez nem ser atribuído a mais de um grupo/sorteio.
-9. A formação dos grupos deve ser rastreável, preservando a relação dos 100 cupons que compõem cada grupo e o resultado correspondente.
+2. Cada maquininha/caixa possui credenciais próprias e só pode emitir cupons para a loja à qual está vinculada.
+3. Cada cupom deve estar vinculado a uma compra, loja, maquininha/caixa, emissão e, depois, ao fechamento e lote correspondentes.
+4. O sistema não deve liberar cupons com base apenas em comprovante enviado ou informação visual de pagamento.
+5. A liberação e o disparo do sorteio dependem da confirmação da transação pelo provedor de pagamento.
+6. O processamento da confirmação deve ser idempotente: notificações repetidas não podem duplicar pagamentos nem sorteios.
+7. Um cupom não pode participar mais de uma vez nem ser atribuído a mais de um lote.
+8. Cada lote deve conter exatamente 100 cupons elegíveis da mesma loja.
+9. Deve existir trilha de auditoria para emissões, fechamentos, pagamentos, liberações, formação dos lotes e sorteios.
+10. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
 
 ## 10. Exemplo ilustrativo do fluxo
 
-1. Uma loja registra compras e emite cupons ao longo da semana.
-2. Cada cupom fica associado ao valor integral da compra e ao percentual devido à plataforma.
-3. Os cupons permanecem emitidos, mas não participam de sorteios enquanto a loja não pagar.
-4. No dia combinado, o dono fecha o período e paga o total devido por Pix.
-5. A plataforma confirma o recebimento e libera somente os cupons incluídos naquele fechamento.
-6. Os cupons liberados entram na fila exclusiva daquela loja.
-7. Quando houver 100 cupons elegíveis, forma-se um grupo completo para um sorteio daquela loja.
-8. Outra loja mantém sua própria fila e seus próprios grupos, sem compartilhar cupons.
-9. Se uma loja não pagar por vários períodos, seus cupons continuam acumulados e poderão ser liberados quando o pagamento for confirmado.
+1. Um supermercado possui cinco caixas, cada um com uma maquininha e credenciais próprias.
+2. Em cada caixa, o funcionário registra o valor da compra e emite o cupom com QR Code.
+3. O administrador acompanha pelo celular os cupons emitidos por todos os caixas da loja.
+4. Quando houver 800 cupons elegíveis ainda não fechados, o administrador pode escolher fechar os 8 lotes de uma vez.
+5. A plataforma calcula o valor devido, apresenta o resumo e gera o QR Code Pix.
+6. O administrador paga a cobrança.
+7. O provedor confirma o pagamento por webhook.
+8. O servidor processa o fechamento automaticamente e realiza 8 sorteios independentes, um para cada lote de 100 cupons.
+9. Outra loja mantém sua própria fila, seus próprios pagamentos e seus próprios sorteios, sem compartilhar cupons.
 
 ## 11. Pontos que ainda precisam ser definidos
 
 - Se o percentual será único para todas as lojas ou configurável individualmente por estabelecimento, respeitando a faixa pretendida de 3% a 5%.
-- Qual será a periodicidade de pagamento de cada loja e como ela será formalizada no acordo comercial.
-- Qual será a periodicidade dos sorteios de cada loja: diária, semanal, mensal ou outra.
-- Se, ao final de um período de sorteio, os cupons elegíveis que não completarem um grupo de 100 serão carregados para o período seguinte. A regra de grupos completos está definida, mas esse comportamento precisa de confirmação.
-- Como tratar cancelamentos, estornos e erros em cupons já incluídos em um fechamento ou grupo.
-- Se será permitido pagamento parcial ou se cada fechamento deverá ser quitado integralmente.
-- Qual provedor Pix será utilizado e como ocorrerá a conciliação automática.
-- Como será feito o procedimento operacional do sorteio e a comprovação do resultado.
+- Se haverá limites ou regras comerciais específicas para a quantidade de lotes que uma loja pode fechar por vez.
+- Como tratar cancelamentos, estornos e erros em cupons já incluídos em um fechamento ou lote.
+- Se será permitido pagamento parcial. A regra descrita pressupõe pagamento integral do fechamento antes do processamento dos lotes nele incluídos.
+- Qual provedor Pix será utilizado e como ocorrerá a conciliação automática por webhook.
+- Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
 - Como será realizada a entrega do prêmio ao consumidor, em dinheiro ou mercadoria.
+- Quais serão os dados e procedimentos de identificação do ganhador.
 
 ---
 
