@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const payout = await authPrisma.couponPayout.findUnique({
       where: { externalReference },
       select: {
-        id: true, couponId: true, storeId: true, kind: true, status: true,
+        id: true, couponId: true, storeId: true, requestedById: true, kind: true, status: true,
         amountCents: true, providerTransferId: true, pixKeyCiphertext: true,
         pixKeyType: true, coupon: { select: { status: true } },
       },
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
           where: { id: payout.couponId, storeId: payout.storeId, status: expectedCouponStatus },
           data: payout.kind === "CUSTOMER_REDEMPTION"
             ? { status: "REDEEMED", redeemedAt: new Date() }
-            : { status: "STORE_REDEEMED", storeClaimedAt: new Date() },
+            : { status: "STORE_REDEEMED", storeClaimedAt: new Date(), storeClaimedById: payout.requestedById },
         });
         if (couponUpdate.count !== 1) {
           const current = await tx.coupon.findUnique({ where: { id: payout.couponId }, select: { status: true } });
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
             : "COUPON_PAYOUT_STATUS_UPDATED",
           entityType: "CouponPayout", entityId: payout.id,
           metadata: {
-            couponId: payout.couponId, storeId: payout.storeId, kind: payout.kind,
+            couponId: payout.couponId, storeId: payout.storeId, requestedById: payout.requestedById, kind: payout.kind,
             amountCents: payout.amountCents, provider: "ASAAS", transferId, providerStatus: status,
           },
         },
