@@ -1,0 +1,1 @@
+ALTER TABLE "StorePixKey" ALTER COLUMN "validatedAt" DROP NOT NULL;
