@@ -69,7 +69,7 @@ export async function startCouponPixPayout(input: {
       pixKeyType = parsed.pixKeyType;
     } else {
       const saved = await tx.storePixKey.findUnique({ where: { storeId: input.storeId } });
-      if (!saved || saved.validatedAt > now) throw new Error("STORE_PIX_KEY_NOT_VALIDATED");
+      if (!saved || !saved.validatedAt) throw new Error("STORE_PIX_KEY_NOT_VALIDATED");
       pixKey = decryptStorePixKey(saved.keyCiphertext);
       pixKeyType = saved.keyType as PixKeyType;
     }
