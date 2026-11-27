@@ -17,7 +17,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador geral possui controle administrativo global da plataforma.
 - É responsabilidade do administrador geral cadastrar as lojas e criar/vincular o usuário administrador de cada estabelecimento. O administrador da loja não cria a própria conta nem cadastra outras lojas.
 - O administrador geral pode ativar, editar, suspender e administrar lojas e seus administradores, além de controlar configurações e parâmetros gerais da plataforma.
-- No cadastro de cada loja/administrador, o administrador geral deve definir e registrar o percentual que aquela loja pagará à plataforma, dentro da faixa comercial permitida. Esse percentual fica associado à loja e será aplicado aos valores das compras dos cupons emitidos.
+- No cadastro de cada loja/administrador, o administrador geral deve definir livremente o percentual que aquela loja pagará à plataforma. Não existe faixa fixa obrigatória de 3% a 5%; essa faixa foi apenas uma referência inicial de desenvolvimento. Cada loja pode ter um percentual diferente, e o administrador geral poderá alterá-lo ao longo do tempo.
 - No mesmo cadastro ou nas configurações da loja, o administrador geral define o limite de cupons por ciclo de cobrança que libera novas emissões. A referência inicial é de **100 cupons por ciclo**, podendo o limite ser controlado pela plataforma.
 - **O administrador geral não cadastra nem cria maquininhas ou acessos operacionais.** Essa responsabilidade pertence exclusivamente ao administrador de cada loja.
 - O administrador geral acompanha centralmente o movimento de toda a plataforma, com indicadores globais de cupons emitidos, cupons premiados, prêmios pendentes, prêmios resgatados e expirados, lojas e valores financeiros.
@@ -66,10 +66,11 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 
 - No momento da venda, o funcionário ou responsável informa na maquininha o valor da compra realizada pelo consumidor.
 - O valor informado representa o valor integral da compra e fica associado ao cupom.
-- A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área de administração geral.
-- A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador geral. Ainda será definido se a configuração será geral ou individual por loja.
-- O percentual aplicável deve ser o percentual individual previamente cadastrado pelo administrador geral para aquela loja. O valor e o percentual utilizados em cada cupom devem ficar registrados, para que mudanças futuras de configuração não alterem cobranças de ciclos já apurados.
-- Exemplo: compra de **R$ 100,00** com percentual de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
+- A plataforma calcula o valor devido aplicando ao valor da compra o percentual individual configurado pelo administrador geral para a loja emissora.
+- O administrador geral define livremente o percentual no formulário de cadastro da loja/administrador. Não há mínimo ou máximo comercial fixado pela regra do produto; a referência de 3% a 5% foi apenas uma hipótese inicial para começar o desenvolvimento e poderá mudar.
+- Cada loja pode ter um percentual diferente. O administrador geral poderá alterar o percentual de uma loja ao longo do tempo.
+- Cada cupom deve guardar uma cópia histórica do percentual efetivamente aplicado no momento da emissão, junto ao valor calculado devido. Alterações posteriores na configuração da loja só valem para cupons emitidos depois da alteração e nunca recalculam cupons anteriores ou cobranças já apuradas.
+- Exemplo: compra de **R$ 100,00** com percentual configurado de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
 - Antes de emitir o cupom, a interface de caixa registra obrigatoriamente o valor da compra e permite informar opcionalmente o WhatsApp/contato do consumidor. Nome do consumidor não será solicitado. O contato opcional pode ajudar a localizar o ganhador caso ele perca o cupom ou não consulte o resultado.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
 - O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
@@ -408,7 +409,7 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 
 ## 15. Pontos que ainda precisam ser definidos
 
-- Se o percentual será único para todas as lojas ou configurável individualmente por estabelecimento, respeitando a faixa pretendida de 3% a 5%.
+- Como será apresentada no painel a edição do percentual individual da loja e a data de início de vigência de cada alteração.
 - Prazos de vencimento, periodicidade de apuração e condições de pagamento das lojas.
 - Regras comerciais e contratuais de cobrança, garantias e consequências para inadimplência.
 - Critérios objetivos para alertas, suspensão temporária e bloqueio de novas emissões por loja inadimplente, incluindo quem pode aplicar e retirar o bloqueio.
