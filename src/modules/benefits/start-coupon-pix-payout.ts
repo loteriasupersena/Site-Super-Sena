@@ -75,6 +75,7 @@ export async function startCouponPixPayout(input: {
       data: {
         couponId: coupon.id,
         storeId: coupon.storeId,
+        requestedById: actor.id,
         kind: input.kind,
         method: "PIX",
         status: "PROCESSING",
