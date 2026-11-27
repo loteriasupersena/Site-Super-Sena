@@ -17,6 +17,8 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador geral possui controle administrativo global da plataforma.
 - É responsabilidade do administrador geral cadastrar as lojas e criar/vincular o usuário administrador de cada estabelecimento. O administrador da loja não cria a própria conta nem cadastra outras lojas.
 - O administrador geral pode ativar, editar, suspender e administrar lojas e seus administradores, além de controlar configurações e parâmetros gerais da plataforma.
+- No cadastro de cada loja/administrador, o administrador geral deve definir e registrar o percentual que aquela loja pagará à plataforma, dentro da faixa comercial permitida. Esse percentual fica associado à loja e será aplicado aos valores das compras dos cupons emitidos.
+- No mesmo cadastro ou nas configurações da loja, o administrador geral define o limite de cupons por ciclo de cobrança que libera novas emissões. A referência inicial é de **100 cupons por ciclo**, podendo o limite ser controlado pela plataforma.
 - **O administrador geral não cadastra nem cria maquininhas ou acessos operacionais.** Essa responsabilidade pertence exclusivamente ao administrador de cada loja.
 - O administrador geral acompanha centralmente o movimento de toda a plataforma, com indicadores globais de cupons emitidos, cupons premiados, prêmios pendentes, prêmios resgatados e expirados, lojas e valores financeiros.
 - Os principais indicadores devem ficar destacados no topo do painel, fora dos menus, sempre visíveis ao entrar na área administrativa.
@@ -36,6 +38,11 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador da loja acompanha a quantidade de cupons emitidos por cada maquininha, o movimento do dia e os totais acumulados, com atualização em tempo real ou tão próxima disso quanto a arquitetura permitir.
 - O administrador da loja consulta os cupons emitidos pelo estabelecimento, os cupons que participaram de lotes/sorteios gerais, os resultados dos cupons da loja e os prêmios pagos/resgatados.
 - O administrador acompanha os valores devidos à plataforma, cobranças e pagamentos, sem poder alterar regras globais ou interferir nos sorteios.
+- A área **Loja** deve exibir um contador de cupons do ciclo de cobrança atual, com o progresso até o limite liberado (por exemplo, 0/100, 65/100 e 100/100).
+- Ao atingir o limite do ciclo (100 cupons, como referência), o sistema fecha a apuração daquele ciclo e gera automaticamente uma cobrança Pix com QR Code para o administrador pagar o percentual devido sobre os valores das compras associadas aos cupons daquele ciclo.
+- Ao atingir o limite, novas emissões de cupons daquela loja ficam bloqueadas até que o pagamento da cobrança seja confirmado pelo webhook do provedor Pix. O painel deve mostrar a cobrança, o valor, o QR Code e a situação do pagamento.
+- Após a confirmação válida do webhook, o sistema registra o pagamento, encerra o ciclo quitado e libera automaticamente a emissão de um novo ciclo, reiniciando o contador para o limite seguinte.
+- O bloqueio é por loja: não impede outras lojas de emitir cupons e não bloqueia leitura ou resgate de cupons já emitidos.
 - A área administrativa da loja não é a interface usada no caixa para registrar compras, emitir cupons ou resgatar prêmios. Essas tarefas pertencem à área operacional da maquininha (APK).
 - O administrador da loja não acessa dados de outros estabelecimentos nem a administração geral.
 
@@ -61,6 +68,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O valor informado representa o valor integral da compra e fica associado ao cupom.
 - A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área de administração geral.
 - A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador geral. Ainda será definido se a configuração será geral ou individual por loja.
+- O percentual aplicável deve ser o percentual individual previamente cadastrado pelo administrador geral para aquela loja. O valor e o percentual utilizados em cada cupom devem ficar registrados, para que mudanças futuras de configuração não alterem cobranças de ciclos já apurados.
 - Exemplo: compra de **R$ 100,00** com percentual de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
 - Antes de emitir o cupom, a interface de caixa registra obrigatoriamente o valor da compra e permite informar opcionalmente o WhatsApp/contato do consumidor. Nome do consumidor não será solicitado. O contato opcional pode ajudar a localizar o ganhador caso ele perca o cupom ou não consulte o resultado.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
@@ -109,10 +117,12 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O sistema deve manter um extrato financeiro por loja, com quantidade de cupons emitidos, valores de compra associados, percentual aplicado, total devido, pagamentos recebidos, saldo em aberto e histórico.
 - O painel da loja deve apresentar de forma clara o valor acumulado e devido à plataforma, com detalhamento e período de referência.
 - O painel geral deve consolidar os mesmos dados de todas as lojas, permitindo identificar valores vencidos, pendentes e pagos.
-- A plataforma deverá permitir gerar uma cobrança Pix com QR Code para que a loja pague os valores devidos. A cobrança e sua confirmação são recursos de apoio à apuração e ao registro financeiro; não condicionam a entrada dos cupons na fila, a formação dos lotes ou os sorteios.
+- A plataforma deverá permitir gerar uma cobrança Pix com QR Code para que a loja pague os valores devidos.
+- A cobrança por ciclo será gerada automaticamente quando a loja atingir o limite de cupons definido para ela (100 como referência inicial). O valor da cobrança será calculado pela soma dos valores devidos em cada cupom do ciclo, usando o percentual individual cadastrado para aquela loja. A cobrança e sua confirmação são recursos de apoio à apuração e ao registro financeiro; não condicionam a entrada dos cupons na fila, a formação dos lotes ou os sorteios.
 - O sistema deve registrar cada cobrança com identificador próprio, loja devedora, valor, período ou cupons de referência, data de criação, vencimento quando definido e situação.
 - A confirmação de pagamento poderá ser registrada por integração e webhook do provedor Pix. O webhook atualiza a situação financeira e a conciliação da loja, mas **não dispara sorteio nem libera lote**, pois os sorteios já acontecem automaticamente pela fila geral.
-- A loja pode acumular valores devidos enquanto continua emitindo cupons, observadas as regras comerciais e eventuais medidas de bloqueio definidas pela plataforma.
+- Neste modelo, o webhook também é responsável por confirmar a quitação do ciclo de cobrança da loja e liberar novas emissões. Essa liberação é independente do mecanismo de sorteio: o webhook não inicia, pausa, repete ou altera sorteios; apenas atualiza o financeiro e o estado de bloqueio/liberação de novas emissões da loja.
+- A loja não poderá continuar acumulando emissões indefinidamente sem pagar: ao atingir o limite do ciclo, novas emissões serão bloqueadas até a confirmação do pagamento pelo webhook. Cupons já emitidos permanecem válidos e participam dos sorteios gerais.
 - A cobrança e o acompanhamento de inadimplência serão uma atividade administrativa e comercial conduzida pelo responsável pela plataforma, fora da lógica automática de sorteios. O aplicativo fornece os dados, cálculos, extratos, cobranças e indicadores necessários para apoiar essa administração.
 
 ## 6. Formação automática dos lotes e processamento dos sorteios
@@ -125,6 +135,8 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Cada lote deve guardar os 100 cupons participantes, a loja de origem de cada um, o resultado, a data/hora, a versão do procedimento de sorteio e os registros técnicos necessários para auditoria.
 - O pagamento de uma loja, a geração de uma cobrança Pix ou a confirmação de um webhook não inicia, interrompe, altera ou repete um sorteio.
 - A inadimplência de qualquer estabelecimento não pode impedir o sorteio de um lote completo nem alterar a participação de um consumidor.
+- **Regra separada de limite de emissão e cobrança:** além dos lotes gerais de sorteio de 100 cupons, cada loja possui seu próprio ciclo de cobrança, contado individualmente pelos cupons que ela emite. Ao completar o limite configurado para a loja (100 cupons como referência), o sistema fecha a apuração financeira daquele ciclo, gera a cobrança Pix e bloqueia novas emissões daquela loja até a confirmação do pagamento pelo webhook.
+- Esse limite por loja não cria lote de sorteio exclusivo, não altera a fila geral e não condiciona sorteios ao pagamento. Os cupons já emitidos continuam participando normalmente dos lotes gerais, e os sorteios continuam automáticos mesmo enquanto a loja aguarda pagar a cobrança.
 
 ## 7. Separação operacional e financeira por estabelecimento
 
@@ -148,6 +160,9 @@ O administrador da loja deve conseguir consultar:
 - Histórico dos sorteios gerais dos quais participaram cupons emitidos pela loja, incluindo o resultado do próprio cupom.
 - Cadastro, situação e acessos das maquininhas/caixas vinculados à loja.
 - Opção para consultar valores devidos e gerar QR Code Pix para pagamento.
+- Contador do ciclo de cobrança atual, com quantidade de cupons emitidos em relação ao limite liberado para a loja.
+- Cobrança Pix/QR Code gerada automaticamente quando o ciclo atinge o limite, com valor calculado pelo percentual individual da loja aplicado aos valores das compras daquele ciclo.
+- Situação do pagamento e do bloqueio de novas emissões; após confirmação do webhook, indicação de que um novo ciclo foi liberado.
 
 ## 9. Painel do administrador geral
 
