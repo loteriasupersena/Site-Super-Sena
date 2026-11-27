@@ -20,6 +20,18 @@ enum AccountStatus {
   PENDING
 }
 
+enum CouponStatus {
+  ACTIVE
+  WINNER
+  REDEEMED
+  EXPIRED
+}
+
+enum CouponBatchStatus {
+  OPEN
+  DRAWN
+}
+
 enum RoundStatus {
   SCHEDULED
   OPEN
@@ -141,6 +153,7 @@ model User {
   printJobsRequested PrintJob[] @relation("PrintJobRequester")
   prizePaymentRequestsReviewed PrizePaymentRequest[] @relation("PrizePaymentRequestReviewer")
   prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
+  issuedCoupons          Coupon[] @relation("CouponIssuer")
 
   @@index([role, status])
 }
@@ -156,6 +169,7 @@ model Store {
   updatedAt                DateTime      @updatedAt
   adminUser                User          @relation("StoreAdministrator", fields: [adminUserId], references: [id], onDelete: Restrict)
   users                    User[]        @relation("StoreMembers")
+  coupons                  Coupon[]
 
   @@index([status, createdAt])
 }
@@ -618,4 +632,43 @@ model PrizePaymentBatchItem {
 
   @@unique([batchId, participationLineId])
   @@index([batchId])
+}
+
+
+model CouponBatch {
+  id             String            @id @default(cuid())
+  sequenceNumber Int               @unique
+  status         CouponBatchStatus @default(OPEN)
+  createdAt      DateTime          @default(now())
+  completedAt    DateTime?
+  winnerCouponId String?           @unique
+  coupons        Coupon[]          @relation("CouponBatchMembers")
+  winnerCoupon   Coupon?           @relation("CouponBatchWinner", fields: [winnerCouponId], references: [id], onDelete: Restrict)
+
+  @@index([status, sequenceNumber])
+}
+
+model Coupon {
+  id                         String       @id @default(cuid())
+  publicCode                 String       @unique
+  storeId                    String
+  issuedById                 String
+  batchId                    String
+  purchaseAmountCents        Int
+  commissionRateBasisPoints  Int
+  platformFeeCents           Int
+  customerWhatsapp           String?
+  status                     CouponStatus @default(ACTIVE)
+  issuedAt                   DateTime     @default(now())
+  drawnAt                    DateTime?
+  redeemedAt                 DateTime?
+  store                      Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  issuedBy                   User         @relation("CouponIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  batch                      CouponBatch  @relation("CouponBatchMembers", fields: [batchId], references: [id], onDelete: Restrict)
+  winningBatch               CouponBatch? @relation("CouponBatchWinner")
+
+  @@index([storeId, issuedAt])
+  @@index([issuedById, issuedAt])
+  @@index([batchId, issuedAt])
+  @@index([status, issuedAt])
 }
