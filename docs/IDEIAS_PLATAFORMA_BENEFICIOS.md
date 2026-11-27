@@ -282,24 +282,26 @@ O painel do administrador geral deve manter como referência o painel administra
 - A operação deve impedir resgates simultâneos ou duplicados, inclusive quando duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
 - **Ponto financeiro ainda pendente:** detalhar a origem dos recursos transferidos via Pix, a liquidação da transferência e a conciliação financeira entre a plataforma e o estabelecimento. O destino da transferência está definido: a conta Pix cadastrada da loja que realizou o resgate.
 
-### 11.4 Recuperação do prêmio quando o consumidor perde o cupom
+### 11.4 Prazo de 30 dias e transferência do direito de resgate à loja de origem
 
-- A plataforma acompanhará os prêmios que continuam sem resgate. Quando identificar que um prêmio está próximo de completar o prazo de 30 dias sem que o ganhador tenha comparecido, deverá entrar em contato usando o telefone registrado na emissão.
-- A mensagem informará que o consumidor foi contemplado, indicará o valor do prêmio e orientará que ele procure uma loja credenciada para fazer o resgate.
-- A mensagem poderá ser enviada pelo WhatsApp e conter um link individual e seguro para abrir o cupom premiado.
-- Ao abrir o link, o consumidor verá o resultado premiado e a **segunda via digital do QR Code original**, correspondente ao mesmo cupom e ao mesmo prêmio.
-- O consumidor poderá abrir o link e apresentar o QR Code na tela do celular, ou mostrar um print ampliado, para facilitar a leitura pela câmera da maquininha.
-- O funcionário ou responsável da loja fará a leitura desse QR Code pelo APK da maquininha. A leitura digital abrirá exatamente a mesma tela e as mesmas opções de resgate disponíveis quando o consumidor apresenta o recibo físico.
-- Depois da leitura, o responsável seleciona **Pagar em mercadoria** ou **Pagar em dinheiro**, confirma o saque e conclui a entrega ao consumidor. A transferência para a conta Pix da loja e a baixa definitiva ocorrem pelo mesmo procedimento do cupom físico.
-- A segunda via não cria um novo cupom, não altera o identificador, não aumenta o valor e não reinicia o prazo. É apenas outra forma de apresentar o mesmo QR Code já emitido.
-- O link deve ser individual, difícil de adivinhar e protegido contra alteração ou reutilização para criar um prêmio novo. A validade do link de recuperação e os controles adicionais de identidade ainda serão especificados.
-- A recuperação do QR Code não permite resgate por celular comum: a baixa continua restrita ao APK de uma maquininha credenciada.
+- A emissão do cupom não solicita nem armazena telefone, WhatsApp, nome ou qualquer outro contato do consumidor. Não haverá contato ativo com ganhadores, mensagens, links de recuperação ou segunda via digital enviada pela plataforma.
+- O prazo de resgate pelo consumidor é de **30 dias corridos**, contado a partir da data e hora em que o sorteio daquele cupom for concluído e o prêmio for registrado.
+- Durante esses 30 dias, somente o próprio consumidor, apresentando o cupom/QR Code e comparecendo presencialmente a uma loja credenciada, poderá receber o prêmio pelo fluxo operacional autorizado no APK.
+- Se o consumidor não resgatar dentro do prazo, o prêmio deixa de estar disponível para ele. O sistema deverá alterar automaticamente o estado para **DISPONÍVEL PARA A LOJA**, sem apagar o histórico nem o registro do ganhador.
+- A partir dessa mudança, somente o administrador autenticado da **loja que emitiu o cupom vencedor** poderá solicitar o saque do valor para a própria loja, por uma opção específica na área administrativa da loja.
+- O administrador geral não poderá sacar, cancelar, transferir, editar o ganhador ou dar baixa nesse prêmio. A área geral poderá apenas consultar o histórico e o estado, sem ação de saque ou cancelamento.
+- O direito da loja de origem só é liberado depois de completados os 30 dias. Antes disso, a loja não pode sacar nem reservar o prêmio em nome próprio.
+- O saque da loja deve ser uma operação financeira registrada e idempotente, com confirmação do servidor, valor, loja beneficiária, administrador solicitante, data/hora e identificador da transferência. Uma repetição da solicitação não poderá pagar duas vezes.
+- Depois que a loja concluir o saque, o prêmio passa para **RESGATADO PELA LOJA** e não poderá ser novamente resgatado pelo consumidor ou por qualquer outra loja.
+- O sistema deve executar a mudança de estado mesmo que ninguém esteja acessando o painel. A rotina de vencimento precisa ser confiável, repetível e protegida contra concorrência, sem depender de ação manual do administrador geral.
 
 ### 11.5 Baixa automática pela operação de resgate
 
 - A baixa do prêmio acontece no servidor como consequência da operação válida concluída pelo APK da maquininha.
-- Não haverá botão ou permissão para o administrador geral ou o administrador da loja dar baixa manualmente em um prêmio.
-- A modalidade escolhida, a transferência para a conta Pix da loja, a entrega ao consumidor e a baixa do prêmio pertencem ao mesmo fluxo de resgate.
+- Não haverá botão ou permissão para o administrador geral cancelar, sacar ou dar baixa manualmente em prêmios.
+- O resgate do consumidor dentro dos 30 dias ocorre presencialmente, com apresentação do QR Code e entrega do prêmio pela loja credenciada.
+- Depois dos 30 dias, o saque fica disponível exclusivamente ao administrador da loja de origem, pela área administrativa dessa loja. O administrador geral não participa dessa operação.
+- O saque da loja e a baixa definitiva devem ocorrer de forma atômica e idempotente, com auditoria e proteção contra solicitações simultâneas.
 - A conclusão da operação deve invalidar imediatamente novas tentativas de resgate daquele prêmio em qualquer outra loja ou maquininha.
 - O servidor deve impedir resgates simultâneos ou duplicados, mesmo se duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
 - Cada operação deve gerar trilha de auditoria com data/hora, identificador do prêmio, estabelecimento que resgatou, maquininha, responsável, modalidade, valor, identificação da transferência e resultado.
@@ -309,9 +311,9 @@ O painel do administrador geral deve manter como referência o painel administra
 - Cada estabelecimento terá um acordo comercial com a plataforma que definirá as modalidades de resgate aceitas naquele local: mercadorias/desconto, dinheiro/Pix ou ambas.
 - A modalidade poderá variar conforme a natureza do negócio. Exemplo: supermercado pode priorizar mercadorias com desconto; uma autopeça ou consultório pode habilitar pagamento em dinheiro/Pix quando não fizer sentido entregar outro produto ou serviço.
 - O acordo comercial da loja que efetivamente realizar o resgate determina quais modalidades seu APK poderá oferecer.
-- O prêmio pode ser resgatado em qualquer estabelecimento credenciado habilitado, independentemente de qual loja emitiu o cupom.
-- A mensagem ao ganhador deve recomendar primeiro a loja de origem, sem impedir que ele procure outra loja credenciada.
-- As condições do acordo devem estar claras para o consumidor nos termos da promoção e na consulta do prêmio.
+- Durante os 30 dias de prazo do consumidor, o prêmio pode ser resgatado presencialmente em qualquer estabelecimento credenciado habilitado, conforme as modalidades permitidas no acordo comercial.
+- Após os 30 dias sem resgate, somente a loja que emitiu o cupom vencedor poderá sacar o valor destinado à loja. Nenhum outro estabelecimento poderá reivindicar esse prêmio.
+- As condições dos dois fluxos devem estar claras para o consumidor nos termos da promoção.
 
 ## 13. Regras essenciais de segurança e auditoria
 
@@ -341,19 +343,16 @@ A maquininha terá uma área operacional própria para registrar compras, emitir
 
 ### 16.1 Registro da compra e emissão do cupom
 
-- A tela de registro da maquininha terá somente dois campos de entrada:
-  1. **Valor da compra** — obrigatório.
-  2. **WhatsApp/contato do consumidor** — opcional.
-- Não haverá campo para nome do consumidor.
+- A tela de registro da maquininha terá **um único campo de entrada: Valor da compra**, obrigatório.
+- Não haverá campo de nome, telefone, WhatsApp ou qualquer dado de contato do consumidor.
 - O campo de valor deverá aceitar reais e centavos, com formatação monetária correta e validação para impedir valores inválidos ou vazios.
 - A interface deverá ser projetada para a tela comprida da maquininha: valor em destaque na parte superior e teclado numérico grande na parte inferior, com distância e espaçamento suficientes para que o teclado não cubra o valor digitado.
 - A disposição deve facilitar a leitura e reduzir erros de digitação. O valor deverá permanecer claramente visível durante a digitação.
-- O contato deverá aceitar um número de WhatsApp/telefone, mas sua ausência não impedirá a emissão.
 - Depois de informar o valor, o operador usa o botão **Confirmar**. A tela apresenta o valor da compra em tamanho grande para conferência antes da impressão.
 - Após a conferência, o operador usa o botão **Imprimir**. O sistema gera o QR Code individual, apresenta o cupom/QR Code na tela da própria maquininha e envia o mesmo cupom para a impressora térmica.
 - A versão exibida na tela e a versão impressa devem ser espelhos uma da outra, conforme a especificação visual dos dois recibos registrada separadamente no projeto.
 - A emissão deve manter o identificador interno único do cupom, mesmo que esse número não apareça visualmente no recibo.
-- A operação registra valor da compra, contato se fornecido, loja, maquininha, funcionário e data/hora, e insere o cupom na fila geral de sorteio conforme as regras da seção 4.
+- A operação registra somente o valor da compra, loja, maquininha, funcionário e data/hora, e insere o cupom na fila geral de sorteio conforme as regras da seção 4.
 
 ### 16.2 Leitura do QR Code e consulta do resultado
 
@@ -440,7 +439,7 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 - Como será liquidada financeiramente a transferência Pix do resgate e como será feita a conciliação entre a plataforma e a loja.
 - Definir os canais, a frequência e os modelos de mensagem usados no contato com ganhadores que entram na área de urgência aos 20 dias, incluindo como registrar tentativas e respostas.
 - Como será validado o acesso ao link individual de recuperação do QR Code e por quanto tempo esse link ficará disponível.
-- Como tratar tecnicamente uma contestação de resgate sem permitir duplicidade ou baixa manual.
+- Definir o procedimento de contestação sem permitir cancelamento ou saque administrativo indevido, mantendo o direito de saque do consumidor no prazo e da loja de origem após 30 dias.
 - Revisão jurídica do modelo de promoção, da fila compartilhada, dos compromissos com consumidores e dos acordos comerciais com os estabelecimentos.
 
 ---
