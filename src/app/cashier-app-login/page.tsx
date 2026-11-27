@@ -3,8 +3,8 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Acesso do Cambista | Super Sena",
-  description: "Acesso exclusivo para cambistas da Super Sena.",
+  title: "Acesso da Maquininha | MEU VALE PIX",
+  description: "Acesso operacional das maquininhas do MEU VALE PIX.",
   robots: { index: false, follow: false },
 };
 
