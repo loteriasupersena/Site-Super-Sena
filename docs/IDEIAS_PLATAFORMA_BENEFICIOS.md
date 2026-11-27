@@ -40,7 +40,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 ### 2.3 Caixas/maquininhas e funcionários
 
 - Cada maquininha ou caixa terá seu próprio login e senha.
-- O acesso da maquininha é usado pelo funcionário responsável para registrar o valor da compra e emitir o cupom com QR Code.
+- O acesso da maquininha é usado pelo funcionário responsável para registrar o valor da compra, informar opcionalmente o WhatsApp do consumidor e emitir/imprimir o cupom com QR Code.
 - Cada emissão fica vinculada à loja e ao caixa/maquininha que a realizou, permitindo identificar a origem de cada cupom.
 - Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado.
 - Uma loja pequena também pode operar com apenas uma maquininha.
@@ -55,11 +55,11 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A plataforma calcula o valor devido à plataforma aplicando ao valor da compra o percentual configurado na área de administração geral.
 - A faixa percentual pretendida é de **3% a 5%**, com **5% como referência inicial**. O percentual deverá ser editável pelo administrador geral. Ainda será definido se a configuração será geral ou individual por loja.
 - Exemplo: compra de **R$ 100,00** com percentual de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
-- Antes de emitir o cupom, a interface de caixa registra o contato fornecido pelo consumidor, além do valor da compra. O contato deve permitir que a loja localize o cliente caso ele perca o cupom ou não consulte o resultado.
+- Antes de emitir o cupom, a interface de caixa registra obrigatoriamente o valor da compra e permite informar opcionalmente o WhatsApp/contato do consumidor. Nome do consumidor não será solicitado. O contato opcional pode ajudar a localizar o ganhador caso ele perca o cupom ou não consulte o resultado.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
 - O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
 - O valor devido à plataforma não reduz o valor do prêmio. No exemplo, se o cupom for sorteado, o valor de referência do prêmio será **R$ 100,00**, e não R$ 5,00.
-- A forma de entrega do prêmio — dinheiro ou mercadoria — será definida posteriormente e não faz parte das regras técnicas de sorteio desta etapa.
+- A forma de entrega do prêmio — dinheiro ou mercadoria — é escolhida no fluxo de resgate da maquininha, conforme as regras comerciais habilitadas para o estabelecimento.
 - Cada cupom deve ser individual e não pode ser duplicado.
 - O contato do consumidor deve ficar associado ao cupom com proteção adequada, acesso restrito e finalidade limitada à comunicação sobre o resultado e o resgate do prêmio. O contato não deve ficar exposto publicamente na consulta do QR Code.
 
@@ -271,6 +271,52 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 5. A plataforma calcula e registra separadamente o valor devido pelo supermercado e disponibiliza a cobrança Pix.
 6. Quando o supermercado paga, o webhook atualiza seu extrato financeiro, sem interferir no sorteio já realizado ou nos próximos.
 7. Se a loja ficar inadimplente, poderá ser bloqueada para novas emissões conforme política definida, mas os cupons já emitidos continuam participando normalmente.
+
+## 16. Área operacional da maquininha (APK)
+
+A maquininha terá uma área operacional própria para registrar compras, emitir cupons, consultar QR Codes e resgatar prêmios. Essa área deverá ser construída a partir da inspeção e adaptação da atual área do cambista, especialmente dos objetos e recursos que já funcionam, como a leitura/escaneamento de QR Code. O reaproveitamento deverá seguir a diretriz de refatoração limpa da seção 4.1: não manter código incompatível nem criar remendos.
+
+### 16.1 Registro da compra e emissão do cupom
+
+- A tela de registro da maquininha terá somente dois campos de entrada:
+  1. **Valor da compra** — obrigatório.
+  2. **WhatsApp/contato do consumidor** — opcional.
+- Não haverá campo para nome do consumidor.
+- O campo de valor deverá aceitar reais e centavos, com formatação monetária correta e validação para impedir valores inválidos ou vazios.
+- A interface deverá ser projetada para a tela comprida da maquininha: valor em destaque na parte superior e teclado numérico grande na parte inferior, com distância e espaçamento suficientes para que o teclado não cubra o valor digitado.
+- A disposição deve facilitar a leitura e reduzir erros de digitação. O valor deverá permanecer claramente visível durante a digitação.
+- O contato deverá aceitar um número de WhatsApp/telefone, mas sua ausência não impedirá a emissão.
+- Depois de informar o valor, o operador usa o botão **Confirmar**. A tela apresenta o valor da compra em tamanho grande para conferência antes da impressão.
+- Após a conferência, o operador usa o botão **Imprimir**. O sistema gera o QR Code individual, apresenta o cupom/QR Code na tela da própria maquininha e envia o mesmo cupom para a impressora térmica.
+- A versão exibida na tela e a versão impressa devem ser espelhos uma da outra, conforme a especificação visual dos dois recibos registrada separadamente no projeto.
+- A emissão deve manter o identificador interno único do cupom, mesmo que esse número não apareça visualmente no recibo.
+- A operação registra valor da compra, contato se fornecido, loja, maquininha, funcionário e data/hora, e insere o cupom na fila geral de sorteio conforme as regras da seção 4.
+
+### 16.2 Leitura do QR Code e consulta do resultado
+
+- A área operacional terá um botão visível para **Ler QR Code** ou **Escanear QR Code**.
+- O recurso de leitura existente na atual área do cambista deverá ser inspecionado e, se tecnicamente adequado, migrado/adaptado para a área da maquininha, preservando sua capacidade comprovada de leitura.
+- Após a leitura, o APK consulta o servidor e apresenta o resultado do cupom, indicando claramente se está premiado, não premiado, expirado ou já resgatado.
+- Quando o cupom estiver premiado e válido, a tela apresenta o valor do prêmio e a ação **Sacar**.
+- O botão **Sacar** só deve estar disponível para prêmio válido, ainda não resgatado e dentro do prazo.
+
+### 16.3 Resgate e baixa do prêmio
+
+- Ao pressionar **Sacar**, o APK abre uma janela com duas opções mutuamente exclusivas: **Mercadoria** e **Dinheiro**.
+- O operador seleciona somente uma das modalidades, conforme as opções habilitadas para a loja.
+- A confirmação da modalidade escolhida conclui o registro do resgate no servidor. A operação deve registrar a modalidade, o valor, o cupom/prêmio, a loja que realizou o resgate, a maquininha, o funcionário/responsável e data/hora, mantendo a trilha de auditoria definida nas seções 11 e 13.
+- A conclusão deve dar baixa definitiva no prêmio e atualizar seu estado para **resgatado/pago** no sistema.
+- Uma nova leitura do mesmo QR Code, em qualquer maquininha credenciada, deverá informar que o prêmio já foi resgatado e não poderá oferecer novamente o botão **Sacar**.
+- O servidor deve garantir atomicidade e impedir dois resgates simultâneos ou duplicados do mesmo prêmio.
+- O fluxo de resgate deve continuar respeitando as regras financeiras e de liquidação descritas na seção 11.3. A escolha na interface não deve ser tratada como prova de que a entrega ou transferência financeira foi concluída sem o registro correspondente.
+
+### 16.4 Reaproveitamento da área atual do cambista
+
+- A área atual do cambista é a principal referência para construir a área operacional da maquininha, pois já contém objetos e recursos usados pelo sistema, incluindo o mecanismo de escaneamento do QR Code.
+- Antes de implementar, deve-se mapear quais componentes, telas, serviços e permissões do cambista são realmente reutilizáveis.
+- Os elementos compatíveis devem ser migrados ou refatorados para a nova área operacional, com nomes, responsabilidades e fluxo coerentes com a função de maquininha.
+- Elementos exclusivos do antigo fluxo de cambista que não tenham função na promoção devem ser removidos do novo fluxo e, quando deixarem de ser usados em todo o sistema, eliminados com segurança.
+- Não se deve simplesmente renomear a área antiga nem manter funcionalidades de cambista escondidas. A área final deve representar claramente as tarefas da maquininha: registrar compra, emitir/imprimir cupom, ler QR Code e resgatar prêmio.
 
 ## 15. Pontos que ainda precisam ser definidos
 
