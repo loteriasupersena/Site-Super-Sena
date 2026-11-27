@@ -651,6 +651,7 @@ model CouponBatch {
 model Coupon {
   id                         String       @id @default(cuid())
   publicCode                 String       @unique
+  idempotencyKey             String       @unique
   storeId                    String
   issuedById                 String
   batchId                    String
