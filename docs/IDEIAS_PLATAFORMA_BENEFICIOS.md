@@ -209,12 +209,11 @@ O painel do administrador geral deve manter como referência o painel administra
 
 - Os cupons premiados devem ficar disponíveis em uma área própria para consulta, sem exigir acompanhamento de números ou rodadas.
 - A lista deve mostrar as informações necessárias para identificar o prêmio, como cupom, valor, loja de origem, data do sorteio, prazo final e situação atual.
-- O administrador geral deve conseguir acompanhar os prêmios ainda não resgatados e registrar o andamento do contato com o ganhador.
-- Ao completar **20 dias corridos** desde o sorteio sem resgate, o prêmio deve sair da lista comum de acompanhamento e entrar automaticamente em uma área destacada de **Urgência / Contato**, para que o administrador priorize a tentativa de localizar o ganhador.
-- A área de urgência deve permitir consultar o contato fornecido na emissão, registrar tentativas de contato, datas, resultado e observações. O acesso a dados pessoais deve ser restrito e auditável.
-- O prêmio continua válido durante os dias 21 a 30. A entrada na área de urgência não altera o prazo nem bloqueia o resgate.
-- Ao completar **30 dias corridos** desde o sorteio sem resgate, o prêmio expira automaticamente, independentemente de o administrador ter conseguido contato com o ganhador.
-- O administrador geral não pode estender o prazo nem dar baixa manual no prêmio.
+- O administrador geral pode consultar os prêmios ainda não resgatados e seus prazos, sem dados pessoais do consumidor e sem opção de contato.
+- O prêmio fica disponível para resgate pelo consumidor durante **30 dias corridos** desde o sorteio.
+- Durante esse prazo, o painel acompanha o estado e a contagem regressiva, sem tentar localizar o ganhador.
+- Ao completar **30 dias corridos** sem resgate, o sistema retira o direito de resgate do consumidor e muda automaticamente o prêmio para **DISPONÍVEL PARA A LOJA**, liberando o saque exclusivamente ao administrador da loja emissora.
+- O administrador geral não pode estender o prazo, cancelar o prêmio, sacar ou dar baixa nele.
 
 ### 9.4 Simplicidade do painel
 
@@ -229,7 +228,7 @@ O painel do administrador geral deve manter como referência o painel administra
 - A mensagem para o ganhador deve orientar: **“Dirija-se preferencialmente à loja onde você recebeu este cupom para resgatar seu prêmio.”** A orientação favorece o estabelecimento que emitiu o cupom, mas não restringe o resgate a ele.
 - O prêmio poderá ser resgatado em qualquer estabelecimento credenciado que possua maquininha com o aplicativo autorizado para leitura e resgate. O estabelecimento de origem é recomendado, não obrigatório.
 - A consulta pública não deve exibir telefone nem outros dados pessoais do consumidor.
-- O contato informado na emissão fica vinculado ao cupom, protegido e com acesso restrito, para que a plataforma possa localizar e avisar o ganhador caso ele não procure o resgate.
+- A plataforma não coleta dados de contato do consumidor e não realiza comunicação ativa com ganhadores.
 - O prazo para resgatar começa no momento em que o sorteio é realizado. O prêmio fica disponível por **30 dias corridos**.
 - Ao completar 30 dias sem resgate, o prêmio muda automaticamente para **expirado**. A expiração ocorre exclusivamente por regra automática do sistema, sem ação ou autorização manual de qualquer administrador.
 - Ao completar **20 dias corridos** desde o sorteio sem resgate, o prêmio deve ser movido automaticamente para a área de **Urgência / Contato** do administrador geral. Ele permanece válido até completar 30 dias.
@@ -260,7 +259,7 @@ O painel do administrador geral deve manter como referência o painel administra
 - Após a leitura, o APK consulta o servidor e apresenta a situação do prêmio, seu valor, validade e modalidades de resgate permitidas para o estabelecimento que está atendendo.
 - **A leitura do QR Code impresso e a leitura da segunda via digital levam ao mesmo fluxo de resgate**, sem diferença de permissões ou de valor.
 - **Qualquer maquininha autorizada de qualquer estabelecimento credenciado poderá resgatar o prêmio**, não apenas a maquininha da loja que emitiu o cupom.
-- A loja de origem deve ser recomendada na mensagem ao ganhador, mas não pode ser uma restrição técnica para o resgate.
+- Não haverá mensagens ou contato ativo da plataforma com o ganhador. Durante os 30 dias, o consumidor pode resgatar presencialmente em qualquer loja credenciada habilitada; após esse prazo, somente a loja emissora pode sacar o prêmio liberado.
 - O servidor deve validar automaticamente se o prêmio está ativo, dentro do prazo e ainda não resgatado. Não haverá necessidade de autorização em tempo real do administrador geral ou do dono da loja.
 - A operação fica vinculada à loja credenciada que efetivamente realizou o resgate, à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
 
@@ -438,8 +437,6 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 - Como garantir financeiramente a entrega dos prêmios sorteados, inclusive quando a loja de origem ainda não tiver pago à plataforma e quando o prêmio for resgatado em outra loja.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
 - Como será liquidada financeiramente a transferência Pix do resgate e como será feita a conciliação entre a plataforma e a loja.
-- Definir os canais, a frequência e os modelos de mensagem usados no contato com ganhadores que entram na área de urgência aos 20 dias, incluindo como registrar tentativas e respostas.
-- Como será validado o acesso ao link individual de recuperação do QR Code e por quanto tempo esse link ficará disponível.
 - Definir o procedimento de contestação sem permitir cancelamento ou saque administrativo indevido, mantendo o direito de saque do consumidor no prazo e da loja de origem após 30 dias.
 - Revisão jurídica do modelo de promoção, da fila compartilhada, dos compromissos com consumidores e dos acordos comerciais com os estabelecimentos.
 
