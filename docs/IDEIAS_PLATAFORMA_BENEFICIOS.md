@@ -90,6 +90,15 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A criação destas entidades é apenas a fundação de dados. Ainda não implementa emissão, fechamento de lote, sorteio, consulta pública, impressão ou resgate.
 - Cupons e lotes novos não devem utilizar as entidades Purchase, Round ou NumericParticipationLine do sistema antigo. O histórico antigo permanece preservado e isolado.
 
+### 3.2 Idempotência da emissão
+
+- Cada solicitação de emissão deverá apresentar uma chave de idempotência única, gerada pelo cliente operacional para aquela tentativa de compra.
+- O banco garante unicidade dessa chave em `Coupon`. Repetir uma solicitação por falha de rede ou reenvio não poderá criar um segundo cupom nem inserir uma segunda participação na fila global.
+- A chave deve ser persistida junto com o cupom na mesma transação da emissão. Em uma repetição com a mesma chave, o serviço deverá recuperar e devolver o cupom já criado, sem recalcular sua comissão, alterar seu lote ou disparar outro sorteio.
+- A chave deve ser vinculada ao contexto autenticado da loja/operador; não poderá ser usada para consultar ou recuperar cupom de outra loja.
+- Registros antigos, se existirem antes da ativação da emissão, recebem uma chave técnica de legado durante a migração. Novas emissões devem sempre fornecer uma chave própria.
+- A unicidade no banco é a última barreira contra duplicidade; validações apenas na interface ou na aplicação não são suficientes.
+
 ## 4. Regra única de sorteio: fila geral e lotes de 100 cupons
 
 - Haverá **uma fila única e geral de cupons**, compartilhada por todos os estabelecimentos participantes da promoção.
