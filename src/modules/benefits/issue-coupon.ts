@@ -1,6 +1,5 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
-import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 
 const MAX_INT = 2_147_483_647;
@@ -126,5 +125,5 @@ export async function issueCoupon(input: {
 
     const savedCoupon = await tx.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
     return { coupon: savedCoupon, batch, replayed: false };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 }
