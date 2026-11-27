@@ -14,7 +14,7 @@ const createSchema = z.object({
   username: z.string().trim().min(3).max(24).regex(/^[A-Za-z0-9_.-]+$/),
   password: z.string().min(8).max(1024),
   whatsapp: z.string().trim().min(10).max(24),
-  commissionRateBasisPoints: z.number().int().min(300).max(500),
+  commissionRateBasisPoints: z.number().int().min(0),
   couponLimit: z.number().int().min(1).max(100000).default(100),
 }).strict();
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers }); }
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Confira os dados da loja, administrador, percentual entre 3% e 5% e limite de cupons." }, { status: 400, headers });
+  if (!parsed.success) return NextResponse.json({ error: "Confira os dados da loja, administrador, percentual não negativo e limite de cupons." }, { status: 400, headers });
 
   const whatsapp = parsed.data.whatsapp.replace(/\D/g, "");
   if (whatsapp.length < 10 || whatsapp.length > 15) return NextResponse.json({ error: "Informe um WhatsApp válido com DDD." }, { status: 400, headers });
