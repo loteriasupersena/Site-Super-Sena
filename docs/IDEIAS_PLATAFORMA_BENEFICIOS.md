@@ -30,23 +30,32 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 
 ### 2.2 Administrador da loja
 
-- Cada estabelecimento possui sua própria área administrativa, acessível pelo celular ou outro dispositivo autorizado.
-- O administrador da loja é o responsável pelo estabelecimento e pode acompanhar somente os dados da própria loja.
-- Essa área é destinada à administração da loja: acompanhar movimento, vendas registradas, cupons emitidos, lotes, valores devidos, pagamentos e histórico de sorteios.
-- O administrador da loja cadastra e administra exclusivamente as maquininhas/caixas vinculados ao próprio estabelecimento, incluindo seus acessos.
-- O administrador da loja acompanha os cupons emitidos pela própria loja e os valores devidos à plataforma. Não escolhe nem fecha lotes de sorteio.
-- A área administrativa da loja não é a interface usada no caixa para registrar compras e emitir cupons.
+- Cada loja possui uma área administrativa própria, denominada simplesmente **Loja**, acessível pelo administrador do estabelecimento em celular ou outro dispositivo autorizado.
+- O administrador da loja **não cria a própria conta**. O administrador geral cadastra a loja e cria/vincula o usuário administrador responsável por ela.
+- O administrador da loja acompanha somente os dados e a operação do próprio estabelecimento.
+- A área deve ser simples e objetiva, concentrada no acompanhamento em tempo real das maquininhas, na administração dos acessos operacionais e na transparência dos cupons e resultados.
+- O administrador da loja pode cadastrar e administrar as maquininhas/caixas vinculados ao estabelecimento, criando os acessos que serão usados pelos funcionários diretamente nas maquininhas.
+- O administrador da loja acompanha a quantidade de cupons emitidos por cada maquininha, o movimento do dia e os totais acumulados, com atualização em tempo real ou tão próxima disso quanto a arquitetura permitir.
+- O administrador da loja consulta os cupons emitidos pelo estabelecimento, os cupons que participaram de lotes/sorteios gerais, os resultados dos cupons da loja e os prêmios pagos/resgatados.
+- O administrador acompanha os valores devidos à plataforma, cobranças e pagamentos, sem poder alterar regras globais ou interferir nos sorteios.
+- A área administrativa da loja não é a interface usada no caixa para registrar compras, emitir cupons ou resgatar prêmios. Essas tarefas pertencem à área operacional da maquininha (APK).
+- O administrador da loja não acessa dados de outros estabelecimentos nem a administração geral.
 
 ### 2.3 Caixas/maquininhas e funcionários
 
-- Cada maquininha ou caixa terá seu próprio login e senha.
-- O acesso da maquininha é usado pelo funcionário responsável para registrar o valor da compra, informar opcionalmente o WhatsApp do consumidor e emitir/imprimir o cupom com QR Code.
-- Cada emissão fica vinculada à loja e ao caixa/maquininha que a realizou, permitindo identificar a origem de cada cupom.
-- Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado.
-- Uma loja pequena também pode operar com apenas uma maquininha.
+- Cada maquininha/caixa deve possuir uma identidade operacional própria, vinculada a uma única loja.
+- O administrador da loja cria os acessos de suas maquininhas, definindo ou gerando login e senha para que o funcionário entre diretamente no APK instalado na maquininha.
+- O acesso operacional é usado na própria maquininha, não no celular pessoal do funcionário.
+- O funcionário utiliza o login e a senha atribuídos àquela maquininha para registrar compras, emitir cupons, ler QR Codes e executar resgates conforme as permissões do APK.
+- A identidade da maquininha deve permitir que cada cupom e cada operação sejam atribuídos ao equipamento correto, preservando o controle de produção e a auditoria.
+- O modelo de credenciais — um login por maquininha ou credencial compartilhada entre equipamentos — ainda será definido tecnicamente. A solução deverá favorecer a identificação individual de cada equipamento; credenciais genéricas compartilhadas podem prejudicar o controle e a auditoria.
+- O administrador da loja deve conseguir consultar qual login está associado a cada maquininha e administrar o acesso, inclusive redefinindo a senha quando necessário.
+- A administração das credenciais deve ser simples para o lojista, sem exigir um fluxo complexo de recuperação. Por segurança, a implementação não deve armazenar senhas em texto aberto nem permitir sua leitura direta no banco; deve oferecer redefinição/geração de nova senha e uma forma segura de entregá-la ao funcionário.
+- Cada emissão fica vinculada à loja e à maquininha/caixa que a realizou, permitindo identificar a origem de cada cupom.
+- Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado, ou operar com apenas uma.
 - O dono pode ser o único administrador da loja. Se também realizar vendas e emitir cupons, deverá utilizar o acesso operacional de uma maquininha/caixa, separado do acesso administrativo.
-- O acesso administrativo da loja pode ser feito pelo celular; a emissão de cupons ocorre pela interface de caixa/maquininha.
-- As funções administrativas e as funções de emissão não devem ser misturadas em uma única área.
+- As funções administrativas e as funções de emissão/resgate não devem ser misturadas em uma única área.
+
 
 ## 3. Registro de compras, percentual e emissão de cupons
 
@@ -317,6 +326,52 @@ A maquininha terá uma área operacional própria para registrar compras, emitir
 - Os elementos compatíveis devem ser migrados ou refatorados para a nova área operacional, com nomes, responsabilidades e fluxo coerentes com a função de maquininha.
 - Elementos exclusivos do antigo fluxo de cambista que não tenham função na promoção devem ser removidos do novo fluxo e, quando deixarem de ser usados em todo o sistema, eliminados com segurança.
 - Não se deve simplesmente renomear a área antiga nem manter funcionalidades de cambista escondidas. A área final deve representar claramente as tarefas da maquininha: registrar compra, emitir/imprimir cupom, ler QR Code e resgatar prêmio.
+
+## 17. Área administrativa da loja
+
+A área administrativa do estabelecimento será identificada simplesmente como **Loja**. Ela será uma área enxuta, voltada ao acompanhamento do funcionamento das maquininhas e à gestão dos acessos operacionais.
+
+### 17.1 Criação e acesso do administrador da loja
+
+- O administrador geral é quem cadastra o estabelecimento e cria/vincula seu usuário administrador.
+- O administrador da loja recebe as credenciais de acesso à área **Loja** e administra somente o próprio estabelecimento.
+- O administrador da loja não pode criar outra loja nem promover a própria conta a administrador geral.
+
+### 17.2 Painel de movimento das maquininhas
+
+- A tela principal deve apresentar um painel simples com o movimento das maquininhas vinculadas à loja.
+- Deve mostrar cada maquininha individualmente, sua identificação, situação operacional e quantidade de cupons emitidos no dia.
+- Deve apresentar totais da loja, como quantidade total de cupons emitidos no dia e acumulado do período selecionado.
+- Os indicadores devem atualizar em tempo real ou com a menor latência tecnicamente viável, para que o administrador acompanhe o movimento enquanto as maquininhas trabalham.
+- O administrador deve conseguir consultar o histórico de produção por maquininha e comparar o movimento entre os equipamentos.
+- A interface deve deixar claro de qual maquininha veio cada cupom, evitando apresentar apenas totais sem origem.
+
+### 17.3 Cadastro e administração de maquininhas
+
+- A área **Loja** terá uma opção/menu para cadastrar uma nova maquininha ou caixa.
+- Ao cadastrar, o administrador cria um acesso operacional com login e senha para uso no APK instalado naquele equipamento.
+- O cadastro deve permitir identificar cada equipamento de forma simples, por exemplo: **Maquininha 1**, **Maquininha 2**, **Maquininha 3**, ou por um nome/identificação escolhido pela loja.
+- O administrador poderá consultar a lista de maquininhas, identificar quais estão ativas, editar sua identificação, desativar um acesso e redefinir a senha quando necessário.
+- A criação de acessos deve ser simples e adequada à rotina de funcionários de loja.
+- A decisão técnica entre credencial individual por equipamento ou credencial compartilhada ficará para a etapa de arquitetura. A recomendação funcional é manter uma identidade por maquininha, para que a produção e as operações possam ser auditadas por equipamento.
+- Senhas não devem ser armazenadas em texto aberto. O administrador poderá redefinir/gerar uma nova senha e repassá-la ao funcionário, em vez de consultar a senha antiga em texto legível.
+
+### 17.4 Menus de cupons, sorteios e prêmios
+
+A área **Loja** terá menus simples para dar transparência ao movimento do estabelecimento:
+
+- **Cupons emitidos:** lista dos cupons gerados pela loja, com data/hora, valor da compra, maquininha de origem e situação.
+- **Sorteios:** lista dos lotes gerais dos quais participaram cupons da loja, com identificação do lote, data do sorteio e resultado relevante para os cupons emitidos pelo estabelecimento.
+- **Cupons premiados:** relação dos cupons da loja que foram sorteados como ganhadores, com valor do prêmio, situação e prazo de resgate.
+- **Prêmios resgatados/pagos:** histórico dos prêmios originados em cupons da loja que já foram resgatados, incluindo a modalidade registrada e a loja credenciada que realizou o resgate.
+- **Financeiro:** resumo do percentual devido à plataforma, valores acumulados, cobranças e pagamentos da própria loja.
+
+### 17.5 Limites e simplicidade da área
+
+- O administrador da loja não precisa de ferramentas para controlar a fila geral, formar lotes ou iniciar sorteios. Essas operações são automáticas no servidor.
+- O administrador da loja não pode alterar resultados, escolher ganhadores, dar baixa manual em prêmios ou acessar dados de outros estabelecimentos.
+- A área não deve acumular ferramentas administrativas desnecessárias. O foco é acompanhar as maquininhas, administrar seus acessos e consultar os registros da própria loja.
+- A construção deverá priorizar a adaptação/refatoração de componentes existentes que sejam compatíveis, sem manter funcionalidades antigas sem uso ou criar remendos. A arquitetura final deve seguir a diretriz de código limpo registrada na seção 4.1.
 
 ## 15. Pontos que ainda precisam ser definidos
 
