@@ -415,14 +415,15 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 
 - **Cupons emitidos:** lista dos cupons gerados pela loja, com data/hora, valor da compra, maquininha de origem e situação.
 - **Sorteios:** lista dos lotes gerais dos quais participaram cupons da loja, com identificação do lote, data do sorteio e resultado relevante para os cupons emitidos pelo estabelecimento.
-- **Cupons premiados:** relação dos cupons da loja que foram sorteados como ganhadores, com valor do prêmio, situação e prazo de resgate.
-- **Prêmios resgatados/pagos:** histórico dos prêmios originados em cupons da loja que já foram resgatados, incluindo a modalidade registrada e a loja credenciada que realizou o resgate.
-- **Financeiro:** resumo do percentual devido à plataforma, valores acumulados, cobranças e pagamentos da própria loja.
+- **Cupons premiados:** relação dos cupons da loja que foram sorteados como ganhadores, com valor do prêmio, situação e prazo de resgate pelo consumidor.
+- **Prêmios liberados para saque da loja:** lista dos prêmios de cupons emitidos pela própria loja cujo prazo de 30 dias terminou sem resgate pelo consumidor. Cada item deverá mostrar valor, cupom, data de liberação e botão **Sacar prêmio**, disponível exclusivamente ao administrador daquela loja.
+- **Prêmios resgatados/pagos:** histórico separado dos prêmios pagos ao consumidor e dos prêmios sacados pela loja após o prazo, com modalidade, valor, data e identificação do responsável pela operação.
+- **Financeiro:** resumo do percentual devido à plataforma, valores acumulados, cobranças e pagamentos da própria loja, incluindo os valores de prêmios liberados e sacados pela loja.
 
 ### 17.5 Limites e simplicidade da área
 
 - O administrador da loja não precisa de ferramentas para controlar a fila geral, formar lotes ou iniciar sorteios. Essas operações são automáticas no servidor.
-- O administrador da loja não pode alterar resultados, escolher ganhadores, dar baixa manual em prêmios ou acessar dados de outros estabelecimentos.
+- O administrador da loja não pode alterar resultados, escolher ganhadores, cancelar prêmios nem sacar prêmios antes do fim dos 30 dias. Depois do prazo, só pode sacar os prêmios liberados que pertencem à própria loja, pelo fluxo específico e auditado; não pode acessar dados de outros estabelecimentos.
 - A área não deve acumular ferramentas administrativas desnecessárias. O foco é acompanhar as maquininhas, administrar seus acessos e consultar os registros da própria loja.
 - A construção deverá priorizar a adaptação/refatoração de componentes existentes que sejam compatíveis, sem manter funcionalidades antigas sem uso ou criar remendos. A arquitetura final deve seguir a diretriz de código limpo registrada na seção 4.1.
 
