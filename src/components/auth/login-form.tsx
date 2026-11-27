@@ -1,9 +1,9 @@
 "use client";
 import { FormEvent, useState } from "react";
 
-type UserRole = "PLAYER" | "CASHIER" | "ADMIN";
+type UserRole = "PLAYER" | "CASHIER" | "ADMIN" | "STORE_ADMIN";
 type SessionResponse = { authenticated: true; user: { role: UserRole; mustChangePassword: boolean } };
-const destinationByRole = { PLAYER: "/player", CASHIER: "/cashier", ADMIN: "/admin" } as const;
+const destinationByRole = { PLAYER: "/player", CASHIER: "/cashier", ADMIN: "/admin", STORE_ADMIN: "/store" } as const;
 
 export function LoginForm({ allowedRole, cashierApp = false }: { allowedRole?: UserRole; cashierApp?: boolean } = {}) {
   const [username, setUsername] = useState("");
