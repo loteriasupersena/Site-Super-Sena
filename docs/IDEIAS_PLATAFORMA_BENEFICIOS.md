@@ -34,7 +34,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador da loja é o responsável pelo estabelecimento e pode acompanhar somente os dados da própria loja.
 - Essa área é destinada à administração da loja: acompanhar movimento, vendas registradas, cupons emitidos, lotes, valores devidos, pagamentos e histórico de sorteios.
 - O administrador da loja cadastra e administra exclusivamente as maquininhas/caixas vinculados ao próprio estabelecimento, incluindo seus acessos.
-- O administrador da loja escolhe quantos lotes completos deseja incluir em cada fechamento, respeitando a quantidade de cupons elegíveis e ainda não fechados.
+- O administrador da loja acompanha os cupons emitidos pela própria loja e os valores devidos à plataforma. Não escolhe nem fecha lotes de sorteio.
 - A área administrativa da loja não é a interface usada no caixa para registrar compras e emitir cupons.
 
 ### 2.3 Caixas/maquininhas e funcionários
@@ -76,6 +76,18 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A situação financeira da loja emissora não altera a elegibilidade do consumidor nem o resultado do sorteio. O cliente não pode ser prejudicado por atraso ou falta de pagamento da loja.
 - Não haverá lotes exclusivos por estabelecimento nem exigência de 100 cupons da mesma loja para realizar um sorteio.
 
+### 4.1 Transformação do mecanismo de sorteio existente
+
+- O sistema atual possui um mecanismo antigo baseado em sorteio de seis números e modalidades/faixas como unidade, dezena, centena, milhar, quina e sena. Esse mecanismo será substituído pela nova regra promocional: **um ganhador a cada lote de 100 cupons da fila geral**.
+- A mudança deverá ser feita prioritariamente por **edição e adaptação do que já existe**, aproveitando componentes, serviços, estruturas, telas e rotinas atuais sempre que forem compatíveis.
+- Não se deve apagar o sistema existente indiscriminadamente nem reconstruir tudo do zero. Novos componentes, tabelas, campos ou serviços só deverão ser criados quando forem realmente necessários para suportar a nova regra.
+- O mecanismo antigo de sorteio de seis números e suas modalidades deixa de ser a regra operacional da promoção. A lógica do servidor deverá ser adaptada para formar lotes sequenciais de 100 cupons e selecionar exatamente um cupom ganhador por lote.
+- A execução do sorteio deve ocorrer no servidor, automaticamente quando o lote geral completar 100 cupons. A interface não deve simular o resultado nem depender de ação manual do administrador.
+- Antes de qualquer alteração, deve-se inspecionar o fluxo atual de sorteio ponta a ponta: emissão/registro dos cupons, entrada na fila, serviço responsável pelo sorteio, persistência do resultado, consulta pública, painéis administrativos e resgate. A adaptação deve preservar as funcionalidades úteis e atualizar todos os pontos que dependem da regra antiga.
+- A migração deve evitar perda de histórico. Registros históricos do mecanismo antigo devem ser preservados para consulta/auditoria, sem serem misturados aos novos lotes promocionais. A estratégia de compatibilidade e tratamento dos registros existentes deverá ser definida após a inspeção do banco e do código.
+- A implementação deverá incluir testes para garantir: lote com exatamente 100 cupons; um único ganhador; mistura de lojas; disparo automático no servidor; nenhum sorteio antes do centésimo cupom; nenhum efeito de pagamentos/webhooks sobre o sorteio; e prevenção de lotes ou resultados duplicados.
+- Nenhuma alteração deverá ser feita diretamente na branch `main`. O trabalho deverá ocorrer na branch de desenvolvimento definida para o projeto, com inspeção e commits incrementais.
+
 ## 5. Apuração financeira e pagamento devido por cada loja
 
 - A emissão dos cupons e a participação dos consumidores na fila geral não dependem de pagamento prévio da loja.
@@ -116,16 +128,13 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 O administrador da loja deve conseguir consultar:
 
 - Total de compras registradas pela loja.
-- Quantidade de cupons emitidos, pendentes de pagamento e elegíveis.
-- Quantidade de lotes completos disponíveis para fechamento.
-- Quantos lotes foram fechados, pagos e sorteados.
+- Quantidade de cupons emitidos pela loja e sua situação na fila geral (aguardando completar lote, já sorteados ou premiados).
 - Histórico de compras e cupons, identificando a maquininha/caixa e o funcionário responsável.
 - Valores acumulados e percentual devido à plataforma.
-- Fechamentos realizados, com seus respectivos lotes, cupons e valores.
-- Situação de cada fechamento: aberto, aguardando pagamento, pago/processado.
-- Histórico dos sorteios e respectivos ganhadores da própria loja.
+- Histórico das cobranças e pagamentos da loja, com valores, datas e identificadores.
+- Histórico dos sorteios gerais dos quais participaram cupons emitidos pela loja, incluindo o resultado do próprio cupom.
 - Cadastro, situação e acessos das maquininhas/caixas vinculados à loja.
-- Opção para escolher a quantidade de lotes, realizar o fechamento e gerar o QR Code Pix da cobrança.
+- Opção para consultar valores devidos e gerar QR Code Pix para pagamento.
 
 ## 9. Painel do administrador geral
 
@@ -137,15 +146,15 @@ O painel deve apresentar, no mínimo:
 - Para cada loja: quantidade de maquininhas cadastradas e situação de cada uma.
 - Quantidade de cupons emitidos por loja e por maquininha, com filtros por período.
 - Valores das compras registrados, percentual devido à plataforma, valores em aberto e valores pagos.
-- Quantidade de cupons pendentes de pagamento, elegíveis e já utilizados em lotes.
-- Quantidade de lotes disponíveis, em fechamento, aguardando pagamento, pagos e sorteados.
-- Histórico de fechamentos e pagamentos de cada loja.
-- Histórico de sorteios por loja e por lote, incluindo status do processamento e resultado.
+- Situação financeira individual de cada loja, incluindo valores devidos, cobranças e pagamentos.
+- Tamanho e posição da fila geral, lotes em formação, lotes completos e sorteios processados.
+- Histórico global de lotes e sorteios, com a identificação da loja de origem de cada cupom participante.
+- Histórico de cobranças e pagamentos individualizado por loja.
 - Identificação do cupom ganhador, valor da compra associado e contato do consumidor, com acesso restrito.
 - Situação do contato com o ganhador e do resgate/entrega do prêmio: pendente de contato, avisado, aguardando comparecimento, entregue ou ocorrência registrada.
 - Alertas para valores vencidos ou pendentes por loja, falhas de processamento, lotes completos ainda não sorteados e prêmios ainda não resgatados.\n- Ferramentas para consultar e exportar os dados necessários à cobrança administrativa dos estabelecimentos.
 
-O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar seus caixas, cupons, fechamentos, lotes, sorteios e prêmios. A visualização dos dados operacionais não implica acesso às senhas dos usuários ou maquininhas.
+O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar seus caixas, cupons emitidos, valores devidos, cobranças, pagamentos e os resultados dos cupons daquela loja nos sorteios gerais. A visualização dos dados operacionais não implica acesso às senhas dos usuários ou maquininhas.
 
 ## 10. Consulta do QR Code, comunicação e prazo do prêmio
 
@@ -239,26 +248,23 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 
 1. Os dados financeiros e administrativos são segregados por loja; cada estabelecimento só acessa seus próprios registros, embora a fila de sorteio seja global.
 2. Cada maquininha/caixa possui credenciais próprias e só pode emitir cupons para a loja à qual está vinculada.
-3. Cada cupom deve estar vinculado a uma compra, loja, maquininha/caixa, emissão e, depois, ao fechamento e lote correspondentes.
-4. O sistema não deve liberar cupons com base apenas em comprovante enviado ou informação visual de pagamento.
-5. A liberação e o disparo do sorteio dependem da confirmação da transação pelo provedor de pagamento.
-6. O processamento da confirmação deve ser idempotente: notificações repetidas não podem duplicar pagamentos nem sorteios.
-7. Um cupom não pode participar mais de uma vez nem ser atribuído a mais de um lote.
-8. Cada lote deve conter exatamente 100 cupons elegíveis da mesma loja.
-9. Deve existir trilha de auditoria para emissões, fechamentos, pagamentos, liberações, formação dos lotes, sorteios e resgates.
-10. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
+3. Cada cupom deve estar vinculado a uma compra, loja, maquininha/caixa e emissão; depois, deve ser atribuído uma única vez a um lote geral.
+4. A entrada do centésimo cupom válido na fila geral fecha o lote e dispara o sorteio automático no servidor, sem depender de pagamento.
+5. A confirmação Pix por webhook atualiza somente o financeiro da loja e não pode liberar, iniciar, interromper ou repetir sorteios.
+6. O processamento da fila e dos sorteios deve ser idempotente: eventos repetidos não podem duplicar lotes ou resultados.
+7. Cada lote deve conter exatamente 100 cupons da fila geral, podendo reunir cupons de diferentes lojas, e gerar exatamente um ganhador.
+8. Deve existir trilha de auditoria para emissões, entrada na fila, composição dos lotes, sorteios, cobranças, pagamentos, bloqueios e resgates.
+9. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
 
 ## 14. Exemplo ilustrativo do fluxo
 
 1. Um supermercado possui cinco caixas, cada um com uma maquininha e credenciais próprias.
 2. Em cada caixa, o funcionário registra o valor da compra e emite o cupom com QR Code.
-3. O administrador acompanha pelo celular os cupons emitidos por todos os caixas da loja.
-4. Quando houver 800 cupons elegíveis ainda não fechados, o administrador pode escolher fechar os 8 lotes de uma vez.
-5. A plataforma calcula o valor devido, apresenta o resumo e gera o QR Code Pix.
-6. O administrador paga a cobrança.
-7. O provedor confirma o pagamento por webhook.
-8. O servidor processa o fechamento automaticamente e realiza 8 sorteios independentes, um para cada lote de 100 cupons.
-9. Outra loja mantém sua própria fila, seus próprios pagamentos e seus próprios sorteios, sem compartilhar cupons.
+3. O cupom entra imediatamente na fila geral, junto com os cupons das demais lojas.
+4. Quando a fila geral completa 100 cupons, o servidor fecha o lote e realiza automaticamente um sorteio com um ganhador.
+5. A plataforma calcula e registra separadamente o valor devido pelo supermercado e disponibiliza a cobrança Pix.
+6. Quando o supermercado paga, o webhook atualiza seu extrato financeiro, sem interferir no sorteio já realizado ou nos próximos.
+7. Se a loja ficar inadimplente, poderá ser bloqueada para novas emissões conforme política definida, mas os cupons já emitidos continuam participando normalmente.
 
 ## 15. Pontos que ainda precisam ser definidos
 
