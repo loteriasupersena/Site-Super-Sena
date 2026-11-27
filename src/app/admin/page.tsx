@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { AdminGameSimulator } from "@/components/admin/admin-game-simulator";
 import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
 import { AdminPaymentRequests } from "@/components/admin/admin-payment-requests";
+import { AdminStoreManager } from "@/components/admin/admin-store-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AdminPage() {
 
   return (
     <AreaShell title="Administração" username={user.username} description="Configuração e supervisão da plataforma.">
-      <div className="admin-page-layout">
+      <div className="admin-page-layout">\n        <AdminStoreManager />
         <AdminUnpaidPrizeDashboard />
         <div className="admin-payment-section">
           <AdminPaymentRequests />
