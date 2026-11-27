@@ -50,7 +50,7 @@ export async function issueCoupon(input: {
 
     const store = await tx.store.findUnique({
       where: { id: actor.storeId },
-      select: { id: true, status: true, commissionRateBasisPoints: true },
+      select: { id: true, status: true, commissionRateBasisPoints: true, couponLimit: true },
     });
     if (!store || store.status !== "ACTIVE") throw new Error("COUPON_STORE_INACTIVE");
 
