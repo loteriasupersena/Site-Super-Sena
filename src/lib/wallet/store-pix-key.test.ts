@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 import { decryptStorePixKey, encryptStorePixKey } from "./store-pix-key";
 
 describe("store Pix key encryption", () => {
