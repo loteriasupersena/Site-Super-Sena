@@ -76,6 +76,23 @@ export async function issueCoupon(input: {
       return { coupon: raced, batch, replayed: true };
     }
 
+    // Billing cycles are store-specific and independent from the global draw queue.
+    // A payment closes the store's outstanding cycle; it never changes draw batches.
+    const latestPaidBilling = await tx.storeBilling.findFirst({
+      where: { storeId: store.id, status: "PAID", paidAt: { not: null } },
+      orderBy: { paidAt: "desc" },
+      select: { paidAt: true },
+    });
+    const outstandingCouponCount = await tx.coupon.count({
+      where: {
+        storeId: store.id,
+        ...(latestPaidBilling?.paidAt ? { issuedAt: { gt: latestPaidBilling.paidAt } } : {}),
+      },
+    });
+    if (outstandingCouponCount >= store.couponLimit) {
+      throw new Error("COUPON_STORE_BILLING_LIMIT_REACHED");
+    }
+
     let batch = await tx.couponBatch.findFirst({
       where: { status: "OPEN" },
       orderBy: { sequenceNumber: "desc" },
