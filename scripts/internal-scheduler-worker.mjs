@@ -13,9 +13,8 @@ const jobs = [
 const enabledJobs = jobs.filter((job) => {
   if (job.token && job.token.length >= 32) return true;
   const message = `[internal-scheduler-worker] ${job.name}: segredo ausente ou menor que 32 caracteres.`;
-  // Do not take the whole site offline when the new Mercado Pago secret has
-  // not yet been configured during deployment. Round scheduling remains
-  // mandatory; payment reconciliation can be enabled as soon as its secret exists.
+  // Payment reconciliation is optional until its independent secret is configured.
+  // The legacy round scheduler keeps its existing mandatory startup behavior.
   if (job.name === "round-scheduler") {
     console.error(message);
     process.exit(1);
