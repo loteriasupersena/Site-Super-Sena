@@ -50,8 +50,8 @@ export function AdminStoreManager() {
     setError(""); setNotice("");
     const percent = Number(form.commissionPercent.replace(",", "."));
     const limit = Number(form.couponLimit);
-    if (!Number.isFinite(percent) || percent < 3 || percent > 5) {
-      setError("O percentual deve ficar entre 3% e 5%."); return;
+    if (!Number.isFinite(percent) || percent < 0 || !Number.isSafeInteger(Math.round(percent * 100))) {
+      setError("Informe um percentual válido, igual ou maior que zero, com até duas casas decimais."); return;
     }
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100000) {
       setError("Informe um limite válido de cupons."); return;
@@ -100,8 +100,8 @@ export function AdminStoreManager() {
       <label>WhatsApp do administrador
         <input type="tel" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} minLength={10} maxLength={24} required />
       </label>
-      <label>Percentual devido à plataforma (3% a 5%)
-        <input type="number" inputMode="decimal" min="3" max="5" step="0.01" value={form.commissionPercent} onChange={(event) => setForm({ ...form, commissionPercent: event.target.value })} required />
+      <label>Percentual devido à plataforma (%)
+        <input type="number" inputMode="decimal" min="0" step="0.01" value={form.commissionPercent} onChange={(event) => setForm({ ...form, commissionPercent: event.target.value })} required />
       </label>
       <label>Limite de cupons por ciclo de cobrança
         <input type="number" inputMode="numeric" min="1" max="100000" step="1" value={form.couponLimit} onChange={(event) => setForm({ ...form, couponLimit: event.target.value })} required />
