@@ -343,6 +343,9 @@ O painel do administrador geral deve manter como referência o painel administra
 7. Cada lote deve conter exatamente 100 cupons da fila geral, podendo reunir cupons de diferentes lojas, e gerar exatamente um ganhador.
 8. Deve existir trilha de auditoria para emissões, entrada na fila, composição dos lotes, sorteios, cobranças, pagamentos, bloqueios e resgates.
 9. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
+10. O resgate na maquininha pode ocorrer por entrega pela loja emissora (mercadoria ou dinheiro, conforme acordo) ou por Pix direto ao cliente executado pela plataforma. As duas modalidades são exclusivas por operação e devem registrar qual foi efetivamente concluída.
+11. No Pix direto ao cliente, a chave e seu tipo são informados na maquininha, validados no servidor e usados em uma transferência de saída da plataforma. A auditoria registra a modalidade, loja emissora, maquininha, operador, valor, horário e referência do provedor, sem expor a chave completa.
+12. O mesmo prêmio não pode ser liquidado por mais de uma modalidade. Transferências Pix pendentes ou de resultado ambíguo permanecem em conciliação e não podem ser repetidas sem consulta ao provedor.
 
 ## 14. Exemplo ilustrativo do fluxo
 
@@ -381,13 +384,17 @@ A maquininha terá uma área operacional própria para registrar compras, emitir
 
 ### 16.3 Resgate e baixa do prêmio
 
-- Ao pressionar **Sacar**, o APK abre uma janela com duas opções mutuamente exclusivas: **Mercadoria** e **Dinheiro**.
-- O operador seleciona somente uma das modalidades, conforme as opções habilitadas para a loja.
-- A confirmação da modalidade escolhida conclui o registro do resgate no servidor. A operação deve registrar a modalidade, o valor, o cupom/prêmio, a loja que realizou o resgate, a maquininha, o funcionário/responsável e data/hora, mantendo a trilha de auditoria definida nas seções 11 e 13.
-- A conclusão deve dar baixa definitiva no prêmio e atualizar seu estado para **resgatado/pago** no sistema.
-- Uma nova leitura do mesmo QR Code, em qualquer maquininha credenciada, deverá informar que o prêmio já foi resgatado e não poderá oferecer novamente o botão **Sacar**.
-- O servidor deve garantir atomicidade e impedir dois resgates simultâneos ou duplicados do mesmo prêmio. Também deve rejeitar qualquer tentativa feita por loja diferente da loja emissora, mesmo que a outra loja seja credenciada.
-- O fluxo de resgate deve continuar respeitando as regras financeiras e de liquidação descritas na seção 11.3. A escolha na interface não deve ser tratada como prova de que a entrega ou transferência financeira foi concluída sem o registro correspondente.
+- Ao pressionar **Sacar**, o APK apresenta duas modalidades principais, mutuamente exclusivas: **Entrega pela loja** e **Pix direto ao cliente pela plataforma**.
+- **Entrega pela loja:** mantém a janela já definida, com as opções **Mercadoria** ou **Dinheiro**, conforme o acordo comercial habilitado para a loja emissora. O operador seleciona uma única opção e registra a entrega realizada pelo estabelecimento.
+- **Pix direto ao cliente pela plataforma:** quando a loja não puder ou não quiser entregar o prêmio em mercadoria ou dinheiro, o operador poderá selecionar essa modalidade na própria maquininha. O APK abre uma segunda janela, com estrutura visual equivalente à janela de entrega pela loja, contendo campo para a chave Pix do cliente e seleção obrigatória do tipo de chave: CPF/CNPJ, telefone, e-mail ou chave aleatória.
+- Antes de executar o Pix, a maquininha deve apresentar o valor integral do prêmio e os dados de destino mascarados para conferência do operador e do cliente. A chave deve ser validada e enviada ao serviço de pagamento no servidor; não confiar em valor, titularidade ou resultado informado pelo aplicativo.
+- O Pix direto ao cliente é uma transferência executada pela plataforma, não um pagamento feito por outra loja credenciada. A disponibilidade dessa modalidade depende de integração de transferência Pix/payout e de saldo/garantia financeira suficiente na plataforma. A existência de uma API de cobrança Pix não comprova que a transferência de saída esteja disponível.
+- O pagamento deve usar referência idempotente única por prêmio, registrar a tentativa antes de chamar o provedor e tratar estados pendentes/ambíguos por consulta e conciliação. Não repetir uma transferência incerta sem antes verificar o estado da anterior. O prêmio só recebe baixa definitiva como pago após confirmação confiável do provedor.
+- A operação concluída deve registrar obrigatoriamente a modalidade efetiva (**mercadoria**, **dinheiro pela loja** ou **Pix direto pela plataforma**), valor, cupom/prêmio, loja emissora, maquininha, funcionário/responsável, data/hora e, no caso do Pix, tipo de chave, chave mascarada, provedor e identificador externo da transferência. A chave Pix completa e segredos não devem aparecer em logs ou telas de auditoria.
+- A confirmação da entrega em mercadoria ou dinheiro pela loja deve ser registrada no servidor antes de dar baixa definitiva. No Pix direto, a baixa só ocorre depois da confirmação do provedor.
+- Uma nova leitura do mesmo QR Code, em qualquer maquininha credenciada, deverá informar que o prêmio já foi resgatado/pago e não poderá oferecer novamente o botão **Sacar**.
+- O servidor deve garantir atomicidade e impedir dois resgates ou pagamentos simultâneos/duplicados do mesmo prêmio. Também deve rejeitar qualquer tentativa feita por loja diferente da loja emissora, mesmo que a outra loja seja credenciada.
+- O fluxo de resgate deve continuar respeitando as regras de propriedade e liquidação da seção 11.6. A modalidade escolhida na interface não é prova de que a entrega ou transferência financeira foi concluída; a baixa depende do registro válido da entrega ou da confirmação do provedor.
 
 ### 16.4 Reaproveitamento da área atual do cambista
 
@@ -454,7 +461,7 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 - Qual provedor Pix será utilizado e como ocorrerá a conciliação automática por webhook. O webhook não terá função de disparar sorteios.
 - Como garantir financeiramente a entrega dos prêmios sorteados quando a loja emissora ainda não tiver pago à plataforma, sem transferir a obrigação de resgate ou pagamento para outro estabelecimento.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
-- Como será liquidada financeiramente a transferência Pix do resgate e como será feita a conciliação entre a plataforma e a loja.
+- Definir o provedor e a fonte de recursos para o Pix direto ao cliente executado pela plataforma na maquininha, incluindo tarifas, limites, validação de titularidade, conciliação, estornos e tratamento de transferências pendentes/ambíguas.
 - Definir o procedimento de contestação sem permitir cancelamento ou saque administrativo indevido, mantendo o direito de saque do consumidor no prazo e da loja de origem após 30 dias.
 - Revisão jurídica do modelo de promoção, da fila compartilhada, dos compromissos com consumidores e dos acordos comerciais com os estabelecimentos.
 
