@@ -139,12 +139,38 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O painel da loja deve apresentar de forma clara o valor acumulado e devido à plataforma, com detalhamento e período de referência.
 - O painel geral deve consolidar os mesmos dados de todas as lojas, permitindo identificar valores vencidos, pendentes e pagos.
 - A plataforma deverá permitir gerar uma cobrança Pix com QR Code para que a loja pague os valores devidos.
-- A cobrança por ciclo será gerada automaticamente quando a loja atingir o limite de cupons definido para ela (100 como referência inicial). O valor da cobrança será calculado pela soma dos valores devidos em cada cupom do ciclo, usando o percentual individual cadastrado para aquela loja. A cobrança e sua confirmação são recursos de apoio à apuração e ao registro financeiro; não condicionam a entrada dos cupons na fila, a formação dos lotes ou os sorteios.
+- A cobrança do ciclo financeiro é individual por loja e soma os valores devidos dos cupons daquele ciclo. A loja pode gerar e pagar a cobrança antecipadamente, mesmo antes de completar 100 cupons. Ao atingir 100 cupons ainda não quitados, novas emissões daquela loja são bloqueadas até a confirmação do pagamento. Esse controle financeiro é independente da fila global e dos lotes de sorteio; não condiciona a entrada de cupons na fila, a formação dos lotes ou os sorteios.
 - O sistema deve registrar cada cobrança com identificador próprio, loja devedora, valor, período ou cupons de referência, data de criação, vencimento quando definido e situação.
 - A confirmação de pagamento poderá ser registrada por integração e webhook do provedor Pix. O webhook atualiza a situação financeira e a conciliação da loja, mas **não dispara sorteio nem libera lote**, pois os sorteios já acontecem automaticamente pela fila geral.
 - Neste modelo, o webhook também é responsável por confirmar a quitação do ciclo de cobrança da loja e liberar novas emissões. Essa liberação é independente do mecanismo de sorteio: o webhook não inicia, pausa, repete ou altera sorteios; apenas atualiza o financeiro e o estado de bloqueio/liberação de novas emissões da loja.
-- A loja não poderá continuar acumulando emissões indefinidamente sem pagar: ao atingir o limite do ciclo, novas emissões serão bloqueadas até a confirmação do pagamento pelo webhook. Cupons já emitidos permanecem válidos e participam dos sorteios gerais.
+- A loja não poderá continuar acumulando emissões indefinidamente sem pagar: ao atingir 100 cupons não quitados no controle financeiro individual, novas emissões serão bloqueadas até a confirmação do pagamento. A loja pode, porém, gerar a cobrança e quitá-la antes desse limite. Cupons já emitidos permanecem válidos e participam dos sorteios gerais.
 - A cobrança e o acompanhamento de inadimplência serão uma atividade administrativa e comercial conduzida pelo responsável pela plataforma, fora da lógica automática de sorteios. O aplicativo fornece os dados, cálculos, extratos, cobranças e indicadores necessários para apoiar essa administração.
+
+### 5.1 Separação obrigatória entre lotes de sorteio e lotes de cobrança
+
+Existem **dois controles independentes**, que não podem compartilhar a mesma contagem, composição, identificador de lote, estado ou regra de fechamento:
+
+**A. Lotes de sorteio — fila global da plataforma**
+- Existe uma única fila global, compartilhada por todas as lojas.
+- Cada cupom válido entra imediatamente na fila global quando é emitido, sem depender de pagamento da loja.
+- A cada 100 cupons da fila global, o servidor fecha um lote de sorteio e realiza automaticamente um sorteio individual, com exatamente um ganhador.
+- Um lote de sorteio pode conter cupons de várias lojas. Não existe exigência de 100 cupons da mesma loja.
+- O pagamento, a cobrança, a inadimplência ou o bloqueio de uma loja não podem iniciar, adiar, cancelar, alterar ou impedir qualquer sorteio. Cupons já emitidos continuam participando normalmente.
+
+**B. Lotes/ciclos de cobrança — controle individual de cada loja**
+- Cada loja possui sua própria contagem financeira de cupons emitidos. Essa contagem não é a fila global e não corresponde aos lotes de sorteio.
+- Para cada cupom emitido pela loja, o sistema registra o valor devido à plataforma com base no percentual daquela loja e no snapshot gravado no cupom.
+- A loja pode solicitar e pagar uma cobrança Pix a qualquer momento, inclusive depois de emitir apenas um cupom. O painel deve permitir gerar o QR Code de pagamento antes de chegar a 100 cupons.
+- Quando a loja completa 100 cupons ainda não quitados nesse controle financeiro, fecha-se um ciclo de cobrança daquela loja, calculado pela soma dos valores devidos dos cupons que o compõem.
+- Ao atingir 100 cupons sem quitação, a emissão de novos cupons fica bloqueada **somente para aquela loja** até a confirmação do pagamento devido. O bloqueio não afeta outras lojas, cupons já emitidos, consultas, resgates, a fila global nem os sorteios.
+- Após a confirmação autêntica do pagamento, o sistema registra a quitação e libera novas emissões para a loja. A contagem financeira inicia o próximo ciclo, sem alterar ou reabrir lotes de sorteio.
+- A cobrança pode ser gerada antes do limite; o limite de 100 é a trava máxima de emissão sem quitação, não uma condição para permitir o pagamento.
+- Cada cobrança deve ter referência própria e vínculo explícito à loja e aos cupons/valores quitados. Evitar cobranças duplicadas para os mesmos valores.
+- A baixa de pagamento via webhook/consulta/reconciliação atualiza exclusivamente o financeiro e a permissão de emissão da loja. **Nunca dispara nem condiciona sorteio.**
+
+**Regra de implementação:** os lotes globais de sorteio e os ciclos/lotes financeiros por loja devem ser entidades ou controles logicamente separados. Não reutilizar o mesmo contador ou registro para representar os dois processos. A conclusão de um lote de sorteio não fecha a cobrança de uma loja; a conclusão ou quitação de uma cobrança não fecha nem libera um lote de sorteio.
+
+---
 
 ## 6. Formação automática dos lotes e processamento dos sorteios
 
