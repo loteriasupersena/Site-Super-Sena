@@ -43,7 +43,7 @@ describe("Asaas store billing webhook", () => {
       },
       storeBilling: { updateMany: mocks.billingUpdateMany },
     };
-    mocks.transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx));
+    mocks.transaction.mockImplementation(async (callback: (tx: any) => unknown) => callback(tx));
   });
 
   function request(payload: unknown, token = "t".repeat(40)) {
