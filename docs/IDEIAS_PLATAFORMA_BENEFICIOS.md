@@ -71,18 +71,18 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Cada loja pode ter um percentual diferente. O administrador geral poderá alterar o percentual de uma loja ao longo do tempo.
 - Cada cupom deve guardar uma cópia histórica do percentual efetivamente aplicado no momento da emissão, junto ao valor calculado devido. Alterações posteriores na configuração da loja só valem para cupons emitidos depois da alteração e nunca recalculam cupons anteriores ou cobranças já apuradas.
 - Exemplo: compra de **R$ 100,00** com percentual configurado de **5%** gera **R$ 5,00** de valor devido pela loja à plataforma.
-- Antes de emitir o cupom, a interface de caixa registra obrigatoriamente o valor da compra e permite informar opcionalmente o WhatsApp/contato do consumidor. Nome do consumidor não será solicitado. O contato opcional pode ajudar a localizar o ganhador caso ele perca o cupom ou não consulte o resultado.
+- Antes de emitir o cupom, a interface registra exclusivamente o valor da compra. Não solicita nome, telefone, WhatsApp nem qualquer dado de contato do consumidor.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
 - O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
 - O valor devido à plataforma não reduz o valor do prêmio. No exemplo, se o cupom for sorteado, o valor de referência do prêmio será **R$ 100,00**, e não R$ 5,00.
 - A forma de entrega do prêmio — dinheiro ou mercadoria — é escolhida no fluxo de resgate da maquininha, conforme as regras comerciais habilitadas para o estabelecimento.
 - Cada cupom deve ser individual e não pode ser duplicado.
-- O contato do consumidor deve ficar associado ao cupom com proteção adequada, acesso restrito e finalidade limitada à comunicação sobre o resultado e o resgate do prêmio. O contato não deve ficar exposto publicamente na consulta do QR Code.
+- Nenhum telefone, WhatsApp ou contato do consumidor será coletado, armazenado ou utilizado pela plataforma.
 
 ## 3.1. Estrutura persistente dos cupons e lotes
 
 - O cupom promocional terá registro próprio, separado das entidades antigas de apostas, compras numéricas e rodadas.
-- Cada cupom terá identificador interno, código público único para o QR Code, loja emissora, usuário operacional responsável, lote global, valor integral da compra, percentual histórico aplicado, valor devido à plataforma, WhatsApp opcional e datas de emissão/sorteio/resgate.
+- Cada cupom terá identificador interno, código público único para o QR Code, loja emissora, usuário operacional responsável, lote global, valor integral da compra, percentual histórico aplicado, valor devido à plataforma, datas de emissão/sorteio/resgate e prazo de resgate.
 - O percentual aplicado será copiado da configuração da loja no instante da emissão. Alterações futuras no cadastro da loja não poderão recalcular o valor devido de cupons já emitidos.
 - O valor devido será calculado em centavos, com arredondamento monetário definido no serviço de emissão e validado por testes.
 - O lote global terá sequência única e estado próprio. O modelo persistente registra os cupons associados e o cupom vencedor; a regra de completar exatamente 100 cupons e sortear uma única vez deverá ser garantida por transação no servidor, com controle de concorrência e testes antes de liberar a emissão.
