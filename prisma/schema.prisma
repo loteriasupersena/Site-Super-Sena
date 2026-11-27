@@ -11,6 +11,7 @@ enum UserRole {
   PLAYER
   CASHIER
   ADMIN
+  STORE_ADMIN
 }
 
 enum AccountStatus {
@@ -113,6 +114,9 @@ model User {
   referencePoint        String?
   suppliesMaterial      Boolean       @default(false)
   commissionRateBasisPoints Int       @default(0)
+  storeId               String?
+  store                 Store?        @relation("StoreMembers", fields: [storeId], references: [id], onDelete: SetNull)
+  administeredStore     Store?        @relation("StoreAdministrator")
   passwordHash          String
   role                  UserRole      @default(PLAYER)
   status                AccountStatus @default(ACTIVE)
@@ -139,6 +143,21 @@ model User {
   prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
 
   @@index([role, status])
+}
+
+model Store {
+  id                       String        @id @default(cuid())
+  name                     String
+  status                   AccountStatus @default(ACTIVE)
+  commissionRateBasisPoints Int
+  couponLimit              Int           @default(100)
+  adminUserId              String        @unique
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  adminUser                User          @relation("StoreAdministrator", fields: [adminUserId], references: [id], onDelete: Restrict)
+  users                    User[]        @relation("StoreMembers")
+
+  @@index([status, createdAt])
 }
 
 model Session {
