@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { HomeAccess } from "@/components/home-access";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "MEU VALE PIX | Promoções para consumidores e lojas",
@@ -11,28 +10,17 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="home-page home-page-compact">
-      <HomeAccess />
-      <main className="home-entry">
-        <figure className="home-how-infographic numeric-game-infographic">
-          <Image
-            src="/images/brand/meu-vale-pix-inicio.webp"
-            alt="Como funciona o MEU VALE PIX"
-            className="home-how-infographic-image"
-            width={1200}
-            height={1200}
-            priority
-            sizes="(max-width: 768px) 100vw, 1100px"
-          />
-          <a
-            className="home-kit-whatsapp-link"
-            href="https://wa.me/5577991601217?text=Quero%20ser%20um%20cambista%20credenciado%20da%20Super%20Sena."
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Solicitar o kit gratuito da Super Sena pelo WhatsApp"
-          />
-        </figure>
-      </main>
-    </div>
+    <main className="home-page">
+      <header className="site-header">
+        <Link href="/" aria-label="MEU VALE PIX">MEU VALE PIX</Link>
+        <Link href="/cashier-app-login">Acesso da maquininha</Link>
+      </header>
+      <section className="home-entry">
+        <p className="eyebrow">Promoções para o comércio</p>
+        <h1>MEU VALE PIX</h1>
+        <p>Uma plataforma de cupons promocionais com QR Code para conectar lojas e consumidores.</p>
+        <p>A cada compra elegível, a loja emite um cupom. O consumidor consulta o cupom pelo QR Code e acompanha se foi contemplado.</p>
+      </section>
+    </main>
   );
 }
