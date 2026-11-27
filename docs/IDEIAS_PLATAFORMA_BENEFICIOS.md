@@ -14,18 +14,16 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 
 ### 2.1 Administrador geral da plataforma
 
-- O administrador geral possui acesso global à plataforma e é responsável por cadastrar, ativar, editar, suspender e administrar os estabelecimentos.
-- A hierarquia de cadastro é obrigatória: **o administrador geral cadastra as lojas; cada loja cadastra e administra suas próprias maquininhas/caixas**. A loja não cadastra outras lojas.
-- O administrador geral deve ter visão operacional de todas as lojas, incluindo os dados e resultados produzidos por suas maquininhas.
-- O administrador geral pode consultar quantas maquininhas cada loja possui, quantos cupons cada maquininha emitiu, o total emitido por loja, os valores acumulados, os lotes disponíveis, os fechamentos, os pagamentos, os sorteios e a situação dos prêmios.
-- O administrador geral deve conseguir acompanhar se cada loja está realizando fechamentos e pagamentos, se os sorteios foram processados corretamente pelo servidor e se existem prêmios aguardando contato ou entrega.
-- O administrador geral precisa de acesso aos resultados operacionais e indicadores das maquininhas, mas não precisa visualizar as senhas dos caixas. As credenciais individuais são administradas pela loja e devem permanecer protegidas.
-- O administrador geral não deve depender do administrador da loja para obter os indicadores operacionais: essas informações devem ser registradas centralmente e apresentadas no painel geral.
-
-- Existe um administrador geral, responsável pela administração central da plataforma.
-- O administrador geral cadastra e gerencia os administradores dos estabelecimentos.
-- O administrador geral controla as configurações gerais e os parâmetros permitidos da plataforma.
-- O administrador geral pode consultar e administrar os estabelecimentos conforme suas permissões.
+- O administrador geral possui controle administrativo global da plataforma.
+- É responsabilidade do administrador geral cadastrar as lojas e criar/vincular o usuário administrador de cada estabelecimento. O administrador da loja não cria a própria conta nem cadastra outras lojas.
+- O administrador geral pode ativar, editar, suspender e administrar lojas e seus administradores, além de controlar configurações e parâmetros gerais da plataforma.
+- **O administrador geral não cadastra nem cria maquininhas ou acessos operacionais.** Essa responsabilidade pertence exclusivamente ao administrador de cada loja.
+- O administrador geral acompanha centralmente o movimento de toda a plataforma, com indicadores globais de cupons emitidos, cupons premiados, prêmios pendentes, prêmios resgatados e expirados, lojas e valores financeiros.
+- Os principais indicadores devem ficar destacados no topo do painel, fora dos menus, sempre visíveis ao entrar na área administrativa.
+- O painel geral deve aproveitar como referência visual e estrutural o painel administrativo atual da Super Sena, mantendo sua organização familiar e substituindo os indicadores antigos de jogos pelos indicadores correspondentes de cupons/vales. O conteúdo e os fluxos devem refletir a nova plataforma, sem manter funções antigas de jogo.
+- O administrador geral pode consultar os cupons ganhadores e seus estados, inclusive os que estão próximos de atingir 20 dias sem resgate e os que expiraram aos 30 dias.
+- O administrador geral pode acessar os dados de contato dos ganhadores para realizar o acompanhamento e registrar tentativas de contato, com acesso restrito e trilha de auditoria.
+- O administrador geral não precisa visualizar senhas de administradores ou de maquininhas. Deve poder administrar contas por procedimentos seguros de redefinição de acesso.
 - Um administrador de loja não pode acessar a administração geral nem os dados administrativos de outras lojas.
 
 ### 2.2 Administrador da loja
@@ -41,21 +39,21 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A área administrativa da loja não é a interface usada no caixa para registrar compras, emitir cupons ou resgatar prêmios. Essas tarefas pertencem à área operacional da maquininha (APK).
 - O administrador da loja não acessa dados de outros estabelecimentos nem a administração geral.
 
-### 2.3 Caixas/maquininhas e funcionários
+### 2.3 APK, maquininhas e acessos operacionais
 
-- Cada maquininha/caixa deve possuir uma identidade operacional própria, vinculada a uma única loja.
-- O administrador da loja cria os acessos de suas maquininhas, definindo ou gerando login e senha para que o funcionário entre diretamente no APK instalado na maquininha.
-- O acesso operacional é usado na própria maquininha, não no celular pessoal do funcionário.
-- O funcionário utiliza o login e a senha atribuídos àquela maquininha para registrar compras, emitir cupons, ler QR Codes e executar resgates conforme as permissões do APK.
-- A identidade da maquininha deve permitir que cada cupom e cada operação sejam atribuídos ao equipamento correto, preservando o controle de produção e a auditoria.
-- O modelo de credenciais — um login por maquininha ou credencial compartilhada entre equipamentos — ainda será definido tecnicamente. A solução deverá favorecer a identificação individual de cada equipamento; credenciais genéricas compartilhadas podem prejudicar o controle e a auditoria.
-- O administrador da loja deve conseguir consultar qual login está associado a cada maquininha e administrar o acesso, inclusive redefinindo a senha quando necessário.
-- A administração das credenciais deve ser simples para o lojista, sem exigir um fluxo complexo de recuperação. Por segurança, a implementação não deve armazenar senhas em texto aberto nem permitir sua leitura direta no banco; deve oferecer redefinição/geração de nova senha e uma forma segura de entregá-la ao funcionário.
-- Cada emissão fica vinculada à loja e à maquininha/caixa que a realizou, permitindo identificar a origem de cada cupom.
-- Uma loja pode ter várias maquininhas, por exemplo, uma para cada caixa de supermercado, ou operar com apenas uma.
-- O dono pode ser o único administrador da loja. Se também realizar vendas e emitir cupons, deverá utilizar o acesso operacional de uma maquininha/caixa, separado do acesso administrativo.
+- O APK é livre e não fica permanentemente vinculado a uma loja ou a um equipamento específico. Pode ser instalado nas maquininhas compatíveis e permanecer pronto para uso por diferentes estabelecimentos.
+- Uma maquininha pode ser deslocada de uma loja para outra. Para começar a operar no novo estabelecimento, basta sair da sessão anterior e entrar com um acesso operacional criado pelo administrador da nova loja.
+- O administrador da loja cria, pelo seu painel **Loja**, acessível pelo próprio celular (iPhone ou Android) ou outro dispositivo, os acessos operacionais que serão utilizados nas maquininhas do estabelecimento.
+- O administrador geral cria a loja e seu administrador, mas não cria maquininhas nem seus usuários operacionais.
+- Cada loja pode criar a quantidade de acessos/maquininhas permitida pelo limite liberado pela plataforma. O sistema deve informar e aplicar esse limite; a quantidade máxima e a forma de sua configuração comercial/administrativa ainda serão definidas.
+- As maquininhas recebem o APK previamente instalado. No estabelecimento, o funcionário só precisa entrar no APK com um dos acessos operacionais criados pelo administrador da loja para começar a trabalhar.
+- Ao autenticar, o servidor identifica a loja à qual aquele acesso pertence e carrega as permissões e os recursos correspondentes. Ao sair da conta, o APK fica disponível para autenticação com outro acesso, inclusive de outra loja.
+- A maquininha física não deve ficar presa a uma loja. O vínculo da operação é determinado pela conta autenticada, e não por uma associação permanente entre aparelho e estabelecimento.
+- Mesmo com o APK livre, cada sessão e cada operação devem ser identificadas com segurança: loja, acesso operacional/funcionário, equipamento quando tecnicamente identificável, data/hora e ação realizada. Isso preserva a auditoria sem impedir a transferência do equipamento entre lojas.
+- Cada emissão e cada resgate ficam associados à loja da conta autenticada e ao contexto operacional que realizou a ação.
+- O administrador da loja pode administrar seus próprios acessos operacionais, inclusive desativá-los e redefinir suas senhas. Senhas não devem ser armazenadas em texto aberto nem disponibilizadas para leitura; deve existir redefinição segura.
+- O acesso administrativo do dono da loja e os acessos operacionais usados no APK são distintos. O dono pode usar o próprio acesso operacional quando também trabalhar no caixa.
 - As funções administrativas e as funções de emissão/resgate não devem ser misturadas em uma única área.
-
 
 ## 3. Registro de compras, percentual e emissão de cupons
 
@@ -153,23 +151,40 @@ O administrador da loja deve conseguir consultar:
 
 ## 9. Painel do administrador geral
 
-O administrador geral precisa de um painel central de acompanhamento de toda a operação. As informações essenciais devem estar visíveis em indicadores e listas, sem exigir que ele procure manualmente em cada área.
+O painel do administrador geral deve manter como referência o painel administrativo atual da Super Sena, com organização visual familiar e bem acabada. A adaptação deve substituir os indicadores de jogos pelos indicadores da nova plataforma: cupons/vales emitidos, cupons premiados e demais situações relevantes. Não deve conservar telas ou funções de acompanhamento de rodadas e números sorteados, pois o novo produto funciona por cupons premiados.
 
-O painel deve apresentar, no mínimo:
+### 9.1 Indicadores principais no topo
 
-- Quantidade de lojas cadastradas, ativas e suspensas.
-- Para cada loja: quantidade de maquininhas cadastradas e situação de cada uma.
-- Quantidade de cupons emitidos por loja e por maquininha, com filtros por período.
-- Valores das compras registrados, percentual devido à plataforma, valores em aberto e valores pagos.
-- Situação financeira individual de cada loja, incluindo valores devidos, cobranças e pagamentos.
-- Tamanho e posição da fila geral, lotes em formação, lotes completos e sorteios processados.
-- Histórico global de lotes e sorteios, com a identificação da loja de origem de cada cupom participante.
-- Histórico de cobranças e pagamentos individualizado por loja.
-- Identificação do cupom ganhador, valor da compra associado e contato do consumidor, com acesso restrito.
-- Situação do contato com o ganhador e do resgate/entrega do prêmio: pendente de contato, avisado, aguardando comparecimento, entregue ou ocorrência registrada.
-- Alertas para valores vencidos ou pendentes por loja, falhas de processamento, lotes completos ainda não sorteados e prêmios ainda não resgatados.\n- Ferramentas para consultar e exportar os dados necessários à cobrança administrativa dos estabelecimentos.
+- Os indicadores mais importantes devem ficar em uma faixa de destaque no topo da página, fora dos menus, visíveis assim que o administrador entrar no painel.
+- Mostrar, no mínimo, quantidade total de cupons/vales emitidos, quantidade de cupons premiados, quantidade de prêmios aguardando resgate, quantidade de prêmios resgatados e quantidade de prêmios expirados.
+- Apresentar também o total de lojas cadastradas/ativas e os indicadores financeiros globais relevantes.
+- Os números devem refletir o movimento geral da plataforma, com atualização em tempo real ou na menor latência tecnicamente viável.
+- A interface deve ser organizada, clara e visualmente agradável, sem excesso de menus ou informações pouco úteis.
 
-O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar seus caixas, cupons emitidos, valores devidos, cobranças, pagamentos e os resultados dos cupons daquela loja nos sorteios gerais. A visualização dos dados operacionais não implica acesso às senhas dos usuários ou maquininhas.
+### 9.2 Administração das lojas e visão geral
+
+- O administrador geral pode criar lojas e criar/vincular o respectivo administrador.
+- Pode consultar, editar, ativar ou suspender lojas e administradores, conforme as permissões administrativas.
+- Pode consultar o número de acessos/maquininhas criados por cada loja e o limite liberado para aquele estabelecimento, mas não criar esses acessos em nome da loja.
+- Pode abrir o detalhe de cada estabelecimento para consultar cupons emitidos, cupons premiados, prêmios resgatados/expirados e situação financeira.
+- Os dados devem permitir filtros por loja e período, mantendo também os totais globais.
+
+### 9.3 Lista de cupons premiados e acompanhamento de ganhadores
+
+- Os cupons premiados devem ficar disponíveis em uma área própria para consulta, sem exigir acompanhamento de números ou rodadas.
+- A lista deve mostrar as informações necessárias para identificar o prêmio, como cupom, valor, loja de origem, data do sorteio, prazo final e situação atual.
+- O administrador geral deve conseguir acompanhar os prêmios ainda não resgatados e registrar o andamento do contato com o ganhador.
+- Ao completar **20 dias corridos** desde o sorteio sem resgate, o prêmio deve sair da lista comum de acompanhamento e entrar automaticamente em uma área destacada de **Urgência / Contato**, para que o administrador priorize a tentativa de localizar o ganhador.
+- A área de urgência deve permitir consultar o contato fornecido na emissão, registrar tentativas de contato, datas, resultado e observações. O acesso a dados pessoais deve ser restrito e auditável.
+- O prêmio continua válido durante os dias 21 a 30. A entrada na área de urgência não altera o prazo nem bloqueia o resgate.
+- Ao completar **30 dias corridos** desde o sorteio sem resgate, o prêmio expira automaticamente, independentemente de o administrador ter conseguido contato com o ganhador.
+- O administrador geral não pode estender o prazo nem dar baixa manual no prêmio.
+
+### 9.4 Simplicidade do painel
+
+- Não haverá necessidade de painel para acompanhar rodadas, números sorteados ou etapas manuais de sorteio. O administrador apenas consulta os cupons premiados e seus estados.
+- O painel deve concentrar a operação em indicadores globais, gestão de lojas/administradores, visão financeira e acompanhamento dos prêmios, sem ferramentas desnecessárias.
+- O administrador geral não cria maquininhas nem acessos operacionais; essa função pertence ao administrador de cada loja, na área **Loja**.
 
 ## 10. Consulta do QR Code, comunicação e prazo do prêmio
 
@@ -181,6 +196,9 @@ O administrador geral deve conseguir abrir o detalhe de uma loja e acompanhar se
 - O contato informado na emissão fica vinculado ao cupom, protegido e com acesso restrito, para que a plataforma possa localizar e avisar o ganhador caso ele não procure o resgate.
 - O prazo para resgatar começa no momento em que o sorteio é realizado. O prêmio fica disponível por **30 dias corridos**.
 - Ao completar 30 dias sem resgate, o prêmio muda automaticamente para **expirado**. A expiração ocorre exclusivamente por regra automática do sistema, sem ação ou autorização manual de qualquer administrador.
+- Ao completar **20 dias corridos** desde o sorteio sem resgate, o prêmio deve ser movido automaticamente para a área de **Urgência / Contato** do administrador geral. Ele permanece válido até completar 30 dias.
+- Ao completar **30 dias corridos** sem resgate, o prêmio expira automaticamente, mesmo que nenhuma tentativa de contato tenha sido realizada ou que o ganhador não tenha respondido.
+- Na consulta pública de um QR Code expirado, deve aparecer uma mensagem clara informando que o prêmio ficou disponível por 30 dias para retirada e que o prazo terminou. A mensagem poderá informar que a plataforma tentou contato sem sucesso somente quando houver registro real de tentativa(s) de contato sem resposta; o sistema não deve afirmar uma tentativa que não aconteceu.
 - Um prêmio expirado não pode ser resgatado pela leitura do QR Code original nem por uma segunda via.
 - Quando o prêmio estiver se aproximando do fim do prazo e continuar sem resgate, a plataforma deverá entrar em contato com o ganhador para avisá-lo e orientá-lo sobre como resgatar. A antecedência exata da mensagem ainda será definida.
 - O procedimento de contato e recuperação para quem perdeu o cupom está descrito na seção 11.4.
@@ -384,7 +402,7 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 - Como garantir financeiramente a entrega dos prêmios sorteados, inclusive quando a loja de origem ainda não tiver pago à plataforma e quando o prêmio for resgatado em outra loja.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
 - Como será liquidada financeiramente a transferência Pix do resgate e como será feita a conciliação entre a plataforma e a loja.
-- Com quantos dias de antecedência do vencimento a plataforma enviará o aviso ao ganhador.
+- Definir os canais, a frequência e os modelos de mensagem usados no contato com ganhadores que entram na área de urgência aos 20 dias, incluindo como registrar tentativas e respostas.
 - Como será validado o acesso ao link individual de recuperação do QR Code e por quanto tempo esse link ficará disponível.
 - Como tratar tecnicamente uma contestação de resgate sem permitir duplicidade ou baixa manual.
 - Revisão jurídica do modelo de promoção, da fila compartilhada, dos compromissos com consumidores e dos acordos comerciais com os estabelecimentos.
