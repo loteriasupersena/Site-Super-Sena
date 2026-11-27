@@ -13,7 +13,7 @@ export default function CashierAppLoginPage() {
     <main className="auth-layout cashier-app-login">
       <SiteHeader linkHome={false} />
       <section className="auth-card" aria-labelledby="login-title">
-        <p className="eyebrow">Aplicativo do cambista</p>
+        <p className="eyebrow">MEU VALE PIX</p>
         <h1 id="login-title">Acesso exclusivo</h1>
         <p className="auth-description">Entre com sua conta de cambista para acessar vendas, financeiro e impressão de recibos.</p>
         <LoginForm allowedRole="CASHIER" cashierApp />
