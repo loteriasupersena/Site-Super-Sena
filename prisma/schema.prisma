@@ -184,6 +184,7 @@ model User {
   prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
   issuedCoupons          Coupon[] @relation("CouponIssuer")
   storeClaimedCoupons     Coupon[] @relation("CouponStoreClaimer")
+  couponPayoutsRequested  CouponPayout[] @relation("CouponPayoutRequester")
 
   @@index([role, status])
 }
@@ -743,6 +744,7 @@ model CouponPayout {
   id                    String             @id @default(cuid())
   couponId              String             @unique
   storeId               String
+  requestedById         String?
   kind                  CouponPayoutKind
   method                CouponPayoutMethod?
   status                CouponPayoutStatus @default(PENDING)
@@ -763,8 +765,10 @@ model CouponPayout {
   updatedAt             DateTime           @updatedAt
   coupon                Coupon             @relation(fields: [couponId], references: [id], onDelete: Restrict)
   store                 Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  requestedBy           User?              @relation("CouponPayoutRequester", fields: [requestedById], references: [id], onDelete: Restrict)
 
   @@index([storeId, kind, status, createdAt])
+  @@index([requestedById, createdAt])
   @@index([status, updatedAt])
 }
 
