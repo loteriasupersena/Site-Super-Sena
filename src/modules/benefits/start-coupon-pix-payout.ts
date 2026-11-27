@@ -32,8 +32,11 @@ export async function startCouponPixPayout(input: {
       where: { id: input.actorId },
       select: { id: true, role: true, status: true, storeId: true, administeredStore: { select: { id: true } } },
     });
+    const roleAllowed = input.kind === "STORE_EXPIRED_CLAIM"
+      ? actor?.role === "STORE_ADMIN"
+      : actor?.role === "STORE_ADMIN" || actor?.role === "CASHIER";
     if (!actor || actor.status !== "ACTIVE"
-      || !["STORE_ADMIN", "CASHIER"].includes(actor.role)
+      || !roleAllowed
       || (actor.storeId !== input.storeId && actor.administeredStore?.id !== input.storeId)) {
       throw new Error("COUPON_PAYOUT_ACTOR_FORBIDDEN");
     }
