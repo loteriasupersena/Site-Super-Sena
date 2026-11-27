@@ -17,7 +17,7 @@ export default function CashierAppLoginPage() {
         <h1 id="login-title">Acesso exclusivo</h1>
         <p className="auth-description">Entre com o acesso desta maquininha para registrar compras, emitir cupons e imprimir recibos.</p>
         <LoginForm allowedRole="CASHIER" cashierApp />
-        <p className="security-note">Este aplicativo não permite acesso de jogadores ou administradores.</p>
+        <p className="security-note">Acesso exclusivo para operação da maquininha vinculada à loja.</p>
       </section>
     </main>
   );
