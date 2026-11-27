@@ -471,3 +471,32 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 ---
 
 **Observação de escopo:** este documento registra as regras e decisões discutidas para orientar o manual e a futura especificação. Não altera o banco de dados, as telas, os pagamentos ou o funcionamento do sistema. A implementação só deverá começar depois da revisão e aprovação da documentação.
+
+
+## 18. Registro de implementação — 27/11/2026
+
+Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela não substitui as regras funcionais acima e não significa que o fluxo esteja liberado para produção.
+
+### 18.1 Primeira etapa: emissão e fila global de cupons
+
+- Criado o serviço `src/modules/benefits/issue-coupon.ts` para registrar um cupom a partir do valor da compra informado em centavos.
+- Criado o endpoint autenticado `POST /api/cashier/coupons`, destinado ao acesso operacional da maquininha.
+- A emissão valida o usuário operacional, a loja vinculada e a situação ativa da loja.
+- O cupom registra a loja emissora, o operador, o valor integral da compra, o percentual configurado na loja e o valor devido à plataforma calculado em centavos.
+- A chave de idempotência é persistida no cupom. Uma repetição com a mesma chave e mesmo operador/loja recupera o cupom existente, sem criar nova participação.
+- A alocação na fila geral é serializada no PostgreSQL por bloqueio transacional global, para impedir que duas emissões ocupem simultaneamente a última posição do lote.
+- Ao registrar o centésimo cupom, o servidor seleciona um único ganhador, marca o lote como sorteado e grava o prazo de resgate de 30 dias.
+- O sorteio não consulta o estado de cobrança ou pagamento da loja.
+- Criados testes unitários para o cálculo monetário do percentual, incluindo arredondamento, percentual superior a 100% e limite do inteiro persistido.
+
+### 18.2 Limitações e validações ainda pendentes
+
+- Os testes ainda precisam ser executados no ambiente de integração; a criação dos arquivos de teste não equivale a aprovação.
+- O fluxo ainda não está integrado à tela operacional do APK nem à impressão do recibo com QR Code.
+- Ainda faltam testes de concorrência PostgreSQL que comprovem o fechamento único do lote com emissões simultâneas.
+- Ainda faltam consulta pública do cupom, apresentação do resultado e integração completa do resgate.
+- Ainda faltam telas e permissões completas para gestão de maquininhas pelo administrador da loja.
+- A cobrança por lote de 100 cupons e sua conciliação por webhook ainda precisam ser integradas ao fluxo financeiro definitivo.
+- Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
+
+**Status:** primeira implementação de emissão e sorteio automático codificada; não validada em execução e não liberada para produção.
