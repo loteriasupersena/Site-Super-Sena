@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser, SESSION_COOKIE, CASHIER_APP_COOKIE, hashSessionToken } from "@/lib/auth/session";
 
-type Role = "PLAYER" | "CASHIER" | "ADMIN";
-const routeByRole: Record<Role, string> = { PLAYER: "/player", CASHIER: "/cashier", ADMIN: "/admin" };
+type Role = "PLAYER" | "CASHIER" | "ADMIN" | "STORE_ADMIN";
+const routeByRole: Record<Role, string> = { PLAYER: "/player", CASHIER: "/cashier", ADMIN: "/admin", STORE_ADMIN: "/store" };
 
 export async function requireRole(role: Role, options: { cashierApp?: boolean } = {}) {
   const cookieStore = await cookies();
