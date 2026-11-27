@@ -14,7 +14,7 @@ const createSchema = z.object({
   username: z.string().trim().min(3).max(24).regex(/^[A-Za-z0-9_.-]+$/),
   password: z.string().min(8).max(1024),
   whatsapp: z.string().trim().min(10).max(24),
-  commissionRateBasisPoints: z.number().int().min(0),
+  commissionRateBasisPoints: z.number().int().min(0).max(2147483647),
   couponLimit: z.number().int().min(1).max(100000).default(100),
 }).strict();
 
