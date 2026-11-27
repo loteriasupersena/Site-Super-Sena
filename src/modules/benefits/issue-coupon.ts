@@ -10,7 +10,7 @@ function makePublicCode() {
   return randomBytes(18).toString("base64url");
 }
 
-function calculatePlatformFeeCents(amountCents: number, rateBasisPoints: number) {
+export function calculatePlatformFeeCents(amountCents: number, rateBasisPoints: number) {
   const numerator = BigInt(amountCents) * BigInt(rateBasisPoints);
   const fee = (numerator + 5_000n) / 10_000n;
   if (fee > BigInt(MAX_INT)) throw new Error("COUPON_PLATFORM_FEE_OUT_OF_RANGE");
