@@ -15,7 +15,7 @@ export default function CashierAppLoginPage() {
       <section className="auth-card" aria-labelledby="login-title">
         <p className="eyebrow">MEU VALE PIX</p>
         <h1 id="login-title">Acesso exclusivo</h1>
-        <p className="auth-description">Entre com sua conta de cambista para acessar vendas, financeiro e impressão de recibos.</p>
+        <p className="auth-description">Entre com o acesso desta maquininha para registrar compras, emitir cupons e imprimir recibos.</p>
         <LoginForm allowedRole="CASHIER" cashierApp />
         <p className="security-note">Este aplicativo não permite acesso de jogadores ou administradores.</p>
       </section>
