@@ -3,8 +3,8 @@ import Image from "next/image";
 import { HomeAccess } from "@/components/home-access";
 
 export const metadata: Metadata = {
-  title: "Super Sena | Página Inicial Oficial",
-  description: "Página inicial oficial da Super Sena. Conheça como funciona o jogo, veja as informações e acesse sua conta quando desejar.",
+  title: "MEU VALE PIX | Promoções para consumidores e lojas",
+  description: "Plataforma de cupons promocionais com QR Code para estabelecimentos comerciais.",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
 };
