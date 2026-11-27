@@ -495,7 +495,7 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - O fluxo ainda não está integrado à tela operacional do APK nem à impressão do recibo com QR Code.
 - Ainda faltam testes de concorrência PostgreSQL que comprovem o fechamento único do lote com emissões simultâneas.
 - Ainda faltam consulta pública do cupom, apresentação do resultado e integração completa do resgate.
-- Ainda faltam telas e permissões completas para gestão de maquininhas pelo administrador da loja.
+- Foi criada a gestão básica de maquininhas na área Loja: o administrador da loja pode listar e criar acessos operacionais individuais, com usuário, senha inicial armazenada como hash e troca obrigatória no primeiro acesso. Edição, bloqueio e redefinição de senha ainda não foram implementados.
 - A cobrança por lote de 100 cupons e sua conciliação por webhook ainda precisam ser integradas ao fluxo financeiro definitivo.
 - Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
 
