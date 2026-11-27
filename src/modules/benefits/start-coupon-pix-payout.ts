@@ -6,6 +6,7 @@ import { maskPixKey, parsePixKeyInput } from "@/lib/wallet/pix-key";
 import { createAsaasPixTransfer } from "@/modules/payments/asaas";
 
 type PayoutKind = "CUSTOMER_REDEMPTION" | "STORE_EXPIRED_CLAIM";
+type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 
 function payoutReference(couponId: string) {
   const digest = createHash("sha256").update("coupon-payout:" + couponId).digest("hex");
@@ -13,9 +14,9 @@ function payoutReference(couponId: string) {
 }
 
 /**
- * Reserves and submits one Pix payout for a winning coupon.
- * The unique coupon constraint and PROCESSING reservation prevent duplicate sends.
- * A timeout leaves the operation in PROCESSING for provider reconciliation; it is never resent here.
+ * Atomically reserves one payout against the winning coupon before calling Asaas.
+ * If the provider request has an uncertain result, the record stays PROCESSING and
+ * the reconciliation worker searches by externalReference; this function never retries it.
  */
 export async function startCouponPixPayout(input: {
   couponId: string;
@@ -24,54 +25,54 @@ export async function startCouponPixPayout(input: {
   kind: PayoutKind;
   customerPix?: { pixKey: string; pixKeyType: string };
 }) {
-  const actor = await authPrisma.user.findUnique({
-    where: { id: input.actorId },
-    select: { id: true, role: true, status: true, storeId: true, administeredStore: { select: { id: true } } },
-  });
-  if (!actor || actor.status !== "ACTIVE"
-    || !["STORE_ADMIN", "CASHIER"].includes(actor.role)
-    || (actor.storeId !== input.storeId && actor.administeredStore?.id !== input.storeId)) {
-    throw new Error("COUPON_PAYOUT_ACTOR_FORBIDDEN");
-  }
+  const reserved = await authPrisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Coupon" WHERE "id" = ${input.couponId} FOR UPDATE`;
 
-  const coupon = await authPrisma.coupon.findUnique({
-    where: { id: input.couponId },
-    select: {
-      id: true, storeId: true, purchaseAmountCents: true, status: true,
-      customerRedemptionDeadline: true,
-    },
-  });
-  if (!coupon || coupon.storeId !== input.storeId) throw new Error("COUPON_PAYOUT_NOT_FOUND");
-  const now = new Date();
-  if (input.kind === "CUSTOMER_REDEMPTION") {
-    if (coupon.status !== "WINNER" || !coupon.customerRedemptionDeadline
-      || coupon.customerRedemptionDeadline <= now) {
-      throw new Error("COUPON_CUSTOMER_REDEMPTION_NOT_AVAILABLE");
+    const actor = await tx.user.findUnique({
+      where: { id: input.actorId },
+      select: { id: true, role: true, status: true, storeId: true, administeredStore: { select: { id: true } } },
+    });
+    if (!actor || actor.status !== "ACTIVE"
+      || !["STORE_ADMIN", "CASHIER"].includes(actor.role)
+      || (actor.storeId !== input.storeId && actor.administeredStore?.id !== input.storeId)) {
+      throw new Error("COUPON_PAYOUT_ACTOR_FORBIDDEN");
     }
-  } else if (coupon.status !== "STORE_CLAIMABLE"
-    || !coupon.customerRedemptionDeadline || coupon.customerRedemptionDeadline > now) {
-    throw new Error("COUPON_STORE_CLAIM_NOT_AVAILABLE");
-  }
 
-  let pixKey: string;
-  let pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
-  if (input.kind === "CUSTOMER_REDEMPTION") {
-    const parsed = parsePixKeyInput(input.customerPix);
-    if (!parsed) throw new Error("COUPON_CUSTOMER_PIX_KEY_INVALID");
-    pixKey = parsed.pixKey;
-    pixKeyType = parsed.pixKeyType;
-  } else {
-    const saved = await authPrisma.storePixKey.findUnique({ where: { storeId: input.storeId } });
-    if (!saved || saved.validatedAt > now) throw new Error("STORE_PIX_KEY_NOT_VALIDATED");
-    pixKey = decryptStorePixKey(saved.keyCiphertext);
-    pixKeyType = saved.keyType as typeof pixKeyType;
-  }
+    const coupon = await tx.coupon.findUnique({
+      where: { id: input.couponId },
+      select: {
+        id: true, storeId: true, purchaseAmountCents: true, status: true,
+        customerRedemptionDeadline: true,
+      },
+    });
+    if (!coupon || coupon.storeId !== input.storeId) throw new Error("COUPON_PAYOUT_NOT_FOUND");
+    const now = new Date();
+    if (input.kind === "CUSTOMER_REDEMPTION") {
+      if (coupon.status !== "WINNER" || !coupon.customerRedemptionDeadline
+        || coupon.customerRedemptionDeadline <= now) {
+        throw new Error("COUPON_CUSTOMER_REDEMPTION_NOT_AVAILABLE");
+      }
+    } else if (coupon.status !== "STORE_CLAIMABLE"
+      || !coupon.customerRedemptionDeadline || coupon.customerRedemptionDeadline > now) {
+      throw new Error("COUPON_STORE_CLAIM_NOT_AVAILABLE");
+    }
 
-  const externalReference = payoutReference(coupon.id);
-  const idempotencyKey = "coupon-payout:" + coupon.id;
-  let payout;
-  try {
-    payout = await authPrisma.couponPayout.create({
+    let pixKey: string;
+    let pixKeyType: PixKeyType;
+    if (input.kind === "CUSTOMER_REDEMPTION") {
+      const parsed = parsePixKeyInput(input.customerPix);
+      if (!parsed) throw new Error("COUPON_CUSTOMER_PIX_KEY_INVALID");
+      pixKey = parsed.pixKey;
+      pixKeyType = parsed.pixKeyType;
+    } else {
+      const saved = await tx.storePixKey.findUnique({ where: { storeId: input.storeId } });
+      if (!saved || saved.validatedAt > now) throw new Error("STORE_PIX_KEY_NOT_VALIDATED");
+      pixKey = decryptStorePixKey(saved.keyCiphertext);
+      pixKeyType = saved.keyType as PixKeyType;
+    }
+
+    const externalReference = payoutReference(coupon.id);
+    const payout = await tx.couponPayout.create({
       data: {
         couponId: coupon.id,
         storeId: coupon.storeId,
@@ -80,7 +81,7 @@ export async function startCouponPixPayout(input: {
         method: "PIX",
         status: "PROCESSING",
         amountCents: coupon.purchaseAmountCents,
-        idempotencyKey,
+        idempotencyKey: "coupon-payout:" + coupon.id,
         externalReference,
         provider: "ASAAS",
         pixKeyCiphertext: encryptStorePixKey(pixKey),
@@ -89,23 +90,19 @@ export async function startCouponPixPayout(input: {
         requestedAt: now,
       },
     });
-  } catch (error) {
-    const code = error && typeof error === "object" && "code" in error
-      ? String((error as { code?: unknown }).code) : "";
-    if (code === "P2002") throw new Error("COUPON_PAYOUT_ALREADY_RESERVED");
-    throw error;
-  }
+    return { payout, pixKey, pixKeyType };
+  }, { isolationLevel: "Serializable" });
 
   const transfer = await createAsaasPixTransfer({
-    amountCents: payout.amountCents,
-    pixKey,
-    pixKeyType,
-    externalReference,
+    amountCents: reserved.payout.amountCents,
+    pixKey: reserved.pixKey,
+    pixKeyType: reserved.pixKeyType,
+    externalReference: reserved.payout.externalReference,
     description: "MEU VALE PIX - prêmio de cupom",
   });
 
   return authPrisma.couponPayout.update({
-    where: { id: payout.id },
+    where: { id: reserved.payout.id },
     data: {
       providerTransferId: transfer.id,
       providerStatus: transfer.status ?? "PENDING",
