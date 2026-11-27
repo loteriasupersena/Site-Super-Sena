@@ -226,7 +226,7 @@ O painel do administrador geral deve manter como referência o painel administra
 - A leitura do QR Code por um celular comum ou navegador serve **somente para consultar o resultado**: informa se o cupom foi premiado ou não e, se foi, apresenta o valor do prêmio e a orientação para resgatá-lo em um estabelecimento credenciado.
 - Na consulta pública do QR Code não haverá botão para iniciar resgate, confirmar recebimento, solicitar saque ou executar qualquer outra ação.
 - A mensagem para o ganhador deve orientar: **“Dirija-se preferencialmente à loja onde você recebeu este cupom para resgatar seu prêmio.”** A orientação favorece o estabelecimento que emitiu o cupom, mas não restringe o resgate a ele.
-- O prêmio poderá ser resgatado em qualquer estabelecimento credenciado que possua maquininha com o aplicativo autorizado para leitura e resgate. O estabelecimento de origem é recomendado, não obrigatório.
+- O prêmio só poderá ser resgatado na loja emissora do cupom. A maquininha que realiza o resgate deve estar autenticada em um acesso operacional vinculado à mesma loja emissora.
 - A consulta pública não deve exibir telefone nem outros dados pessoais do consumidor.
 - A plataforma não coleta dados de contato do consumidor e não realiza comunicação ativa com ganhadores.
 - O prazo para resgatar começa no momento em que o sorteio é realizado. O prêmio fica disponível por **30 dias corridos**.
@@ -258,10 +258,10 @@ O painel do administrador geral deve manter como referência o painel administra
 - Um funcionário ou responsável da loja usa o APK da maquininha credenciada para ler o QR Code.
 - Após a leitura, o APK consulta o servidor e apresenta a situação do prêmio, seu valor, validade e modalidades de resgate permitidas para o estabelecimento que está atendendo.
 - **A leitura do QR Code impresso e a leitura da segunda via digital levam ao mesmo fluxo de resgate**, sem diferença de permissões ou de valor.
-- **Qualquer maquininha autorizada de qualquer estabelecimento credenciado poderá resgatar o prêmio**, não apenas a maquininha da loja que emitiu o cupom.
-- Não haverá mensagens ou contato ativo da plataforma com o ganhador. Durante os 30 dias, o consumidor pode resgatar presencialmente em qualquer loja credenciada habilitada; após esse prazo, somente a loja emissora pode sacar o prêmio liberado.
+- **Somente uma maquininha autenticada na loja emissora poderá concluir o resgate do cupom**, e o servidor deverá conferir esse vínculo antes de aceitar a operação.
+- Não haverá mensagens ou contato ativo da plataforma com o ganhador. Durante os 30 dias, o consumidor pode resgatar presencialmente somente na loja emissora; após esse prazo, somente o administrador dessa mesma loja pode sacar o prêmio liberado por Pix automático para a chave cadastrada da loja.
 - O servidor deve validar automaticamente se o prêmio está ativo, dentro do prazo e ainda não resgatado. Não haverá necessidade de autorização em tempo real do administrador geral ou do dono da loja.
-- A operação fica vinculada à loja credenciada que efetivamente realizou o resgate, à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
+- A operação fica vinculada à loja emissora (que obrigatoriamente também é a loja que realiza o resgate), à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
 
 ### 11.3 Saque e escolha da modalidade de pagamento
 
@@ -316,7 +316,7 @@ O painel do administrador geral deve manter como referência o painel administra
 
 - A baixa do prêmio acontece no servidor como consequência da operação válida concluída pelo APK da maquininha.
 - Não haverá botão ou permissão para o administrador geral cancelar, sacar ou dar baixa manualmente em prêmios.
-- O resgate do consumidor dentro dos 30 dias ocorre presencialmente, com apresentação do QR Code e entrega do prêmio pela loja credenciada.
+- O resgate do consumidor dentro dos 30 dias ocorre presencialmente, com apresentação do QR Code e entrega do prêmio exclusivamente pela loja emissora.
 - Depois dos 30 dias, o saque fica disponível exclusivamente ao administrador da loja de origem, pela área administrativa dessa loja. O administrador geral não participa dessa operação.
 - O saque da loja e a baixa definitiva devem ocorrer de forma atômica e idempotente, com auditoria e proteção contra solicitações simultâneas.
 - A conclusão da operação deve invalidar imediatamente novas tentativas de resgate daquele prêmio em qualquer outra loja ou maquininha.
@@ -452,7 +452,7 @@ A área **Loja** terá menus simples para dar transparência ao movimento do est
 - Critérios objetivos para alertas, suspensão temporária e bloqueio de novas emissões por loja inadimplente, incluindo quem pode aplicar e retirar o bloqueio.
 - Como registrar pagamentos parciais, acordos, renegociações, estornos e divergências nos valores devidos.
 - Qual provedor Pix será utilizado e como ocorrerá a conciliação automática por webhook. O webhook não terá função de disparar sorteios.
-- Como garantir financeiramente a entrega dos prêmios sorteados, inclusive quando a loja de origem ainda não tiver pago à plataforma e quando o prêmio for resgatado em outra loja.
+- Como garantir financeiramente a entrega dos prêmios sorteados quando a loja emissora ainda não tiver pago à plataforma, sem transferir a obrigação de resgate ou pagamento para outro estabelecimento.
 - Como será feito o procedimento técnico do sorteio, a geração de aleatoriedade verificável e a comprovação do resultado.
 - Como será liquidada financeiramente a transferência Pix do resgate e como será feita a conciliação entre a plataforma e a loja.
 - Definir o procedimento de contestação sem permitir cancelamento ou saque administrativo indevido, mantendo o direito de saque do consumidor no prazo e da loja de origem após 30 dias.
