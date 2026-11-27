@@ -513,6 +513,7 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - A alocação na fila geral é serializada no PostgreSQL por bloqueio transacional global, para impedir que duas emissões ocupem simultaneamente a última posição do lote.
 - Ao registrar o centésimo cupom, o servidor seleciona um único ganhador, marca o lote como sorteado e grava o prazo de resgate de 30 dias.
 - O sorteio não consulta o estado de cobrança ou pagamento da loja.
+- A emissão também consulta, separadamente, o último ciclo financeiro quitado da loja e conta os cupons emitidos depois dessa quitação. Ao alcançar o limite configurado em `Store.couponLimit` (100 por padrão), novas emissões da loja são recusadas com erro específico de limite financeiro. Essa verificação não altera a fila global nem o sorteio.
 - Criados testes unitários para o cálculo monetário do percentual, incluindo arredondamento, percentual superior a 100% e limite do inteiro persistido.
 
 ### 18.2 Limitações e validações ainda pendentes
@@ -522,7 +523,7 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - Ainda faltam testes de concorrência PostgreSQL que comprovem o fechamento único do lote com emissões simultâneas.
 - Ainda faltam consulta pública do cupom, apresentação do resultado e integração completa do resgate.
 - Foi criada a gestão básica de maquininhas na área Loja: o administrador da loja pode listar e criar acessos operacionais individuais, com usuário, senha inicial armazenada como hash e troca obrigatória no primeiro acesso. Edição, bloqueio e redefinição de senha ainda não foram implementados.
-- A cobrança por lote de 100 cupons e sua conciliação por webhook ainda precisam ser integradas ao fluxo financeiro definitivo.
+- A geração antecipada da cobrança Pix por qualquer quantidade de cupons, a associação exata dos cupons quitados à cobrança e a conciliação/webhook ainda precisam ser integradas. Até essa integração, a trava de emissão já considera o último pagamento registrado em `StoreBilling`, mas o fluxo de pagamento não está completo.
 - Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
 
 **Status:** primeira implementação de emissão e sorteio automático codificada; não validada em execução e não liberada para produção.
