@@ -778,7 +778,7 @@ model StorePixKey {
   keyCiphertext String
   keyMasked     String
   keyType       String
-  validatedAt   DateTime
+  validatedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)
