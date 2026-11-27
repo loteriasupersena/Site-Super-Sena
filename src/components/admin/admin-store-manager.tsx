@@ -28,6 +28,8 @@ export function AdminStoreManager() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [editingStoreId, setEditingStoreId] = useState<string | null>(null);
+  const [editingPercent, setEditingPercent] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,13 +47,36 @@ export function AdminStoreManager() {
 
   useEffect(() => { void load(); }, [load]);
 
+  async function saveStorePercent(storeId: string) {
+    setError(""); setNotice("");
+    const percent = Number(editingPercent.replace(",", "."));
+    const basisPoints = Math.round(percent * 100);
+    if (!Number.isFinite(percent) || percent < 0 || !Number.isSafeInteger(basisPoints) || basisPoints > 2147483647 || Math.abs(percent * 100 - basisPoints) > 0.000001) {
+      setError("Informe um percentual válido, não negativo e com até duas casas decimais."); return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/stores/${storeId}`, {
+        method: "PATCH", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ commissionRateBasisPoints: basisPoints }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Não foi possível atualizar o percentual.");
+      setEditingStoreId(null); setEditingPercent("");
+      setNotice("Percentual atualizado. A nova taxa será aplicada somente aos próximos cupons.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Falha ao atualizar o percentual.");
+    } finally { setSaving(false); }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(""); setNotice("");
     const percent = Number(form.commissionPercent.replace(",", "."));
     const limit = Number(form.couponLimit);
-    if (!Number.isFinite(percent) || percent < 0 || !Number.isSafeInteger(Math.round(percent * 100))) {
-      setError("Informe um percentual válido, igual ou maior que zero, com até duas casas decimais."); return;
+    if (!Number.isFinite(percent) || percent < 0 || !Number.isSafeInteger(Math.round(percent * 100)) || Math.round(percent * 100) > 2147483647 || Math.abs(percent * 100 - Math.round(percent * 100)) > 0.000001) {
+      setError("Informe um percentual válido, não negativo e com até duas casas decimais."); return;
     }
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100000) {
       setError("Informe um limite válido de cupons."); return;
@@ -120,6 +145,11 @@ export function AdminStoreManager() {
         <strong>{store.name}</strong>
         <p>Administrador: {store.adminUser.fullName || store.adminUser.username} · Usuário: {store.adminUser.username}</p>
         <p>Percentual: <strong>{moneyPercent(store.commissionRateBasisPoints)}</strong> · Limite por ciclo: <strong>{store.couponLimit} cupons</strong></p>
+        {editingStoreId === store.id ? <div className="round-actions">
+          <label>Novo percentual (%) <input type="number" inputMode="decimal" min="0" step="0.01" value={editingPercent} onChange={(event) => setEditingPercent(event.target.value)} /></label>
+          <button type="button" disabled={saving} onClick={() => void saveStorePercent(store.id)}>{saving ? "Salvando…" : "Salvar percentual"}</button>
+          <button type="button" disabled={saving} onClick={() => { setEditingStoreId(null); setEditingPercent(""); }}>Cancelar</button>
+        </div> : <div className="round-actions"><button type="button" onClick={() => { setEditingStoreId(store.id); setEditingPercent((store.commissionRateBasisPoints / 100).toFixed(2)); }}>Alterar percentual</button></div> }
         <p>Status da loja: {store.status === "ACTIVE" ? "Ativa" : store.status === "BLOCKED" ? "Bloqueada" : "Pendente"} · Acessos vinculados: {store._count.users}</p>
       </article>)}
     </div>}
