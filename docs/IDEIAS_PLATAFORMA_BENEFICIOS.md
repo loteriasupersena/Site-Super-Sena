@@ -24,7 +24,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Os principais indicadores devem ficar destacados no topo do painel, fora dos menus, sempre visíveis ao entrar na área administrativa.
 - O painel geral deve aproveitar como referência visual e estrutural o painel administrativo atual da Super Sena, mantendo sua organização familiar e substituindo os indicadores antigos de jogos pelos indicadores correspondentes de cupons/vales. O conteúdo e os fluxos devem refletir a nova plataforma, sem manter funções antigas de jogo.
 - O administrador geral pode consultar os cupons ganhadores e seus estados, inclusive os que estão próximos de atingir 20 dias sem resgate e os que expiraram aos 30 dias.
-- O administrador geral pode acessar os dados de contato dos ganhadores para realizar o acompanhamento e registrar tentativas de contato, com acesso restrito e trilha de auditoria.
+- A plataforma não coleta nem mantém dados de contato dos consumidores/ganhadores. O administrador geral consulta os registros e estados dos cupons, sem contato ativo com ganhadores.
 - O administrador geral não precisa visualizar senhas de administradores ou de maquininhas. Deve poder administrar contas por procedimentos seguros de redefinição de acesso.
 - Um administrador de loja não pode acessar a administração geral nem os dados administrativos de outras lojas.
 
@@ -276,8 +276,8 @@ O painel do administrador geral deve manter como referência o painel administra
 - A transferência para a conta da loja, o registro da modalidade e a baixa definitiva do prêmio fazem parte da mesma operação de resgate. A operação concluída encerra o prêmio.
 - Se o responsável cancelar antes da confirmação final, o prêmio permanece ativo e sem baixa, permitindo que a operação seja iniciada novamente.
 - Depois da confirmação e da conclusão da transferência, o servidor registra a baixa definitiva do prêmio e bloqueia novas tentativas de resgate em qualquer loja ou maquininha.
-- O acordo comercial define se a loja pode pagar em mercadoria, dinheiro ou ambas as modalidades. O APK só apresenta opções habilitadas para o estabelecimento que está realizando o resgate.
-- O histórico deve registrar a modalidade escolhida, o valor, estabelecimento, maquininha, funcionário/responsável, conta de destino identificada de forma protegida, data/hora e identificador da transação Pix.
+- O acordo comercial da loja emissora define se o consumidor poderá receber em mercadoria ou dinheiro/Pix, ou ambas as modalidades. O APK só apresenta as opções habilitadas para a própria loja emissora; o cupom não pode ser liquidado por outra loja.
+- O histórico deve registrar a modalidade escolhida, o valor, loja emissora que também é a única loja pagadora, maquininha, funcionário/responsável, conta de destino identificada de forma protegida, data/hora e identificador da transação Pix.
 - A operação deve impedir resgates simultâneos ou duplicados, inclusive quando duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
 - **Ponto financeiro ainda pendente:** detalhar a origem dos recursos transferidos via Pix, a liquidação da transferência e a conciliação financeira entre a plataforma e o estabelecimento. O destino da transferência está definido: a conta Pix cadastrada da loja que realizou o resgate.
 
@@ -285,14 +285,32 @@ O painel do administrador geral deve manter como referência o painel administra
 
 - A emissão do cupom não solicita nem armazena telefone, WhatsApp, nome ou qualquer outro contato do consumidor. Não haverá contato ativo com ganhadores, mensagens, links de recuperação ou segunda via digital enviada pela plataforma.
 - O prazo de resgate pelo consumidor é de **30 dias corridos**, contado a partir da data e hora em que o sorteio daquele cupom for concluído e o prêmio for registrado.
-- Durante esses 30 dias, somente o próprio consumidor, apresentando o cupom/QR Code e comparecendo presencialmente a uma loja credenciada, poderá receber o prêmio pelo fluxo operacional autorizado no APK.
+- Durante esses 30 dias, o consumidor só poderá resgatar o prêmio na própria loja que emitiu o cupom vencedor, apresentando o cupom/QR Code e comparecendo presencialmente. Nenhuma outra loja credenciada poderá consultar para pagamento, autorizar, entregar ou liquidar esse prêmio.
 - Se o consumidor não resgatar dentro do prazo, o prêmio deixa de estar disponível para ele. O sistema deverá alterar automaticamente o estado para **DISPONÍVEL PARA A LOJA**, sem apagar o histórico nem o registro do ganhador.
 - A partir dessa mudança, somente o administrador autenticado da **loja que emitiu o cupom vencedor** poderá solicitar o saque do valor para a própria loja, por uma opção específica na área administrativa da loja.
 - O administrador geral não poderá sacar, cancelar, transferir, editar o ganhador ou dar baixa nesse prêmio. A área geral poderá apenas consultar o histórico e o estado, sem ação de saque ou cancelamento.
 - O direito da loja de origem só é liberado depois de completados os 30 dias. Antes disso, a loja não pode sacar nem reservar o prêmio em nome próprio.
-- O saque da loja deve ser uma operação financeira registrada e idempotente, com confirmação do servidor, valor, loja beneficiária, administrador solicitante, data/hora e identificador da transferência. Uma repetição da solicitação não poderá pagar duas vezes.
+- Cada loja deverá manter uma chave Pix de recebimento cadastrada e validada em seu próprio cadastro financeiro. A chave e os dados do titular devem ser armazenados de forma protegida; telas e logs devem exibir apenas dados mascarados quando possível. Alterações da chave exigem autenticação reforçada, validação e trilha de auditoria.
+- O saque da loja será automático via Pix, usando a mesma integração de transferência Pix já adotada pelo fluxo de saque/pagamento de prêmios da plataforma, adaptada para identificar a loja como beneficiária. Não será uma solicitação para pagamento manual.
+- O saque deve usar uma referência/idempotency key única e estável por cupom/prêmio, registrar a tentativa antes de chamar o provedor, consultar/reconciliar estados ambíguos e nunca repetir uma transferência sem verificar a anterior. O provedor deve confirmar a liquidação antes de marcar o prêmio como pago.
+- O registro financeiro e a auditoria devem identificar o cupom vencedor, lote global, loja emissora/beneficiária, valor integral do prêmio, chave Pix mascarada, titular validado, administrador solicitante, horário, provedor, identificador da transferência, estado/resposta do provedor e resultado final. Não registrar chave Pix completa nem segredos em logs.
+- Uma repetição da solicitação, webhook ou rotina de conciliação não poderá gerar um segundo pagamento. Se o resultado da transferência for incerto, o prêmio permanece em processamento até reconciliação; não se cria uma nova transferência automaticamente sem confirmação de que a anterior não foi executada.
 - Depois que a loja concluir o saque, o prêmio passa para **RESGATADO PELA LOJA** e não poderá ser novamente resgatado pelo consumidor ou por qualquer outra loja.
 - O sistema deve executar a mudança de estado mesmo que ninguém esteja acessando o painel. A rotina de vencimento precisa ser confiável, repetível e protegida contra concorrência, sem depender de ação manual do administrador geral.
+
+
+### 11.6 Regra definitiva de propriedade e liquidação por loja
+
+- **O cupom pertence à loja que o emitiu.** Esse vínculo é permanente e acompanha o cupom desde a emissão, passando pela fila/lote global, sorteio, consulta, resgate do consumidor, eventual expiração e saque pela loja.
+- O sorteio é global: cupons de lojas diferentes podem integrar o mesmo lote de 100. Isso não cria uma carteira ou responsabilidade compartilhada entre as lojas. Cada cupom vencedor continua sendo obrigação operacional e financeira exclusiva da loja que o emitiu.
+- O consumidor deve resolver o recebimento exclusivamente com a loja emissora. Durante os 30 dias, só essa loja pode validar o QR Code para resgate, entregar mercadoria ou realizar o pagamento em dinheiro/Pix conforme o acordo comercial. Outra loja credenciada deve informar que aquele cupom pertence a outro estabelecimento e não pode concluir a operação.
+- A consulta pública do QR Code pode informar o estado do cupom e identificar a loja emissora, mas não permite que outra loja execute o pagamento. As APIs devem validar no servidor a correspondência entre o cupom e a loja autenticada, não confiar em identificadores enviados pela interface.
+- Após 30 dias corridos do sorteio concluído, se o consumidor não tiver resgatado, somente o administrador autenticado da loja emissora pode acionar **Sacar prêmio** no painel Loja. O pagamento será automático por Pix para a chave cadastrada e validada daquela loja.
+- A chave Pix de recebimento é dado financeiro da loja, não do cupom nem do funcionário. Deve ser cadastrada/alterada pelo administrador autorizado, protegida em repouso, mascarada nas telas e logs e sujeita a validação do titular. O saque usa a chave vigente e validada no momento da solicitação; a auditoria preserva a identificação segura do destino efetivo.
+- O saque automático exige registro persistente da transferência, chave de idempotência única por prêmio, estados de processamento/falha/pago, referência do provedor, webhook e rotina de conciliação. A baixa definitiva só ocorre após confirmação confiável de pagamento pelo provedor.
+- A operação registra a procedência completa: cupom, lote, compra/valor, loja emissora, loja beneficiária, administrador solicitante, chave mascarada/tipo, valor transferido, provedor, identificador externo, horários, tentativas e resultado. O administrador geral pode consultar e auditar, mas não pode iniciar, substituir, cancelar ou receber esse saque.
+- Não existe resgate em qualquer loja da rede. A regra anterior de permitir que o consumidor recebesse em qualquer estabelecimento credenciado fica revogada e deve ser removida de telas, APIs, permissões, documentação, testes e textos destinados ao consumidor.
+- Nenhum operador de outra loja, administrador geral ou funcionário pode transferir o vínculo do cupom ou reivindicar o prêmio. Exceções operacionais não podem ser resolvidas alterando o dono do cupom; devem seguir procedimento de suporte/auditoria sem pagamento por terceiro.
 
 ### 11.5 Baixa automática pela operação de resgate
 
@@ -309,16 +327,16 @@ O painel do administrador geral deve manter como referência o painel administra
 
 - Cada estabelecimento terá um acordo comercial com a plataforma que definirá as modalidades de resgate aceitas naquele local: mercadorias/desconto, dinheiro/Pix ou ambas.
 - A modalidade poderá variar conforme a natureza do negócio. Exemplo: supermercado pode priorizar mercadorias com desconto; uma autopeça ou consultório pode habilitar pagamento em dinheiro/Pix quando não fizer sentido entregar outro produto ou serviço.
-- O acordo comercial da loja que efetivamente realizar o resgate determina quais modalidades seu APK poderá oferecer.
-- Durante os 30 dias de prazo do consumidor, o prêmio pode ser resgatado presencialmente em qualquer estabelecimento credenciado habilitado, conforme as modalidades permitidas no acordo comercial.
-- Após os 30 dias sem resgate, somente a loja que emitiu o cupom vencedor poderá sacar o valor destinado à loja. Nenhum outro estabelecimento poderá reivindicar esse prêmio.
+- O acordo comercial da loja emissora determina quais modalidades de resgate estarão habilitadas para aquele cupom.
+- Durante os 30 dias de prazo do consumidor, o prêmio só pode ser resgatado presencialmente na própria loja emissora. A rede credenciada compartilha a fila global de sorteios, mas não compartilha a responsabilidade de pagar/resgatar cupons de outras lojas.
+- Após os 30 dias sem resgate, somente o administrador da loja emissora poderá sacar o valor destinado àquela loja, por Pix automático para a chave Pix previamente cadastrada e validada para o estabelecimento. Nenhum outro estabelecimento poderá reivindicar, pagar ou sacar esse prêmio.
 - As condições dos dois fluxos devem estar claras para o consumidor nos termos da promoção.
 
 ## 13. Regras essenciais de segurança e auditoria
 
-1. Os dados financeiros e administrativos são segregados por loja; cada estabelecimento só acessa seus próprios registros, embora a fila de sorteio seja global.
+1. Os dados financeiros, operacionais e os prêmios são segregados por loja; cada estabelecimento só acessa, resgata e recebe pagamentos dos cupons que ele próprio emitiu, embora a fila e os lotes de sorteio sejam globais.
 2. Cada maquininha/caixa possui credenciais próprias e só pode emitir cupons para a loja à qual está vinculada.
-3. Cada cupom deve estar vinculado a uma compra, loja, maquininha/caixa e emissão; depois, deve ser atribuído uma única vez a um lote geral.
+3. Cada cupom deve estar vinculado de forma permanente a uma única loja emissora, compra, maquininha/caixa e operador; depois, deve ser atribuído uma única vez a um lote geral. O vínculo à loja nunca muda, mesmo quando o lote mistura cupons de vários estabelecimentos.
 4. A entrada do centésimo cupom válido na fila geral fecha o lote e dispara o sorteio automático no servidor, sem depender de pagamento.
 5. A confirmação Pix por webhook atualiza somente o financeiro da loja e não pode liberar, iniciar, interromper ou repetir sorteios.
 6. O processamento da fila e dos sorteios deve ser idempotente: eventos repetidos não podem duplicar lotes ou resultados.
@@ -368,7 +386,7 @@ A maquininha terá uma área operacional própria para registrar compras, emitir
 - A confirmação da modalidade escolhida conclui o registro do resgate no servidor. A operação deve registrar a modalidade, o valor, o cupom/prêmio, a loja que realizou o resgate, a maquininha, o funcionário/responsável e data/hora, mantendo a trilha de auditoria definida nas seções 11 e 13.
 - A conclusão deve dar baixa definitiva no prêmio e atualizar seu estado para **resgatado/pago** no sistema.
 - Uma nova leitura do mesmo QR Code, em qualquer maquininha credenciada, deverá informar que o prêmio já foi resgatado e não poderá oferecer novamente o botão **Sacar**.
-- O servidor deve garantir atomicidade e impedir dois resgates simultâneos ou duplicados do mesmo prêmio.
+- O servidor deve garantir atomicidade e impedir dois resgates simultâneos ou duplicados do mesmo prêmio. Também deve rejeitar qualquer tentativa feita por loja diferente da loja emissora, mesmo que a outra loja seja credenciada.
 - O fluxo de resgate deve continuar respeitando as regras financeiras e de liquidação descritas na seção 11.3. A escolha na interface não deve ser tratada como prova de que a entrega ou transferência financeira foi concluída sem o registro correspondente.
 
 ### 16.4 Reaproveitamento da área atual do cambista
