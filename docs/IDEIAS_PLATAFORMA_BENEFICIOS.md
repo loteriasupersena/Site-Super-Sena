@@ -79,6 +79,17 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Cada cupom deve ser individual e não pode ser duplicado.
 - O contato do consumidor deve ficar associado ao cupom com proteção adequada, acesso restrito e finalidade limitada à comunicação sobre o resultado e o resgate do prêmio. O contato não deve ficar exposto publicamente na consulta do QR Code.
 
+## 3.1. Estrutura persistente dos cupons e lotes
+
+- O cupom promocional terá registro próprio, separado das entidades antigas de apostas, compras numéricas e rodadas.
+- Cada cupom terá identificador interno, código público único para o QR Code, loja emissora, usuário operacional responsável, lote global, valor integral da compra, percentual histórico aplicado, valor devido à plataforma, WhatsApp opcional e datas de emissão/sorteio/resgate.
+- O percentual aplicado será copiado da configuração da loja no instante da emissão. Alterações futuras no cadastro da loja não poderão recalcular o valor devido de cupons já emitidos.
+- O valor devido será calculado em centavos, com arredondamento monetário definido no serviço de emissão e validado por testes.
+- O lote global terá sequência única e estado próprio. O modelo persistente registra os cupons associados e o cupom vencedor; a regra de completar exatamente 100 cupons e sortear uma única vez deverá ser garantida por transação no servidor, com controle de concorrência e testes antes de liberar a emissão.
+- Estados iniciais do cupom: ativo, premiado, resgatado e expirado. Estados do lote: aberto e sorteado.
+- A criação destas entidades é apenas a fundação de dados. Ainda não implementa emissão, fechamento de lote, sorteio, consulta pública, impressão ou resgate.
+- Cupons e lotes novos não devem utilizar as entidades Purchase, Round ou NumericParticipationLine do sistema antigo. O histórico antigo permanece preservado e isolado.
+
 ## 4. Regra única de sorteio: fila geral e lotes de 100 cupons
 
 - Haverá **uma fila única e geral de cupons**, compartilhada por todos os estabelecimentos participantes da promoção.
