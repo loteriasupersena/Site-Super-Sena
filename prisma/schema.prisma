@@ -105,6 +105,33 @@ enum WithdrawalStatus {
   FAILED
 }
 
+
+enum StoreBillingStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum CouponPayoutKind {
+  CUSTOMER_REDEMPTION
+  STORE_EXPIRED_CLAIM
+}
+
+enum CouponPayoutMethod {
+  GOODS
+  PIX
+}
+
+enum CouponPayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  UNKNOWN
+}
+
 enum PrintJobPurpose {
   AUTO_RECEIPT
   MANUAL_REPRINT
@@ -173,6 +200,9 @@ model Store {
   adminUser                User          @relation("StoreAdministrator", fields: [adminUserId], references: [id], onDelete: Restrict)
   users                    User[]        @relation("StoreMembers")
   coupons                  Coupon[]
+  billings                 StoreBilling[]
+  payoutOperations         CouponPayout[]
+  pixKey                   StorePixKey?
 
   @@index([status, createdAt])
 }
@@ -673,6 +703,7 @@ model Coupon {
   storeClaimedBy             User?        @relation("CouponStoreClaimer", fields: [storeClaimedById], references: [id], onDelete: Restrict)
   batch                      CouponBatch  @relation("CouponBatchMembers", fields: [batchId], references: [id], onDelete: Restrict)
   winningBatch               CouponBatch? @relation("CouponBatchWinner")
+  payout                      CouponPayout?
 
   @@index([storeId, issuedAt])
   @@index([issuedById, issuedAt])
@@ -680,4 +711,83 @@ model Coupon {
   @@index([status, issuedAt])
   @@index([status, customerRedemptionDeadline])
   @@index([storeClaimedById, storeClaimedAt])
+}
+
+
+model StoreBilling {
+  id                 String             @id @default(cuid())
+  storeId            String
+  periodKey          String
+  amountCents        Int
+  status             StoreBillingStatus @default(PENDING)
+  idempotencyKey     String             @unique
+  externalReference  String             @unique
+  provider           String             @default("ASAAS")
+  providerPaymentId  String?            @unique
+  providerQrCodeId   String?            @unique
+  pixCopyPaste       String?
+  pixQrCodeBase64    String?
+  dueAt              DateTime?
+  paidAt             DateTime?
+  lastProviderStatus String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  store              Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@unique([storeId, periodKey])
+  @@index([storeId, status, createdAt])
+  @@index([status, updatedAt])
+}
+
+model CouponPayout {
+  id                    String             @id @default(cuid())
+  couponId              String             @unique
+  storeId               String
+  kind                  CouponPayoutKind
+  method                CouponPayoutMethod?
+  status                CouponPayoutStatus @default(PENDING)
+  amountCents           Int
+  idempotencyKey        String             @unique
+  externalReference     String             @unique
+  provider              String?
+  providerTransferId    String?            @unique
+  providerStatus        String?
+  providerReceiptUrl    String?
+  providerFailureReason String?
+  pixKeyCiphertext      String?
+  pixKeyMasked          String?
+  pixKeyType            String?
+  requestedAt           DateTime?
+  paidAt                DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  coupon                Coupon             @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  store                 Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, kind, status, createdAt])
+  @@index([status, updatedAt])
+}
+
+model StorePixKey {
+  id            String   @id @default(cuid())
+  storeId       String   @unique
+  keyCiphertext String
+  keyMasked     String
+  keyType       String
+  validatedAt   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)
+}
+
+model AsaasWebhookEvent {
+  id              String   @id @default(cuid())
+  providerEventId String   @unique
+  eventType       String
+  payloadDigest   String
+  receivedAt      DateTime @default(now())
+  processedAt     DateTime?
+  processingError String?
+
+  @@index([processedAt, receivedAt])
 }
