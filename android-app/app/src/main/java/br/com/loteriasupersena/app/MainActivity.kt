@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
-        private const val SITE_URL = "https://loteriasupersena.com.br"
+        private const val SITE_URL = "https://meuvalepix.com.br"
         private const val CASHIER_LOGIN_URL = "$SITE_URL/cashier-app-login"
     }
 
