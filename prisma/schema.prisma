@@ -25,6 +25,8 @@ enum CouponStatus {
   WINNER
   REDEEMED
   EXPIRED
+  STORE_CLAIMABLE
+  STORE_REDEEMED
 }
 
 enum CouponBatchStatus {
@@ -154,6 +156,7 @@ model User {
   prizePaymentRequestsReviewed PrizePaymentRequest[] @relation("PrizePaymentRequestReviewer")
   prizePaymentBatchesReviewed PrizePaymentBatch[] @relation("PrizePaymentBatchReviewer")
   issuedCoupons          Coupon[] @relation("CouponIssuer")
+  storeClaimedCoupons     Coupon[] @relation("CouponStoreClaimer")
 
   @@index([role, status])
 }
@@ -658,13 +661,16 @@ model Coupon {
   purchaseAmountCents        Int
   commissionRateBasisPoints  Int
   platformFeeCents           Int
-  customerWhatsapp           String?
   status                     CouponStatus @default(ACTIVE)
   issuedAt                   DateTime     @default(now())
   drawnAt                    DateTime?
+  customerRedemptionDeadline DateTime?
   redeemedAt                 DateTime?
+  storeClaimedAt             DateTime?
+  storeClaimedById           String?
   store                      Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
   issuedBy                   User         @relation("CouponIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  storeClaimedBy             User?        @relation("CouponStoreClaimer", fields: [storeClaimedById], references: [id], onDelete: Restrict)
   batch                      CouponBatch  @relation("CouponBatchMembers", fields: [batchId], references: [id], onDelete: Restrict)
   winningBatch               CouponBatch? @relation("CouponBatchWinner")
 
@@ -672,4 +678,6 @@ model Coupon {
   @@index([issuedById, issuedAt])
   @@index([batchId, issuedAt])
   @@index([status, issuedAt])
+  @@index([status, customerRedemptionDeadline])
+  @@index([storeClaimedById, storeClaimedAt])
 }
