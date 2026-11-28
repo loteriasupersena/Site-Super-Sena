@@ -77,8 +77,12 @@ export async function issueCoupon(input: {
       return { coupon: raced, batch, replayed: true };
     }
 
+    // Serialize store billing snapshots with coupon issuance. The billing lock is
+    // separate from the global draw lock and never changes the draw queue.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(20261128, hashtext(${store.id}))`;
+
     // Billing cycles are store-specific and independent from the global draw queue.
-    // A payment closes the store's outstanding cycle; it never changes draw batches.
+    // A payment closes only the linked coupons; it never changes draw batches.
     const outstandingCouponCount = await tx.coupon.count({
       where: {
         storeId: store.id,
