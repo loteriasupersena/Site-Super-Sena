@@ -17,6 +17,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador geral possui controle administrativo global da plataforma.
 - É responsabilidade do administrador geral cadastrar as lojas e criar/vincular o usuário administrador de cada estabelecimento. O administrador da loja não cria a própria conta nem cadastra outras lojas.
 - O administrador geral pode ativar, editar, suspender e administrar lojas e seus administradores, além de controlar configurações e parâmetros gerais da plataforma.
+- O administrador geral também terá uma área funcional de **Regras do sorteio**, na qual poderá configurar a quantidade de cupons por lote e a quantidade de ganhadores por lote. A tela deverá salvar a regra no servidor, validar os valores, registrar auditoria/histórico e integrar a configuração ao sequenciador global. A regra nova só vale a partir do próximo lote iniciado; lotes em andamento e resultados concluídos preservam a regra original.
 - No cadastro de cada loja/administrador, o administrador geral deve definir livremente o percentual que aquela loja pagará à plataforma. Não existe faixa fixa obrigatória de 3% a 5%; essa faixa foi apenas uma referência inicial de desenvolvimento. Cada loja pode ter um percentual diferente, e o administrador geral poderá alterá-lo ao longo do tempo.
 - No mesmo cadastro ou nas configurações da loja, o administrador geral define o limite de cupons por ciclo de cobrança que libera novas emissões. A referência inicial é de **100 cupons por ciclo**, podendo o limite ser controlado pela plataforma.
 - **O administrador geral não cadastra nem cria maquininhas ou acessos operacionais.** Essa responsabilidade pertence exclusivamente ao administrador de cada loja.
@@ -99,36 +100,38 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - Registros antigos, se existirem antes da ativação da emissão, recebem uma chave técnica de legado durante a migração. Novas emissões devem sempre fornecer uma chave própria.
 - A unicidade no banco é a última barreira contra duplicidade; validações apenas na interface ou na aplicação não são suficientes.
 
-## 4. Regra única de sorteio: fila geral e lotes de 100 cupons
+## 4. Regra global de sorteio configurável
 
-- Haverá **uma fila única e geral de cupons**, compartilhada por todos os estabelecimentos participantes da promoção.
-- Cada cupom entra nessa fila assim que é emitido e registrado corretamente, independentemente de a loja já ter pago ou não o valor devido à plataforma.
-- Os cupons de lojas diferentes podem compor o mesmo lote. A origem de cada cupom continua identificada e vinculada à respectiva loja, maquininha/caixa, compra e funcionário.
-- A fila forma lotes sequenciais de exatamente **100 cupons**. Cada lote completo gera automaticamente um sorteio independente e exatamente um ganhador.
-- Assim que o centésimo cupom de um lote for registrado, o servidor deve fechar aquele lote e processar o sorteio automaticamente, sem aguardar fechamento administrativo ou pagamento de qualquer loja.
-- A fila deve continuar recebendo cupons e formando novos lotes continuamente. A inadimplência de uma loja não pode pausar, atrasar ou impedir a formação dos lotes e a realização dos sorteios.
-- Cada cupom participa de apenas um lote e de apenas um sorteio. O servidor deve registrar de forma permanente a composição exata dos lotes e os resultados.
-- O valor do prêmio associado ao cupom sorteado corresponde ao valor integral da compra registrada naquele cupom.
-- A situação financeira da loja emissora não altera a elegibilidade do consumidor nem o resultado do sorteio. O cliente não pode ser prejudicado por atraso ou falta de pagamento da loja.
-- Não haverá lotes exclusivos por estabelecimento nem exigência de 100 cupons da mesma loja para realizar um sorteio.
+- Haverá uma fila única e geral de cupons, compartilhada por todos os estabelecimentos participantes.
+- A regra do sorteio será configurável pelo administrador geral, em uma área administrativa própria e funcional. A configuração terá, no mínimo, dois parâmetros: **quantidade de cupons por lote** e **quantidade de ganhadores por lote**.
+- Exemplos de configurações permitidas: 1 ganhador a cada 100 cupons; 2 ganhadores a cada 100; 3 ganhadores a cada 100; 1 ganhador a cada 300; ou 1 ganhador a cada 50. Os valores são exemplos, não limites técnicos já aprovados.
+- Ao completar o número de cupons definido para um lote, o servidor fecha o lote automaticamente e seleciona a quantidade configurada de ganhadores distintos, sem repetição do mesmo cupom dentro do lote.
+- A fila permanece global: um lote pode reunir cupons de lojas diferentes. O vínculo permanente de cada cupom com a loja emissora é preservado.
+- A configuração deve ser validada no servidor. A quantidade de ganhadores precisa ser um inteiro positivo e não pode ser maior que a quantidade de cupons do lote. Os limites máximos de cupons e ganhadores deverão ser definidos com base em testes de carga, custo operacional e revisão de segurança antes de liberar a edição em produção.
+- Cada lote deve guardar uma cópia imutável da regra aplicada: tamanho do lote, número de ganhadores, versão/identificador da configuração, data de ativação e resultado. Alterar a configuração não recalcula lotes fechados nem altera lotes que já começaram.
+- **Toda alteração passa a valer somente a partir do próximo lote iniciado depois da alteração.** Se um lote estiver em andamento, ele termina com a regra que recebeu quando foi aberto. A configuração nova é aplicada ao lote seguinte. Isso evita misturar, por exemplo, os primeiros 37 cupons de uma regra de 100 com uma regra nova de 50.
+- O administrador geral deve visualizar a regra vigente, o histórico de alterações, quem alterou, quando alterou, os valores anteriores e novos e a partir de qual lote a nova regra passa a valer. A alteração exige confirmação explícita e registro de auditoria.
+- O sistema deve impedir configurações inválidas, atualizações concorrentes perdidas e aplicação parcial de uma regra. A atualização da configuração e a definição da próxima regra de lote precisam ser transacionais e consistentes com o sequenciador global.
+- A mudança de regra não pode apagar histórico, reabrir lotes, alterar ganhadores já definidos, reiniciar a sequência global ou interferir em cobranças e limites financeiros individuais das lojas.
+- A quantidade de cupons por lote e a quantidade de ganhadores são regras do sorteio global. Não devem ser confundidas com o limite de cupons não pagos de cada loja, que pertence ao controle financeiro e continua sendo uma configuração separada.
+- O sistema deve registrar exatamente uma conclusão por lote e exatamente a quantidade de ganhadores configurada. Se a seleção aleatória de múltiplos ganhadores ocorrer, os cupons vencedores devem ser distintos e selecionados sem reposição.
+- O sorteio ocorre automaticamente no servidor, sem ação manual do administrador e sem depender do pagamento das lojas.
+- A implementação deverá incluir testes de lotes de tamanhos diferentes, um e vários ganhadores, cupons de lojas diferentes, alterações de regra durante lote aberto, concorrência na ativação, falhas/retentativas, idempotência e ausência de ganhadores duplicados.
+- A configuração inicial da plataforma será **100 cupons por lote e 1 ganhador**, até que o administrador geral faça uma alteração válida.
 
-### 4.1 Transformação do mecanismo de sorteio existente
+### 4.1. Refatoração necessária para suportar regras configuráveis
 
-- O sistema atual possui um mecanismo antigo baseado em sorteio de seis números e modalidades/faixas como unidade, dezena, centena, milhar, quina e sena. Esse mecanismo será substituído pela nova regra promocional: **um ganhador a cada lote de 100 cupons da fila geral**.
-- A mudança deverá partir de uma **refatoração limpa e planejada**, não de remendos. O objetivo é aproveitar o que comprovadamente funciona, mas deixar cada parte adaptada à sua responsabilidade nova, com arquitetura coerente, clara e sustentável.
-- Não se deve preservar código antigo apenas por conveniência nem empilhar novas condições sobre uma lógica que foi criada para outro produto ou regra. Se um componente, serviço, módulo ou estrutura não puder ser adaptado de forma limpa, deverá ser substituído por uma implementação adequada, removendo-se depois o código antigo que ficar sem uso.
-- É proibido deixar código morto, caminhos antigos ativos sem finalidade, funções duplicadas, regras conflitantes, compatibilidades provisórias sem prazo, desvios condicionais improvisados ou estruturas paralelas que confundam qual fluxo é o oficial.
-- Não fazer “pontes”, gambiarras ou camadas temporárias para encaixar a nova promoção no sorteio antigo de seis números. A nova regra deve ter um fluxo de domínio consistente: fila geral, lotes de 100 cupons, um ganhador por lote e processamento automático no servidor.
-- A decisão entre adaptar, refatorar profundamente ou substituir uma parte deverá ser tomada após inspecionar o código e suas dependências. Preservar o que funciona não significa manter uma arquitetura inadequada; criar uma estrutura nova é aceitável quando for a solução mais limpa.
-- Toda substituição deverá incluir remoção segura do código obsoleto, atualização dos pontos que dependem dele e testes para confirmar que não restaram referências, rotas ou comportamentos antigos indevidos.
-- Não se deve apagar o sistema existente indiscriminadamente nem reconstruir tudo do zero. A prioridade é uma transformação criteriosa, com cada parte reaproveitada ou substituída por razões técnicas claras.
-- O mecanismo antigo de sorteio de seis números e suas modalidades deixa de ser a regra operacional da promoção. A lógica do servidor deverá ser adaptada para formar lotes sequenciais de 100 cupons e selecionar exatamente um cupom ganhador por lote.
-- A execução do sorteio deve ocorrer no servidor, automaticamente quando o lote geral completar 100 cupons. A interface não deve simular o resultado nem depender de ação manual do administrador.
-- A transformação deve resultar em uma estrutura lapidada, sem código morto, remendos ou regras antigas convivendo indevidamente com a nova promoção.
-- Antes de qualquer alteração, deve-se inspecionar o fluxo atual de sorteio ponta a ponta: emissão/registro dos cupons, entrada na fila, serviço responsável pelo sorteio, persistência do resultado, consulta pública, painéis administrativos e resgate. A adaptação deve preservar as funcionalidades úteis e atualizar todos os pontos que dependem da regra antiga.
-- A migração deve evitar perda de histórico. Registros históricos do mecanismo antigo devem ser preservados para consulta/auditoria, sem serem misturados aos novos lotes promocionais. A estratégia de compatibilidade e tratamento dos registros existentes deverá ser definida após a inspeção do banco e do código.
-- A implementação deverá incluir testes para garantir: lote com exatamente 100 cupons; um único ganhador; mistura de lojas; disparo automático no servidor; nenhum sorteio antes do centésimo cupom; nenhum efeito de pagamentos/webhooks sobre o sorteio; e prevenção de lotes ou resultados duplicados.
-- Nenhuma alteração deverá ser feita diretamente na branch `main`. O trabalho deverá ocorrer na branch de desenvolvimento definida para o projeto, com inspeção e commits incrementais.
+- A implementação atual foi construída com tamanho de lote fixo em 100 e um único campo de ganhador no modelo de lote. Isso não atende à nova necessidade de múltiplos ganhadores nem à edição segura do tamanho do lote.
+- A fila global deverá ler a regra efetiva do lote em vez de comparar o contador com o número fixo 100.
+- Cada lote deverá persistir seu tamanho, quantidade de ganhadores e versão da regra, para que o resultado seja auditável e imutável.
+- O modelo de dados deverá representar uma relação de um lote para vários cupons ganhadores, com unicidade que impeça o mesmo cupom de ganhar duas vezes no mesmo lote. O campo atual de ganhador único deverá ser substituído ou migrado de forma compatível, preservando todos os resultados existentes.
+- A linha de estado da fila global deverá carregar ou referenciar a regra do lote atualmente aberto e a configuração vigente para o próximo lote. A rotação entre lotes deve aplicar a regra nova atomicamente.
+- A tela de administração geral não pode apenas salvar dois números em uma configuração genérica: deve acionar um fluxo de domínio validado, versionado, auditável e integrado ao sequenciador que realmente emite e fecha os lotes.
+- A alteração deve manter a ordem global dos cupons e a consistência transacional. O ponto de serialização global continua existindo enquanto a regra comercial exigir uma fila única ordenada.
+- Não alterar silenciosamente a regra de cobrança por loja. O limite financeiro por loja permanece independente e pode continuar usando 100 como valor próprio, até decisão comercial específica.
+- A migração deve preservar lotes e ganhadores existentes. O histórico antigo deve ser representado como lotes de 100 cupons e um ganhador, com versão de regra legada identificável.
+- A configuração deve ter histórico append-only ou equivalente auditável; não basta sobrescrever o valor atual e perder a regra anterior.
+- Antes de liberar a funcionalidade, executar testes de concorrência no PostgreSQL e testes de integração da API administrativa e do sequenciador com alterações de regra enquanto há lotes abertos.
 
 ## 5. Apuração financeira e pagamento devido por cada loja
 
@@ -378,7 +381,7 @@ A origem dos recursos, tarifas, limites, saldo/garantia e conciliação dos dois
 4. A entrada do centésimo cupom válido na fila geral fecha o lote e dispara o sorteio automático no servidor, sem depender de pagamento.
 5. A confirmação Pix por webhook atualiza somente o financeiro da loja e não pode liberar, iniciar, interromper ou repetir sorteios.
 6. O processamento da fila e dos sorteios deve ser idempotente: eventos repetidos não podem duplicar lotes ou resultados.
-7. Cada lote deve conter exatamente 100 cupons da fila geral, podendo reunir cupons de diferentes lojas, e gerar exatamente um ganhador.
+7. Cada lote deve conter a quantidade de cupons definida na versão de regra aplicada àquele lote e gerar a quantidade de ganhadores distintos configurada nessa mesma versão.
 8. Deve existir trilha de auditoria para emissões, entrada na fila, composição dos lotes, sorteios, cobranças, pagamentos, bloqueios e resgates.
 9. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
 10. No prazo de resgate, a maquininha apresenta exatamente duas opções mutuamente exclusivas: **Saque para a loja**, com Pix para a chave pré-cadastrada da loja e classificação do prêmio como mercadoria entregue ao consumidor; ou **Transferência Pix para o cliente**, com Pix direto para a chave informada pelo consumidor e classificação como dinheiro.
@@ -390,7 +393,7 @@ A origem dos recursos, tarifas, limites, saldo/garantia e conciliação dos dois
 1. Um supermercado possui cinco caixas, cada um com uma maquininha e credenciais próprias.
 2. Em cada caixa, o funcionário registra o valor da compra e emite o cupom com QR Code.
 3. O cupom entra imediatamente na fila geral, junto com os cupons das demais lojas.
-4. Quando a fila geral completa 100 cupons, o servidor fecha o lote e realiza automaticamente um sorteio com um ganhador.
+4. Quando a fila geral completa a quantidade de cupons definida na regra vigente daquele lote, o servidor fecha o lote e seleciona automaticamente a quantidade configurada de ganhadores distintos.
 5. A plataforma calcula e registra separadamente o valor devido pelo supermercado e disponibiliza a cobrança Pix.
 6. Quando o supermercado paga, o webhook atualiza seu extrato financeiro, sem interferir no sorteio já realizado ou nos próximos.
 7. Se a loja ficar inadimplente, poderá ser bloqueada para novas emissões conforme política definida, mas os cupons já emitidos continuam participando normalmente.
@@ -747,6 +750,6 @@ A plataforma só será considerada pronta quando:
 
 ### 10. Regra global de sorteio
 
-A regra atual é um fluxo global de cupons, formando lotes de exatamente 100 entre todas as lojas. Isso cria uma ordem global e um ponto de coordenação. Qualquer proposta de dividir o sorteio por loja ou campanha muda a regra do produto e exige aprovação explícita.
+A fila continua global e compartilhada entre todas as lojas, mas o tamanho do lote e a quantidade de ganhadores passam a ser parâmetros configuráveis pelo administrador geral, com versão imutável por lote. Isso mantém a ordem global e o ponto de coordenação. Qualquer proposta de dividir o sorteio por loja ou campanha muda a regra do produto e exige aprovação explícita.
 
 **Conclusão:** a plataforma deve crescer por capacidade horizontal e processamento assíncrono, mas sua capacidade só será comprovada por medições. O objetivo é evitar reconstrução futura, não prometer que nenhum sistema jamais precisará de ajustes, atualizações ou manutenção.
