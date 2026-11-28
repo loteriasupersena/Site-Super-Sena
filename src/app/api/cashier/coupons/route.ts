@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     if (code === "COUPON_ISSUE_INPUT_INVALID") return NextResponse.json({ error: "Dados inválidos." }, { status: 400, headers });
     if (code === "COUPON_ISSUER_FORBIDDEN") return NextResponse.json({ error: "Acesso operacional não autorizado." }, { status: 403, headers });
     if (code === "COUPON_STORE_INACTIVE") return NextResponse.json({ error: "A loja está inativa." }, { status: 403, headers });
-    if (code === "COUPON_STORE_BILLING_LIMIT_REACHED") return NextResponse.json({ error: "A loja atingiu 100 cupons ainda não quitados. Gere e pague a cobrança Pix para liberar novas emissões." }, { status: 409, headers });
+    if (code === "COUPON_STORE_BILLING_LIMIT_REACHED") return NextResponse.json({ error: "A loja atingiu o limite de cupons ainda não quitados. Gere e pague a cobrança Pix para liberar novas emissões." }, { status: 409, headers });
     if (code === "COUPON_IDEMPOTENCY_KEY_CONFLICT") return NextResponse.json({ error: "Esta chave de operação já foi usada em outra emissão." }, { status: 409, headers });
     if (code === "COUPON_PLATFORM_FEE_OUT_OF_RANGE") return NextResponse.json({ error: "O valor calculado excede o limite financeiro suportado." }, { status: 422, headers });
     return NextResponse.json({ error: "Não foi possível emitir o cupom. Repita a tentativa com a mesma chave de idempotência." }, { status: 500, headers });
