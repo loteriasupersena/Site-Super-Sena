@@ -39,9 +39,9 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - O administrador da loja consulta os cupons emitidos pelo estabelecimento, os cupons que participaram de lotes/sorteios gerais, os resultados dos cupons da loja e os prêmios pagos/resgatados.
 - O administrador acompanha os valores devidos à plataforma, cobranças e pagamentos, sem poder alterar regras globais ou interferir nos sorteios.
 - A área **Loja** deve exibir um contador de cupons do ciclo de cobrança atual, com o progresso até o limite liberado (por exemplo, 0/100, 65/100 e 100/100).
-- Ao atingir o limite do ciclo (100 cupons, como referência), o sistema fecha a apuração daquele ciclo e gera automaticamente uma cobrança Pix com QR Code para o administrador pagar o percentual devido sobre os valores das compras associadas aos cupons daquele ciclo.
-- Ao atingir o limite, novas emissões de cupons daquela loja ficam bloqueadas até que o pagamento da cobrança seja confirmado pelo webhook do provedor Pix. O painel deve mostrar a cobrança, o valor, o QR Code e a situação do pagamento.
-- Após a confirmação válida do webhook, o sistema registra o pagamento, encerra o ciclo quitado e libera automaticamente a emissão de um novo ciclo, reiniciando o contador para o limite seguinte.
+- O administrador da loja pode gerar uma cobrança Pix a qualquer momento, inclusive após emitir apenas um cupom. A cobrança inclui exatamente os cupons pendentes vinculados a ela e soma os valores devidos desses cupons.
+- Ao atingir o limite de cupons ainda não quitados (100 como referência), novas emissões daquela loja ficam bloqueadas até que uma cobrança seja paga e confirmada pelo webhook do provedor Pix. O painel deve mostrar os cupons pendentes, o valor, o QR Code e a situação do pagamento.
+- Após a confirmação válida do webhook, somente os cupons vinculados àquela cobrança são considerados quitados. A loja pode gerar uma nova cobrança para os cupons pendentes seguintes; o contador financeiro considera apenas cupons ainda não quitados.
 - O bloqueio é por loja: não impede outras lojas de emitir cupons e não bloqueia leitura ou resgate de cupons já emitidos.
 - A área administrativa da loja não é a interface usada no caixa para registrar compras, emitir cupons ou resgatar prêmios. Essas tarefas pertencem à área operacional da maquininha (APK).
 - O administrador da loja não acessa dados de outros estabelecimentos nem a administração geral.
@@ -182,7 +182,7 @@ Existem **dois controles independentes**, que não podem compartilhar a mesma co
 - Cada lote deve guardar os 100 cupons participantes, a loja de origem de cada um, o resultado, a data/hora, a versão do procedimento de sorteio e os registros técnicos necessários para auditoria.
 - O pagamento de uma loja, a geração de uma cobrança Pix ou a confirmação de um webhook não inicia, interrompe, altera ou repete um sorteio.
 - A inadimplência de qualquer estabelecimento não pode impedir o sorteio de um lote completo nem alterar a participação de um consumidor.
-- **Regra separada de limite de emissão e cobrança:** além dos lotes gerais de sorteio de 100 cupons, cada loja possui seu próprio ciclo de cobrança, contado individualmente pelos cupons que ela emite. Ao completar o limite configurado para a loja (100 cupons como referência), o sistema fecha a apuração financeira daquele ciclo, gera a cobrança Pix e bloqueia novas emissões daquela loja até a confirmação do pagamento pelo webhook.
+- **Regra separada de limite de emissão e cobrança:** além dos lotes gerais de sorteio de 100 cupons, cada loja possui seu próprio controle financeiro, contado individualmente pelos cupons ainda não quitados. O administrador pode gerar uma cobrança Pix a qualquer momento; ao completar o limite configurado (100 cupons como referência) sem quitação, novas emissões daquela loja são bloqueadas até a confirmação do pagamento pelo webhook.
 - Esse limite por loja não cria lote de sorteio exclusivo, não altera a fila geral e não condiciona sorteios ao pagamento. Os cupons já emitidos continuam participando normalmente dos lotes gerais, e os sorteios continuam automáticos mesmo enquanto a loja aguarda pagar a cobrança.
 
 ## 7. Separação operacional e financeira por estabelecimento
@@ -513,17 +513,18 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - A alocação na fila geral é serializada no PostgreSQL por bloqueio transacional global, para impedir que duas emissões ocupem simultaneamente a última posição do lote.
 - Ao registrar o centésimo cupom, o servidor seleciona um único ganhador, marca o lote como sorteado e grava o prazo de resgate de 30 dias.
 - O sorteio não consulta o estado de cobrança ou pagamento da loja.
-- A emissão também consulta, separadamente, o último ciclo financeiro quitado da loja e conta os cupons emitidos depois dessa quitação. Ao alcançar o limite configurado em `Store.couponLimit` (100 por padrão), novas emissões da loja são recusadas com erro específico de limite financeiro. Essa verificação não altera a fila global nem o sorteio.
+- A emissão também consulta, separadamente, os vínculos entre cupons e cobranças quitadas. Cupons sem cobrança paga associada contam para o limite financeiro individual configurado em `Store.couponLimit` (100 por padrão). Essa verificação não altera a fila global nem o sorteio.
 - Criados testes unitários para o cálculo monetário do percentual, incluindo arredondamento, percentual superior a 100% e limite do inteiro persistido.
 
 ### 18.2 Limitações e validações ainda pendentes
 
 - Os testes ainda precisam ser executados no ambiente de integração; a criação dos arquivos de teste não equivale a aprovação.
+- A migração `20261127090000_store_billing_coupon_links` precisa ser aplicada no banco antes de ativar a cobrança por loja. O fluxo deve ser validado em ambiente de teste com Asaas sandbox antes de produção.
 - O fluxo ainda não está integrado à tela operacional do APK nem à impressão do recibo com QR Code.
 - Ainda faltam testes de concorrência PostgreSQL que comprovem o fechamento único do lote com emissões simultâneas.
 - Ainda faltam consulta pública do cupom, apresentação do resultado e integração completa do resgate.
 - Foi criada a gestão básica de maquininhas na área Loja: o administrador da loja pode listar e criar acessos operacionais individuais, com usuário, senha inicial armazenada como hash e troca obrigatória no primeiro acesso. Edição, bloqueio e redefinição de senha ainda não foram implementados.
-- A geração antecipada da cobrança Pix por qualquer quantidade de cupons, a associação exata dos cupons quitados à cobrança e a conciliação/webhook ainda precisam ser integradas. Até essa integração, a trava de emissão já considera o último pagamento registrado em `StoreBilling`, mas o fluxo de pagamento não está completo.
+- Implementados a geração antecipada da cobrança Pix, o vínculo persistente e exclusivo entre cada cupom e sua cobrança, a consulta do saldo pendente no painel da loja e a conciliação existente por webhook/reconciliação Asaas. A quitação só remove do saldo pendente os cupons associados à cobrança paga; não altera a fila global nem o sorteio.
 - Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
 
 **Status:** primeira implementação de emissão e sorteio automático codificada; não validada em execução e não liberada para produção.
