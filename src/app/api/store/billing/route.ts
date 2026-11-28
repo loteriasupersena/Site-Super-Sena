@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       authPrisma.coupon.aggregate({
-        where: { storeId: auth.store.id, billingLinks: { none: { billing: { status: "PAID" } } } },
+        where: { storeId: auth.store.id, platformFeeCents: { gt: 0 }, billingLinks: { none: { billing: { status: "PAID" } } } },
         _count: { id: true }, _sum: { platformFeeCents: true },
       }),
     ]);
