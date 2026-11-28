@@ -147,7 +147,7 @@ describe("POST /api/internal/round-scheduler", () => {
   });
 
   it("automatically settles completed rounds and retries them through the scheduler", async () => {
-    mocks.queryRaw.mockResolvedValue([{ id: "completed-round-1" }]);
+    mocks.queryRaw.mockResolvedValueOnce([{ id: "completed-round-1" }]).mockResolvedValue([]);
     mocks.settleNumericRoundPrizes.mockResolvedValue({ status: "settled", creditedLines: 1 });
 
     const response = await POST(request("Bearer test-secret-long-enough"));
@@ -160,7 +160,7 @@ describe("POST /api/internal/round-scheduler", () => {
   });
 
   it("reports a settlement failure so the next scheduler run can retry", async () => {
-    mocks.queryRaw.mockResolvedValue([{ id: "completed-round-retry" }]);
+    mocks.queryRaw.mockResolvedValueOnce([{ id: "completed-round-retry" }]).mockResolvedValue([]);
     mocks.settleNumericRoundPrizes.mockRejectedValue(new Error("temporary settlement failure"));
 
     const response = await POST(request("Bearer test-secret-long-enough"));
