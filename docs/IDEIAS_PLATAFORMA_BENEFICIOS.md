@@ -510,21 +510,26 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - A emissão valida o usuário operacional, a loja vinculada e a situação ativa da loja.
 - O cupom registra a loja emissora, o operador, o valor integral da compra, o percentual configurado na loja e o valor devido à plataforma calculado em centavos.
 - A chave de idempotência é persistida no cupom. Uma repetição com a mesma chave e mesmo operador/loja recupera o cupom existente, sem criar nova participação.
-- A alocação na fila geral é serializada no PostgreSQL por bloqueio transacional global, para impedir que duas emissões ocupem simultaneamente a última posição do lote.
+- A alocação na fila geral usa o estado persistente `CouponQueueState`, atualizado atomicamente em uma transação curta. Isso mantém uma única ordem global e impede duas emissões de ocupar a mesma posição ou fechar o mesmo lote.
 - Ao registrar o centésimo cupom, o servidor seleciona um único ganhador, marca o lote como sorteado e grava o prazo de resgate de 30 dias.
 - O sorteio não consulta o estado de cobrança ou pagamento da loja.
-- A emissão também consulta, separadamente, os vínculos entre cupons e cobranças quitadas. Cupons sem cobrança paga associada contam para o limite financeiro individual configurado em `Store.couponLimit` (100 por padrão). Essa verificação não altera a fila global nem o sorteio.
+- A emissão não faz mais uma contagem histórica de cupons: reserva atomicamente uma unidade em `Store.outstandingCouponCount`, limitada por `Store.couponLimit` (100 por padrão). A reserva é revertida automaticamente se a transação falhar. Essa verificação não altera a fila global nem o sorteio.
 - Criados testes unitários para o cálculo monetário do percentual, incluindo arredondamento, percentual superior a 100% e limite do inteiro persistido.
 
 ### 18.2 Limitações e validações ainda pendentes
 
 - Os testes ainda precisam ser executados no ambiente de integração; a criação dos arquivos de teste não equivale a aprovação.
-- A migração `20261127090000_store_billing_coupon_links` precisa ser aplicada no banco antes de ativar a cobrança por loja. O fluxo deve ser validado em ambiente de teste com Asaas sandbox antes de produção.
+- As migrações `20261127090000_store_billing_coupon_links` e `20261127100000_coupon_queue_and_store_counter` precisam ser aplicadas no banco antes de ativar os novos fluxos. O contador financeiro é inicializado por backfill dos cupons já existentes.
 - O fluxo ainda não está integrado à tela operacional do APK nem à impressão do recibo com QR Code.
-- Ainda faltam testes de concorrência PostgreSQL que comprovem o fechamento único do lote com emissões simultâneas.
+- Ainda faltam testes de carga e concorrência PostgreSQL com 100, 500, 1.000 e 5.000 emissões simultâneas, incluindo várias lojas, repetição de chaves de idempotência, rollback e fechamento único de lotes.
 - Ainda faltam consulta pública do cupom, apresentação do resultado e integração completa do resgate.
 - Foi criada a gestão básica de maquininhas na área Loja: o administrador da loja pode listar e criar acessos operacionais individuais, com usuário, senha inicial armazenada como hash e troca obrigatória no primeiro acesso. Edição, bloqueio e redefinição de senha ainda não foram implementados.
 - Implementados a geração antecipada da cobrança Pix, o vínculo persistente e exclusivo entre cada cupom e sua cobrança, a consulta do saldo pendente no painel da loja e a conciliação existente por webhook/reconciliação Asaas. A quitação só remove do saldo pendente os cupons associados à cobrança paga; não altera a fila global nem o sorteio.
+- Adicionado `Store.outstandingCouponCount`, contador financeiro atualizado por incremento/decremento atômico. O painel usa esse contador para exibir a quantidade pendente sem contar linhas de cupons.
+- O webhook e a rotina de reconciliação baixam o contador na mesma transação em que a cobrança muda para `PAID`, usando a quantidade de vínculos da cobrança. A operação é condicional e falha fechada em caso de divergência para impedir contador negativo.
+- A cobrança congela seu conjunto de cupons com bloqueio de linha exclusivo da loja, compartilhado com a reserva do contador na emissão. Lojas diferentes não disputam esse bloqueio financeiro.
+- A alocação global dos lotes deixou de executar consultas de busca/contagem sob um advisory lock amplo. Agora uma única atualização atômica de `CouponQueueState` atribui a posição; a inserção, o fechamento do lote e a rotação para o próximo lote são confirmados na mesma transação. A ordem global continua sendo um ponto de serialização intencional para preservar lotes globais exatos de 100 cupons.
+- Adicionados testes unitários para a baixa exata do contador e para a proteção contra divergência/underflow. Esses testes ainda precisam ser executados.
 - Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
 
-**Status:** primeira implementação de emissão e sorteio automático codificada; não validada em execução e não liberada para produção.
+**Status:** otimização de emissão e contagem financeira codificada na branch; ainda não validada por execução, testes PostgreSQL ou teste de carga, e não liberada para produção.
