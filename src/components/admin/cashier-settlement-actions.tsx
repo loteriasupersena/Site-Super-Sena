@@ -10,8 +10,6 @@ type SettlementPreview = {
   salesCount: number;
   gamesCount: number;
   commissionCents: number;
-  cashPrizePayoutCount: number;
-  cashPrizePayoutCents: number;
   pendingCashSalesCount: number;
   pendingCashSalesCents: number;
   netBalanceCents: number;
@@ -52,7 +50,7 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
       : preview.platformOwesCashierCents > 0
         ? "A plataforma deve pagar " + money(preview.platformOwesCashierCents) + " ao cambista."
         : "Não há transferência financeira pendente.";
-    if (!window.confirm("Confirme somente depois de conferir os valores e efetivar o repasse ou pagamento indicado.\n\n" + balanceText + "\n\nAo confirmar, o acerto será gravado no histórico e o próximo período começará. Esta ação não transfere dinheiro automaticamente.")) return;
+    if (!window.confirm("Confirme somente depois de conferir os valores e efetivar o repasse indicado.\n\n" + balanceText + "\n\nAo confirmar, o acerto será gravado no histórico e o próximo período começará. Esta ação não transfere dinheiro automaticamente.")) return;
 
     setBusy("finalize"); setError(""); setNotice("");
     try {
@@ -75,7 +73,7 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
 
   return <section className="feature-card admin-settlement-action">
     <h2>Apuração e acerto financeiro</h2>
-    <p>A apuração mostra os valores antes de encerrar o período. O Pix fica no caixa da plataforma; o dinheiro fica no caixa do cambista. Os prêmios pagos em dinheiro pelo cambista são valores a compensar pela plataforma.</p>
+    <p>A apuração considera exclusivamente as vendas realizadas pelo cambista, a comissão devida e os valores que permanecem no caixa físico. As vendas em Pix ficam no caixa da plataforma. O pagamento de prêmios é responsabilidade exclusiva da plataforma e não faz parte do acerto do cambista.</p>
     <button type="button" className="primary-button" disabled={Boolean(busy)} onClick={() => void calculate()}>
       {busy === "preview" ? "Apurando…" : "Apurar período"}
     </button>
@@ -90,9 +88,8 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
         <article className="cashier-summary-tile"><span>Vendas em Pix · caixa da plataforma</span><strong>{money(preview.pixSalesCents)}</strong></article>
         <article className="cashier-summary-tile"><span>Total vendido</span><strong>{money(preview.totalSalesCents)}</strong></article>
         <article className="cashier-summary-tile"><span>Comissão devida ao cambista</span><strong>{money(preview.commissionCents)}</strong></article>
-        <article className="cashier-summary-tile"><span>Prêmios pagos em dinheiro pelo cambista ({preview.cashPrizePayoutCount})</span><strong>{money(preview.cashPrizePayoutCents)}</strong></article>
         <article className="cashier-summary-tile"><span>Vendas confirmadas · jogos</span><strong>{preview.salesCount} · {preview.gamesCount}</strong></article>
-        <article className="cashier-summary-tile"><span>Dinheiro recebido em vendas que seguirão para o próximo período</span><strong>{preview.pendingCashSalesCount} · {money(preview.pendingCashSalesCents)}</strong></article>
+        <article className="cashier-summary-tile"><span>Dinheiro recebido em vendas que seguirá para o próximo período</span><strong>{preview.pendingCashSalesCount} · {money(preview.pendingCashSalesCents)}</strong></article>
       </div>
       <div className="admin-settlement-final-balance">
         <h4>Resultado financeiro final</h4>
@@ -101,12 +98,12 @@ export function CashierSettlementActions({ cashierId }: { cashierId: string }) {
           : preview.platformOwesCashierCents > 0
             ? <p><strong>A PLATAFORMA DEVE AO CAMBISTA: {money(preview.platformOwesCashierCents)}</strong></p>
             : <p><strong>ACERTO ZERADO: não há valor a repassar ou pagar.</strong></p>}
-        <p>O cálculo considera dinheiro de vendas confirmadas menos comissão e prêmios pagos pelo cambista. O Pix é demonstrado separadamente porque já está no caixa da plataforma. Vendas em dinheiro ainda aguardando alocação ficam fora deste acerto e entram no próximo período quando forem confirmadas.</p>
+        <p>O cálculo considera o dinheiro das vendas confirmadas menos a comissão devida ao cambista. As vendas em Pix são demonstradas separadamente porque o valor já está no caixa da plataforma. Vendas em dinheiro ainda aguardando alocação ficam fora deste acerto e entram no próximo período quando forem confirmadas. Nenhum prêmio é pago ou compensado pelo cambista.</p>
       </div>
       <button type="button" className="primary-button" disabled={Boolean(busy)} onClick={() => void finalize()}>
         {busy === "finalize" ? "Confirmando…" : "Confirmar liquidação e zerar período"}
       </button>
-      <p className="note-inline">Só confirme depois de conferir os valores e realizar o repasse ou pagamento fora do sistema. A confirmação grava o histórico e inicia um novo período; não movimenta dinheiro automaticamente.</p>
+      <p className="note-inline">Só confirme depois de conferir os valores e realizar o repasse fora do sistema. A confirmação grava o histórico e inicia um novo período; não movimenta dinheiro automaticamente.</p>
     </div>}
   </section>;
 }

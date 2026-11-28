@@ -8,8 +8,6 @@ type Summary = {
   totalSalesCents: number;
   gamesCount: number;
   commissionCents: number;
-  cashPrizePayoutCents: number;
-  cashPrizePayoutCount: number;
   lastSettlementAt: string | null;
 };
 
@@ -71,7 +69,6 @@ export function CashierSalesSummary() {
         <article className="cashier-summary-tile"><span>Vendas em dinheiro</span><strong>{summary ? money(summary.cashSalesCents) : "Carregando…"}</strong></article>
         <article className="cashier-summary-tile"><span>Vendas em Pix</span><strong>{summary ? money(summary.pixSalesCents) : "Carregando…"}</strong></article>
         <article className="cashier-summary-tile"><span>Jogos realizados</span><strong>{summary ? summary.gamesCount.toLocaleString("pt-BR") : "Carregando…"}</strong></article>
-        <article className="cashier-summary-tile"><span>Prêmios pagos pelo cambista</span><strong>{summary ? money(summary.cashPrizePayoutCents) : "Carregando…"}</strong><small>{summary ? summary.cashPrizePayoutCount.toLocaleString("pt-BR") + " pagamentos" : ""}</small></article>
       </div>
       {summary?.lastSettlementAt && <p className="note-inline">Último acerto: {new Date(summary.lastSettlementAt).toLocaleString("pt-BR")}</p>}
     </section>

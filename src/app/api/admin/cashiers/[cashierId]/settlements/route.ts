@@ -48,7 +48,7 @@ async function databaseNow(tx: Prisma.TransactionClient) {
 }
 
 // The preview is read-only. Its cutoff is sent back when the administrator
-// confirms, so sales or payouts made after the preview remain in the next period.
+// confirms, so sales confirmed after the preview remain in the next period.
 export async function GET(request: NextRequest, context: { params: Promise<{ cashierId: string }> }) {
   const auth = await requireAdmin(request);
   if (!auth.authorized) return auth.response;
@@ -105,15 +105,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
           salesCount: calculation.salesCount,
           gamesCount: calculation.gamesCount,
           commissionCents: calculation.commissionCents,
-          cashPrizePayoutCount: calculation.cashPrizePayoutCount,
-          cashPrizePayoutCents: calculation.cashPrizePayoutCents,
+          // Legacy database columns remain zero for new settlements. Prize
+          // payouts are exclusively handled by the platform, never by cashiers.
+          cashPrizePayoutCount: 0,
+          cashPrizePayoutCents: 0,
           pendingCashSalesCount: calculation.pendingCashSalesCount,
           pendingCashSalesCents: calculation.pendingCashSalesCents,
         },
-      });
-      await tx.numericPrizePayout.updateMany({
-        where: { cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoffAt } },
-        data: { settlementId: snapshot.id },
       });
       await tx.auditEvent.create({
         data: {

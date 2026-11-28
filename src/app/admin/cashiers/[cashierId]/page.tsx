@@ -26,7 +26,7 @@ export default async function AdminCashierDetailPage({ params, searchParams }: {
   if (!cashier) notFound();
   const latestSettlement = await authPrisma.cashierSettlement.findFirst({ where: { cashierId }, orderBy: { settledAt: "desc" }, select: { settledAt: true } });
   const since = latestSettlement?.settledAt ?? new Date(0);
-  const [purchases, settlements, purchaseCount, settlementCount, cashNow, pixNow, commissionNow, gamesNow, cashPrizePayouts] = await Promise.all([
+  const [purchases, settlements, purchaseCount, settlementCount, cashNow, pixNow, commissionNow, gamesNow] = await Promise.all([
     authPrisma.purchase.findMany({
       where: { cashierId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (salesPage - 1) * PAGE_SIZE, take: PAGE_SIZE,
       select: {
@@ -68,7 +68,6 @@ export default async function AdminCashierDetailPage({ params, searchParams }: {
     authPrisma.purchase.aggregate({ where: { cashierId, status: "CONFIRMED", paymentMethod: "PIX", confirmedAt: { gt: since }, payment: { is: { status: "CONFIRMED" } } }, _sum: { totalCents: true }, _count: { _all: true } }),
     authPrisma.cashierCommission.aggregate({ where: { cashierId, purchase: { is: { status: "CONFIRMED", confirmedAt: { gt: since } } } }, _sum: { amountCents: true } }),
     authPrisma.numericParticipationLine.count({ where: { participation: { is: { status: "CONFIRMED", purchase: { is: { cashierId, status: "CONFIRMED", confirmedAt: { gt: since } } } } } } }),
-    authPrisma.numericPrizePayout.aggregate({ where: { cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since } }, _sum: { amountCents: true }, _count: { _all: true } }),
   ]);
   const cashTotal = cashNow._sum.totalCents ?? 0;
   const pixTotal = pixNow._sum.totalCents ?? 0;
@@ -84,7 +83,6 @@ export default async function AdminCashierDetailPage({ params, searchParams }: {
           <article className="cashier-summary-tile"><span>Valor total das vendas</span><strong>{money(cashTotal + pixTotal)}</strong></article>
           <article className="cashier-summary-tile"><span>Vendas em dinheiro</span><strong>{money(cashTotal)}</strong></article>
           <article className="cashier-summary-tile"><span>Vendas em Pix confirmado</span><strong>{money(pixTotal)}</strong></article>
-          <article className="cashier-summary-tile"><span>Prêmios pagos pelo cambista ({cashPrizePayouts._count._all})</span><strong>{money(cashPrizePayouts._sum.amountCents ?? 0)}</strong></article>
         </div>
         <p>Vendas confirmadas: {cashNow._count._all + pixNow._count._all} · Jogos realizados: {gamesNow}</p>
         <p>Contagem iniciada em: {latestSettlement ? latestSettlement.settledAt.toLocaleString("pt-BR") : "início das vendas"}</p>

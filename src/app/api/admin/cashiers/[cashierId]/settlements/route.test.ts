@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(), queryRaw: vi.fn(), userFindFirst: vi.fn(), settlementFindFirst: vi.fn(),
   purchaseAggregate: vi.fn(), purchaseFindMany: vi.fn(), commissionAggregate: vi.fn(), lineCount: vi.fn(),
-  payoutAggregate: vi.fn(), settlementCreate: vi.fn(), payoutUpdateMany: vi.fn(),
+  settlementCreate: vi.fn(),
   auditCreate: vi.fn(), transaction: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
@@ -20,7 +20,7 @@ const snapshot = {
   id: "settlement-1", cashierId, adminId: "admin-1", settledAt: cutoff,
   cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
   salesCount: 3, gamesCount: 7, commissionCents: 900,
-  cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
+  cashPrizePayoutCount: 0, cashPrizePayoutCents: 0, pendingCashSalesCount: 0, pendingCashSalesCents: 0,
 };
 function request(origin = "https://example.test") {
   return new NextRequest(`https://example.test/api/admin/cashiers/${cashierId}/settlements`, {
@@ -49,9 +49,7 @@ describe("POST admin cashier settlements", () => {
     ]);
     mocks.commissionAggregate.mockResolvedValue({ _sum: { amountCents: 900 } });
     mocks.lineCount.mockResolvedValue(7);
-    mocks.payoutAggregate.mockResolvedValue({ _sum: { amountCents: 2500 }, _count: { _all: 2 } });
     mocks.settlementCreate.mockResolvedValue(snapshot);
-    mocks.payoutUpdateMany.mockResolvedValue({ count: 2 });
     mocks.auditCreate.mockResolvedValue({});
     mocks.transaction.mockImplementation(async (callback) => callback({
       $queryRaw: mocks.queryRaw,
@@ -60,7 +58,6 @@ describe("POST admin cashier settlements", () => {
       purchase: { aggregate: mocks.purchaseAggregate, findMany: mocks.purchaseFindMany },
       cashierCommission: { aggregate: mocks.commissionAggregate },
       numericParticipationLine: { count: mocks.lineCount },
-      numericPrizePayout: { aggregate: mocks.payoutAggregate, updateMany: mocks.payoutUpdateMany },
       auditEvent: { create: mocks.auditCreate },
     }));
   });
@@ -75,12 +72,11 @@ describe("POST admin cashier settlements", () => {
     expect(await response.json()).toMatchObject({
       preview: {
         cashSalesCents: 10000, pixSalesCents: 5000, totalSalesCents: 15000,
-        commissionCents: 900, cashPrizePayoutCents: 2500,
-        netBalanceCents: 6600, cashierOwesPlatformCents: 6600, platformOwesCashierCents: 0,
+        commissionCents: 900, cashPrizePayoutCents: 0,
+        netBalanceCents: 9100, cashierOwesPlatformCents: 9100, platformOwesCashierCents: 0,
       },
     });
     expect(mocks.settlementCreate).not.toHaveBeenCalled();
-    expect(mocks.payoutUpdateMany).not.toHaveBeenCalled();
   });
 
   it("closes the current period while unallocated cash sales remain pending for the next period", async () => {
@@ -129,7 +125,7 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.settlementCreate).not.toHaveBeenCalled();
   });
 
-  it("creates one financial snapshot with CASH, confirmed PIX, commission, games and unpaid-association payouts", async () => {
+  it("creates one financial snapshot with cash and Pix sales, commission and games", async () => {
     const response = await POST(request(), context);
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ settlement: { id: snapshot.id, totalSalesCents: 15000, commissionCents: 900 } });
@@ -173,11 +169,8 @@ describe("POST admin cashier settlements", () => {
     expect(mocks.settlementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       cashierId, adminId: "admin-1", settledAt: cutoff, cashSalesCents: 10000, pixSalesCents: 5000,
       totalSalesCents: 15000, salesCount: 3, gamesCount: 7, commissionCents: 900,
-      cashPrizePayoutCount: 2, cashPrizePayoutCents: 2500,
+      cashPrizePayoutCount: 0, cashPrizePayoutCents: 0,
     }) });
-    expect(mocks.payoutUpdateMany).toHaveBeenCalledWith({ where: {
-      cashierId, channel: "CASHIER_CASH", settlementId: null, paidAt: { gt: since, lte: cutoff },
-    }, data: { settlementId: snapshot.id } });
     expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
       actorId: "admin-1", action: "CASHIER_SETTLEMENT_RECORDED",
       entityType: "CashierSettlement", entityId: snapshot.id,

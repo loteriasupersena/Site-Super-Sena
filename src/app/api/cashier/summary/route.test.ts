@@ -66,8 +66,6 @@ describe("GET cashier summary", () => {
       gamesCount: 7,
       commissionCents: 900,
       commissionRateBasisPoints: 600,
-      cashPrizePayoutCents: 2500,
-      cashPrizePayoutCount: 2,
     });
 
     const since = new Date("2026-11-01T00:00:00.000Z");
