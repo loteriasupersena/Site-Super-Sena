@@ -195,6 +195,7 @@ model Store {
   status                   AccountStatus @default(ACTIVE)
   commissionRateBasisPoints Int
   couponLimit              Int           @default(100)
+  outstandingCouponCount   Int           @default(0)
   adminUserId              String        @unique
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
@@ -668,6 +669,15 @@ model PrizePaymentBatchItem {
   @@index([batchId])
 }
 
+
+model CouponQueueState {
+  id                    String   @id
+  currentBatchId        String?
+  currentBatchSequence  Int
+  currentBatchCount     Int      @default(0)
+  nextBatchSequence     Int
+  updatedAt             DateTime @updatedAt
+}
 
 model CouponBatch {
   id             String            @id @default(cuid())
