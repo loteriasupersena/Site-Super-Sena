@@ -705,6 +705,7 @@ model Coupon {
   batch                      CouponBatch  @relation("CouponBatchMembers", fields: [batchId], references: [id], onDelete: Restrict)
   winningBatch               CouponBatch? @relation("CouponBatchWinner")
   payout                      CouponPayout?
+  billingLinks                StoreBillingCoupon[]
 
   @@index([storeId, issuedAt])
   @@index([issuedById, issuedAt])
@@ -734,10 +735,23 @@ model StoreBilling {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   store              Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  couponLinks        StoreBillingCoupon[]
 
   @@unique([storeId, periodKey])
   @@index([storeId, status, createdAt])
   @@index([status, updatedAt])
+}
+
+model StoreBillingCoupon {
+  id        String       @id @default(cuid())
+  billingId String
+  couponId  String       @unique
+  createdAt DateTime     @default(now())
+  billing   StoreBilling @relation(fields: [billingId], references: [id], onDelete: Restrict)
+  coupon    Coupon       @relation(fields: [couponId], references: [id], onDelete: Restrict)
+
+  @@unique([billingId, couponId])
+  @@index([billingId, createdAt])
 }
 
 model CouponPayout {
