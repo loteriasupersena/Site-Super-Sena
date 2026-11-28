@@ -24,7 +24,7 @@ async function requireStore(request: NextRequest) {
   }
   const store = await authPrisma.store.findUnique({
     where: { adminUserId: user.id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, outstandingCouponCount: true },
   });
   if (!store || store.status !== "ACTIVE") {
     return { response: NextResponse.json({ error: "Loja não encontrada ou inativa." }, { status: 403, headers }) };
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       }),
       authPrisma.coupon.aggregate({
         where: { storeId: auth.store.id, platformFeeCents: { gt: 0 }, billingLinks: { none: { billing: { status: "PAID" } } } },
-        _count: { id: true }, _sum: { platformFeeCents: true },
+        _sum: { platformFeeCents: true },
       }),
     ]);
     return NextResponse.json({
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         pixCopyPaste: billing.pixCopyPaste, pixQrCodeBase64: billing.pixQrCodeBase64,
         couponCount: billing._count.couponLinks, createdAt: billing.createdAt.toISOString(),
       } : null,
-      outstanding: { couponCount: outstanding._count.id, amountCents: outstanding._sum.platformFeeCents ?? 0 },
+      outstanding: { couponCount: auth.store.outstandingCouponCount, amountCents: outstanding._sum.platformFeeCents ?? 0 },
     }, { headers });
   } catch {
     return NextResponse.json({ error: "Não foi possível consultar a cobrança da loja." }, { status: 500, headers });
