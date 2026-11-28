@@ -82,6 +82,7 @@ export async function issueCoupon(input: {
     const outstandingCouponCount = await tx.coupon.count({
       where: {
         storeId: store.id,
+        platformFeeCents: { gt: 0 },
         billingLinks: { none: { billing: { status: "PAID" } } },
       },
     });
