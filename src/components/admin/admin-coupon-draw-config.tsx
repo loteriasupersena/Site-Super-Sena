@@ -15,16 +15,6 @@ export function AdminCouponDrawConfig() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function load() {
-    const response = await fetch("/api/admin/coupon-draw-config", { cache: "no-store" });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error ?? "Não foi possível carregar a regra.");
-    setConfig(body.config);
-    setActiveBatch(body.activeBatch);
-    setBatchSize(String(body.config.batchSize));
-    setWinnersPerBatch(String(body.config.winnersPerBatch));
-  }
-
   useEffect(() => {
     let active = true;
     fetch("/api/admin/coupon-draw-config", { cache: "no-store" })
