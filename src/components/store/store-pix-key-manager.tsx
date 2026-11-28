@@ -42,7 +42,7 @@ export function StorePixKeyManager() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
