@@ -6,6 +6,7 @@ import { AdminPrizeRules } from "@/components/admin/admin-prize-rules";
 import { AdminPaymentRequests } from "@/components/admin/admin-payment-requests";
 import { AdminStoreManager } from "@/components/admin/admin-store-manager";
 import { AdminBenefitsSimulator } from "@/components/admin/admin-benefits-simulator";
+import { AdminCouponDrawConfig } from "@/components/admin/admin-coupon-draw-config";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,12 @@ export default async function AdminPage() {
           <AdminPaymentRequests />
         </div>
         <div className="admin-accordion-list">
+          <details className="admin-accordion">
+            <summary><span>Regras dos lotes de cupons</span></summary>
+            <div className="admin-accordion-content">
+              <AdminCouponDrawConfig />
+            </div>
+          </details>
           <details className="admin-accordion">
             <summary><span>Cadastro de cambista</span></summary>
             <div className="admin-accordion-content">
