@@ -71,7 +71,7 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
       },
     });
     return { billing, created: true };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 15_000, timeout: 30_000 });
 
   if (reservation.billing.providerQrCodeId && reservation.billing.pixCopyPaste && reservation.billing.pixQrCodeBase64) {
     return reservation.billing;
