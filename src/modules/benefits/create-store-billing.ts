@@ -19,7 +19,9 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
   if (input.dueAt && Number.isNaN(input.dueAt.getTime())) throw new Error("STORE_BILLING_DUE_DATE_INVALID");
 
   const reservation = await authPrisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(20261128, hashtext(${input.storeId}))`;
+    // Lock only this store row. Coupon issuance takes the same row lock when
+    // incrementing its counter, so the billing snapshot has an exact cutoff.
+    await tx.$queryRaw`SELECT "id" FROM "Store" WHERE "id" = ${input.storeId} FOR UPDATE`;
     const store = await tx.store.findUnique({
       where: { id: input.storeId },
       select: { id: true, status: true },
