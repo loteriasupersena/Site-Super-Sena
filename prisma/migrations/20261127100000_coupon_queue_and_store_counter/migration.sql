@@ -24,7 +24,7 @@ CREATE TABLE "CouponQueueState" (
   "nextBatchSequence" INTEGER NOT NULL,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "CouponQueueState_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "CouponQueueState_count_check" CHECK ("currentBatchCount" >= 0 AND "currentBatchCount" < 100),
+  CONSTRAINT "CouponQueueState_count_check" CHECK ("currentBatchCount" >= 0 AND "currentBatchCount" <= 100),
   CONSTRAINT "CouponQueueState_sequence_check" CHECK ("currentBatchSequence" > 0 AND "nextBatchSequence" > 0)
 );
 
