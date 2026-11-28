@@ -115,6 +115,17 @@ describe("Asaas coupon transfer webhook", () => {
     expect(mocks.auditCreate).not.toHaveBeenCalled();
   });
 
+  it("does not replay side effects when another event already paid the payout", async () => {
+    // The outer lookup is intentionally stale; the transaction sees the committed state.
+    mocks.payoutFindInTx.mockResolvedValueOnce({ status: "PAID" });
+    const response = await POST(request(notification("TRANSFER_DONE")));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true, outcome: "ALREADY_PAID" });
+    expect(mocks.couponUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.payoutUpdate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid webhook token", async () => {
     const response = await POST(request(notification(), "invalid"));
     expect(response.status).toBe(401);
