@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   eventUpsert: vi.fn(),
   eventUpdate: vi.fn(),
   billingUpdateMany: vi.fn(),
+  billingFindForCounter: vi.fn(),
+  storeUpdateMany: vi.fn(),
   transaction: vi.fn(),
 }));
 vi.mock("@/lib/auth/session", () => ({
@@ -35,13 +37,16 @@ describe("Asaas store billing webhook", () => {
     mocks.eventUpsert.mockResolvedValue({});
     mocks.eventUpdate.mockResolvedValue({});
     mocks.billingUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.billingFindForCounter.mockResolvedValue({ storeId: "store-1", _count: { couponLinks: 3 } });
+    mocks.storeUpdateMany.mockResolvedValue({ count: 1 });
     const tx = {
       asaasWebhookEvent: {
         findUnique: mocks.eventFind,
         upsert: mocks.eventUpsert,
         update: mocks.eventUpdate,
       },
-      storeBilling: { updateMany: mocks.billingUpdateMany },
+      storeBilling: { updateMany: mocks.billingUpdateMany, findUnique: mocks.billingFindForCounter },
+      store: { updateMany: mocks.storeUpdateMany },
     };
     mocks.transaction.mockImplementation(async (callback: (tx: any) => unknown) => callback(tx));
   });
@@ -65,6 +70,10 @@ describe("Asaas store billing webhook", () => {
         status: "PAID", providerPaymentId: "pay-1", lastProviderStatus: "RECEIVED",
       }),
     }));
+    expect(mocks.storeUpdateMany).toHaveBeenCalledWith({
+      where: { id: "store-1", outstandingCouponCount: { gte: 3 } },
+      data: { outstandingCouponCount: { decrement: 3 } },
+    });
     expect(mocks.eventUpdate).toHaveBeenCalled();
   });
 
