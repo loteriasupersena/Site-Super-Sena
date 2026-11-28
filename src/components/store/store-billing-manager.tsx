@@ -42,7 +42,7 @@ export function StoreBillingManager() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   async function createCharge() {
     setCreating(true);
