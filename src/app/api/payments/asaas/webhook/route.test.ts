@@ -48,7 +48,21 @@ describe("Asaas store billing webhook", () => {
       storeBilling: { updateMany: mocks.billingUpdateMany, findUnique: mocks.billingFindForCounter },
       store: { updateMany: mocks.storeUpdateMany },
     };
-    mocks.transaction.mockImplementation(async (callback: (tx: any) => unknown) => callback(tx));
+    type WebhookTransaction = {
+      asaasWebhookEvent: {
+        findUnique: typeof mocks.eventFind;
+        upsert: typeof mocks.eventUpsert;
+        update: typeof mocks.eventUpdate;
+      };
+      storeBilling: {
+        updateMany: typeof mocks.billingUpdateMany;
+        findUnique: typeof mocks.billingFindForCounter;
+      };
+      store: { updateMany: typeof mocks.storeUpdateMany };
+    };
+    mocks.transaction.mockImplementation(async (callback: (tx: WebhookTransaction) => unknown) =>
+      callback(tx as WebhookTransaction),
+    );
   });
 
   function request(payload: unknown, token = "t".repeat(40)) {
