@@ -530,6 +530,7 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 - A cobrança congela seu conjunto de cupons com bloqueio de linha exclusivo da loja, compartilhado com a reserva do contador na emissão. Lojas diferentes não disputam esse bloqueio financeiro.
 - A alocação global dos lotes deixou de executar consultas de busca/contagem sob um advisory lock amplo. Agora uma única atualização atômica de `CouponQueueState` atribui a posição; a inserção, o fechamento do lote e a rotação para o próximo lote são confirmados na mesma transação. A ordem global continua sendo um ponto de serialização intencional para preservar lotes globais exatos de 100 cupons.
 - Adicionados testes unitários para a baixa exata do contador e para a proteção contra divergência/underflow. Esses testes ainda precisam ser executados.
+- Adicionado teste de integração PostgreSQL opt-in que dispara 1.000 emissões concorrentes distribuídas entre 20 lojas, verifica unicidade, contadores, lotes completos e repetição idempotente. Ele exige banco local `superquina_test` e `RUN_POSTGRES_INTEGRATION=1`; ainda não foi executado.
 - Nenhuma credencial real do Asaas foi configurada ou utilizada nesta etapa.
 
 **Status:** otimização de emissão e contagem financeira codificada na branch; ainda não validada por execução, testes PostgreSQL ou teste de carga, e não liberada para produção.
