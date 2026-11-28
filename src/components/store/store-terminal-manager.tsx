@@ -33,7 +33,7 @@ export function StoreTerminalManager() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
