@@ -1,6 +1,9 @@
 ALTER TABLE "Store"
   ADD COLUMN "outstandingCouponCount" INTEGER NOT NULL DEFAULT 0;
 
+ALTER TABLE "Store"
+  ADD CONSTRAINT "Store_outstandingCouponCount_check" CHECK ("outstandingCouponCount" >= 0);
+
 UPDATE "Store" AS s
 SET "outstandingCouponCount" = (
   SELECT COUNT(*)::INTEGER
