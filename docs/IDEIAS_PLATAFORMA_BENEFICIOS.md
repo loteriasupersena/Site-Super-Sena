@@ -75,7 +75,7 @@ A plataforma terá áreas separadas, com funções e permissões distintas.
 - A maquininha emite um cupom individual com QR Code para o consumidor.
 - O cupom registra, entre outros dados, o valor integral da compra, a loja, a maquininha/caixa, o funcionário responsável, a data/hora e um identificador único.
 - O valor devido à plataforma não reduz o valor do prêmio. No exemplo, se o cupom for sorteado, o valor de referência do prêmio será **R$ 100,00**, e não R$ 5,00.
-- O prêmio terá duas formas de liquidação ao consumidor: **Mercadoria**, resolvida pela loja emissora, ou **Dinheiro**, pago diretamente ao cliente por Pix executado pela plataforma na maquininha. Não haverá mais uma escolha separada do administrador da loja entre mercadoria e Pix para definir o destino do prêmio.
+- O prêmio terá exatamente duas opções na maquininha após a leitura de um QR Code premiado e válido: **Saque para a loja**, com transferência Pix automática para a chave pré-cadastrada da loja e registro de que o consumidor recebeu mercadoria; ou **Transferência Pix para o cliente**, com chave informada na maquininha e pagamento direto ao consumidor pela plataforma. As opções são mutuamente exclusivas. Não haverá uma terceira opção nem escolha administrativa prévia da modalidade.
 - Cada cupom deve ser individual e não pode ser duplicado.
 - Nenhum telefone, WhatsApp ou contato do consumidor será coletado, armazenado ou utilizado pela plataforma.
 
@@ -289,23 +289,31 @@ O painel do administrador geral deve manter como referência o painel administra
 - O servidor deve validar automaticamente se o prêmio está ativo, dentro do prazo e ainda não resgatado. Não haverá necessidade de autorização em tempo real do administrador geral ou do dono da loja.
 - A operação fica vinculada à loja emissora (que obrigatoriamente também é a loja que realiza o resgate), à maquininha, ao funcionário, ao prêmio, à modalidade e ao valor.
 
-### 11.3 Saque e escolha da modalidade de pagamento
+### 11.3 Duas opções de pagamento após a leitura do QR Code premiado
 
-- Depois que o APK validar o prêmio lido, será exibida a ação **Sacar prêmio**.
-- Ao iniciar o saque, o responsável autorizado pela loja seleciona uma das duas modalidades disponíveis:
-  1. **Pagar em mercadoria** — a loja entrega produtos ou concede desconto ao consumidor até o limite do valor do prêmio.
-  2. **Pagar em dinheiro** — a loja entrega o valor ao consumidor em dinheiro ou por Pix.
-- As duas opções são mutuamente exclusivas. O sistema não permite selecionar ambas.
-- Antes de concluir, o APK apresenta uma confirmação clara da modalidade escolhida, por exemplo: **“Confirma o saque deste prêmio e o registro como pago em mercadoria?”** ou **“Confirma o saque deste prêmio e o registro como pago em dinheiro?”**
-- Após a confirmação, o sistema realiza a transferência do valor do prêmio para a conta Pix da loja que está efetuando o resgate, previamente cadastrada e validada na plataforma.
-- A loja entrega ao consumidor exatamente a modalidade selecionada: mercadoria/desconto ou dinheiro/Pix.
-- A transferência para a conta da loja, o registro da modalidade e a baixa definitiva do prêmio fazem parte da mesma operação de resgate. A operação concluída encerra o prêmio.
-- Se o responsável cancelar antes da confirmação final, o prêmio permanece ativo e sem baixa, permitindo que a operação seja iniciada novamente.
-- Depois da confirmação e da conclusão da transferência, o servidor registra a baixa definitiva do prêmio e bloqueia novas tentativas de resgate em qualquer loja ou maquininha.
-- O acordo comercial da loja emissora define se o consumidor poderá receber em mercadoria ou dinheiro/Pix, ou ambas as modalidades. O APK só apresenta as opções habilitadas para a própria loja emissora; o cupom não pode ser liquidado por outra loja.
-- O histórico deve registrar a modalidade escolhida, o valor, loja emissora que também é a única loja pagadora, maquininha, funcionário/responsável, conta de destino identificada de forma protegida, data/hora e identificador da transação Pix.
-- A operação deve impedir resgates simultâneos ou duplicados, inclusive quando duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
-- **Ponto financeiro ainda pendente:** detalhar a origem dos recursos transferidos via Pix, a liquidação da transferência e a conciliação financeira entre a plataforma e o estabelecimento. O destino da transferência está definido: a conta Pix cadastrada da loja que realizou o resgate.
+Depois de validar que o cupom está premiado, dentro do prazo e ainda não foi resgatado, o APK deve apresentar o valor do prêmio e **exatamente duas opções**:
+
+1. **Saque para a loja**
+   - O sistema transfere automaticamente o valor do prêmio para a chave Pix da própria loja, previamente cadastrada e validada.
+   - O operador não digita a chave da loja. A tela mostra o valor e os dados de destino mascarados; o operador apenas pressiona **Confirmar**.
+   - Essa opção representa que o consumidor recebeu mercadorias da loja. O sistema registra a modalidade como **mercadoria**, embora a liquidação financeira da plataforma seja uma transferência Pix para a loja.
+   - O pagamento não deve ser descrito como Pix ao consumidor: o destino da transferência é a loja.
+
+2. **Transferência Pix para o cliente**
+   - O operador informa na maquininha a chave Pix do consumidor e o tipo da chave (CPF/CNPJ, telefone, e-mail ou aleatória).
+   - Antes da confirmação, o APK mostra o valor do prêmio e os dados de destino mascarados para conferência.
+   - Após a confirmação, a plataforma executa a transferência diretamente para a chave Pix informada. O dinheiro não passa pela conta da loja.
+   - Essa opção representa pagamento em dinheiro ao consumidor e deve ser registrada como **Pix direto ao cliente**.
+
+As opções são mutuamente exclusivas. Não existe uma opção separada para o operador marcar “mercadoria” ou “dinheiro”, nem uma escolha prévia do administrador da loja. A opção escolhida no APK define o destino do Pix e a classificação do resgate.
+
+O servidor deve validar o cupom, prazo, loja emissora, operador, permissões e estado financeiro. A baixa definitiva só ocorre depois da confirmação confiável do provedor Pix. Para ambas as modalidades, registrar tentativa persistente e idempotente antes de chamar o provedor; tratar timeouts e estados ambíguos por consulta e conciliação; e nunca repetir uma transferência incerta sem verificar a anterior. O mesmo prêmio não pode ser liquidado pelas duas opções nem gerar transferências duplicadas.
+
+A auditoria registra modalidade, cupom/prêmio, valor, loja emissora, operador, maquininha, horário, destino mascarado, provedor e identificador externo da transferência. A chave Pix completa e segredos não podem aparecer em telas de auditoria ou logs.
+
+Se o operador cancelar antes de confirmar, nenhuma transferência é solicitada e o prêmio permanece disponível. Se a transferência ficar pendente ou ambígua, o prêmio permanece em processamento até conciliação. Depois da confirmação do pagamento e da baixa, uma nova leitura informa que o prêmio já foi pago e não oferece novamente as opções.
+
+A origem dos recursos, tarifas, limites, saldo/garantia e conciliação dos dois tipos de transferência devem ser definidos na integração financeira. A existência de API de cobrança Pix não comprova que a transferência de saída esteja disponível.
 
 ### 11.4 Prazo de 30 dias e transferência do direito de resgate à loja de origem
 
@@ -329,7 +337,7 @@ O painel do administrador geral deve manter como referência o painel administra
 
 - **O cupom pertence à loja que o emitiu.** Esse vínculo é permanente e acompanha o cupom desde a emissão, passando pela fila/lote global, sorteio, consulta, resgate do consumidor, eventual expiração e saque pela loja.
 - O sorteio é global: cupons de lojas diferentes podem integrar o mesmo lote de 100. Isso não cria uma carteira ou responsabilidade compartilhada entre as lojas. Cada cupom vencedor continua sendo obrigação operacional e financeira exclusiva da loja que o emitiu.
-- O consumidor deve resolver o recebimento exclusivamente com a loja emissora. Durante os 30 dias, só essa loja pode validar o QR Code para resgate, entregar mercadoria ou realizar o pagamento em dinheiro/Pix conforme o acordo comercial. Outra loja credenciada deve informar que aquele cupom pertence a outro estabelecimento e não pode concluir a operação.
+- O consumidor deve resolver o recebimento exclusivamente com a loja emissora. Durante os 30 dias, só essa loja pode validar o QR Code e operar uma das duas opções definidas na seção 11.3: transferência Pix para a chave pré-cadastrada da loja (registrada como mercadoria entregue ao consumidor) ou transferência Pix direta para a chave informada pelo consumidor. Outra loja credenciada não pode concluir a operação.
 - A consulta pública do QR Code pode informar o estado do cupom e identificar a loja emissora, mas não permite que outra loja execute o pagamento. As APIs devem validar no servidor a correspondência entre o cupom e a loja autenticada, não confiar em identificadores enviados pela interface.
 - Após 30 dias corridos do sorteio concluído, se o consumidor não tiver resgatado, somente o administrador autenticado da loja emissora pode acionar **Sacar prêmio** no painel Loja. O pagamento será automático por Pix para a chave cadastrada e validada daquela loja.
 - A chave Pix de recebimento é dado financeiro da loja, não do cupom nem do funcionário. Deve ser cadastrada/alterada pelo administrador autorizado, protegida em repouso, mascarada nas telas e logs e sujeita a validação do titular. O saque usa a chave vigente e validada no momento da solicitação; a auditoria preserva a identificação segura do destino efetivo.
@@ -349,17 +357,18 @@ O painel do administrador geral deve manter como referência o painel administra
 - O servidor deve impedir resgates simultâneos ou duplicados, mesmo se duas maquininhas tentarem processar o mesmo QR Code ao mesmo tempo.
 - Cada operação deve gerar trilha de auditoria com data/hora, identificador do prêmio, estabelecimento que resgatou, maquininha, responsável, modalidade, valor, identificação da transferência e resultado.
 
-## 12. Acordos comerciais por estabelecimento
+## 12. Modalidades de liquidação e responsabilidades financeiras
 
-- O prêmio terá duas modalidades de liquidação claramente separadas: **Mercadoria**, quando a loja emissora resolve o prêmio pelo fluxo próprio do estabelecimento, e **Dinheiro**, quando a plataforma transfere o valor diretamente ao cliente por Pix na maquininha.
-- A antiga seleção administrativa em que o dono da loja marcava se o prêmio seria mercadoria ou Pix deixa de existir. O administrador não escolhe mais entre essas duas opções no saque da loja.
-- A modalidade registrada decorre do fluxo realmente concluído: entrega de mercadoria pela loja ou transferência Pix direta da plataforma ao cliente.
-- Durante os 30 dias de prazo do consumidor, o prêmio só pode ser resolvido presencialmente na própria loja emissora. A loja entrega mercadoria; se essa entrega não for possível ou a opção de dinheiro for escolhida, a plataforma pode pagar diretamente ao cliente por Pix na maquininha.
-- O Pix direto ao cliente é a modalidade **Dinheiro** e não passa pela conta do dono da loja.
-- Após os 30 dias sem resgate, somente o administrador da loja emissora poderá sacar o valor destinado à própria loja, por Pix automático para a chave Pix cadastrada e validada do estabelecimento, conforme a regra de expiração. Esse saque administrativo não é a modalidade de pagamento em dinheiro ao consumidor; ele é o acerto do prêmio expirado com a loja emissora. Nenhum outro estabelecimento poderá reivindicar ou sacar esse valor.
-- As condições dos dois fluxos devem estar claras para o consumidor nos termos da promoção.
-- A antiga opção administrativa para o dono da loja marcar o prêmio como mercadoria ou Pix deve ser removida das telas e regras operacionais. Para o consumidor, **Mercadoria** significa entrega pela loja emissora; **Dinheiro** significa Pix enviado diretamente pela plataforma ao cliente na maquininha.
-- O saque administrativo do prêmio expirado para a conta Pix da própria loja, após os 30 dias, é um acerto separado com a loja emissora e não deve ser confundido com a modalidade **Dinheiro** paga ao consumidor.
+- Durante os 30 dias de prazo do consumidor, a maquininha apresenta exatamente as duas opções descritas na seção 11.3:
+  - **Saque para a loja:** a plataforma transfere o valor para a chave Pix pré-cadastrada da loja emissora. Essa operação é classificada no sistema como **mercadoria**, pois representa que o consumidor recebeu mercadorias da loja.
+  - **Transferência Pix para o cliente:** a plataforma transfere o valor diretamente para a chave Pix informada pelo consumidor na maquininha. Essa operação é classificada como **dinheiro**.
+- A escolha é feita no momento da leitura/resgate pela maquininha, não por configuração prévia do administrador da loja.
+- As duas modalidades são exclusivas por prêmio. A confirmação de uma transferência impede a execução da outra.
+- Na modalidade **Saque para a loja**, a chave de destino é a chave cadastrada e validada da loja; o operador não a informa novamente. Na modalidade **Transferência Pix para o cliente**, o operador informa a chave e o tipo de chave do consumidor, que são validados no servidor.
+- O Pix direto ao cliente não passa pela conta da loja. O Pix para a loja não é um Pix ao consumidor: é a liquidação destinada à loja, classificada como mercadoria entregue.
+- Após os 30 dias sem resgate pelo consumidor, somente o administrador da loja emissora poderá sacar o prêmio expirado para a chave Pix cadastrada da própria loja, conforme a seção 11.4. Esse é um fluxo administrativo distinto das duas opções de resgate apresentadas na maquininha.
+- A integração financeira deve definir a origem dos recursos, tarifas, limites, validação de titularidade, saldo/garantia, conciliação e tratamento de transferências pendentes, falhas ou ambíguas. A disponibilidade de API de cobrança não comprova disponibilidade de API de transferência.
+- Os termos da promoção devem explicar ao consumidor que a opção classificada como mercadoria é liquidada por Pix à loja, enquanto a opção classificada como dinheiro é paga por Pix diretamente ao consumidor.
 
 ## 13. Regras essenciais de segurança e auditoria
 
@@ -372,7 +381,7 @@ O painel do administrador geral deve manter como referência o painel administra
 7. Cada lote deve conter exatamente 100 cupons da fila geral, podendo reunir cupons de diferentes lojas, e gerar exatamente um ganhador.
 8. Deve existir trilha de auditoria para emissões, entrada na fila, composição dos lotes, sorteios, cobranças, pagamentos, bloqueios e resgates.
 9. O administrador de uma loja não pode acessar dados de outra loja nem executar ações na administração geral.
-10. O resgate na maquininha pode ocorrer por entrega pela loja emissora (mercadoria ou dinheiro, conforme acordo) ou por Pix direto ao cliente executado pela plataforma. As duas modalidades são exclusivas por operação e devem registrar qual foi efetivamente concluída.
+10. No prazo de resgate, a maquininha apresenta exatamente duas opções mutuamente exclusivas: **Saque para a loja**, com Pix para a chave pré-cadastrada da loja e classificação do prêmio como mercadoria entregue ao consumidor; ou **Transferência Pix para o cliente**, com Pix direto para a chave informada pelo consumidor e classificação como dinheiro.
 11. No Pix direto ao cliente, a chave e seu tipo são informados na maquininha, validados no servidor e usados em uma transferência de saída da plataforma. A auditoria registra a modalidade, loja emissora, maquininha, operador, valor, horário e referência do provedor, sem expor a chave completa.
 12. O mesmo prêmio não pode ser liquidado por mais de uma modalidade. Transferências Pix pendentes ou de resultado ambíguo permanecem em conciliação e não podem ser repetidas sem consulta ao provedor.
 
@@ -408,22 +417,22 @@ A maquininha terá uma área operacional própria para registrar compras, emitir
 - A área operacional terá um botão visível para **Ler QR Code** ou **Escanear QR Code**.
 - O recurso de leitura existente na atual área do cambista deverá ser inspecionado e, se tecnicamente adequado, migrado/adaptado para a área da maquininha, preservando sua capacidade comprovada de leitura.
 - Após a leitura, o APK consulta o servidor e apresenta o resultado do cupom, indicando claramente se está premiado, não premiado, expirado ou já resgatado.
-- Quando o cupom estiver premiado e válido, a tela apresenta o valor do prêmio e a ação **Sacar**.
-- O botão **Sacar** só deve estar disponível para prêmio válido, ainda não resgatado e dentro do prazo.
+- Quando o cupom estiver premiado, válido e ainda não pago, a tela apresenta o valor do prêmio e exatamente duas opções: **Saque para a loja** e **Transferência Pix para o cliente**.
+- Se o cupom não estiver premiado, estiver expirado, já resgatado ou em processamento de pagamento, as opções de pagamento não devem ser exibidas.
 
 ### 16.3 Resgate e baixa do prêmio
 
-- Ao pressionar **Sacar**, o APK apresenta duas modalidades mutuamente exclusivas: **Mercadoria** e **Dinheiro (Pix direto ao cliente)**.
-- **Mercadoria:** é o fluxo de liquidação pela loja emissora. A janela de mercadoria registra que o prêmio foi entregue em produtos/mercadorias pela própria loja. Não deve existir, nessa janela, uma opção adicional para o administrador marcar Pix/dinheiro.
-- **Dinheiro (Pix direto ao cliente):** quando a loja não puder entregar mercadoria ou quando for escolhida a liquidação em dinheiro, o operador seleciona essa modalidade na maquininha. O APK abre uma janela equivalente à de mercadoria, contendo campo para a chave Pix do cliente e seleção obrigatória do tipo de chave: CPF/CNPJ, telefone, e-mail ou chave aleatória.
-- Antes de executar o Pix, a maquininha deve apresentar o valor integral do prêmio e os dados de destino mascarados para conferência do operador e do cliente. A chave deve ser validada e enviada ao serviço de pagamento no servidor; não confiar em valor, titularidade ou resultado informado pelo aplicativo.
-- O Pix direto ao cliente é uma transferência executada pela plataforma, não um pagamento feito por outra loja credenciada. A disponibilidade dessa modalidade depende de integração de transferência Pix/payout e de saldo/garantia financeira suficiente na plataforma. A existência de uma API de cobrança Pix não comprova que a transferência de saída esteja disponível.
-- O pagamento deve usar referência idempotente única por prêmio, registrar a tentativa antes de chamar o provedor e tratar estados pendentes/ambíguos por consulta e conciliação. Não repetir uma transferência incerta sem antes verificar o estado da anterior. O prêmio só recebe baixa definitiva como pago após confirmação confiável do provedor.
-- A operação concluída deve registrar obrigatoriamente a modalidade efetiva (**mercadoria pela loja** ou **dinheiro por Pix direto da plataforma ao cliente**), valor, cupom/prêmio, loja emissora, maquininha, funcionário/responsável, data/hora e, no caso do Pix, tipo de chave, chave mascarada, provedor e identificador externo da transferência. A chave Pix completa e segredos não devem aparecer em logs ou telas de auditoria.
-- A confirmação da entrega em mercadoria ou dinheiro pela loja deve ser registrada no servidor antes de dar baixa definitiva. No Pix direto, a baixa só ocorre depois da confirmação do provedor.
-- Uma nova leitura do mesmo QR Code, em qualquer maquininha credenciada, deverá informar que o prêmio já foi resgatado/pago e não poderá oferecer novamente o botão **Sacar**.
-- O servidor deve garantir atomicidade e impedir dois resgates ou pagamentos simultâneos/duplicados do mesmo prêmio. Também deve rejeitar qualquer tentativa feita por loja diferente da loja emissora, mesmo que a outra loja seja credenciada.
-- O fluxo de resgate deve continuar respeitando as regras de propriedade e liquidação da seção 11.6. A modalidade escolhida na interface não é prova de que a entrega ou transferência financeira foi concluída; a baixa depende do registro válido da entrega ou da confirmação do provedor.
+- Após a leitura de um cupom premiado e válido, o APK apresenta exatamente duas opções: **Saque para a loja** e **Transferência Pix para o cliente**.
+- **Saque para a loja:** o destino é a chave Pix da loja emissora, previamente cadastrada e validada. O operador não digita essa chave; confere o valor e o destino mascarado e pressiona **Confirmar**. A transferência Pix para a loja é classificada no sistema como **mercadoria**, representando que o consumidor recebeu mercadorias da loja.
+- **Transferência Pix para o cliente:** o operador informa a chave Pix do consumidor e o tipo da chave (CPF/CNPJ, telefone, e-mail ou aleatória). O APK mostra o valor e o destino mascarado para conferência; após confirmação, a plataforma transfere diretamente ao cliente. Essa modalidade é classificada como **dinheiro**.
+- As opções são mutuamente exclusivas. Não deve haver opções adicionais de “pagar em mercadoria” ou “pagar em dinheiro”, nem seleção administrativa prévia que substitua a escolha na maquininha.
+- A chave de destino, a titularidade, o valor e as permissões devem ser validados pelo servidor. Não confiar em valores, titularidade ou resultados informados apenas pelo APK.
+- Ambas as opções são transferências Pix de saída. Cada tentativa deve ser persistida antes da chamada ao provedor, usar idempotência estável por prêmio e modalidade e ter conciliação para estados pendentes ou ambíguos. Não repetir uma transferência incerta sem consultar o provedor.
+- A baixa definitiva só ocorre após confirmação confiável da transferência pelo provedor. Uma escolha na interface ou o toque em **Confirmar** não provam que o pagamento foi concluído.
+- A auditoria registra a modalidade efetiva, valor, cupom/prêmio, loja emissora, maquininha, operador, data/hora, destino mascarado, provedor e identificador externo. A chave Pix completa e segredos não aparecem em logs ou telas de auditoria.
+- Uma nova leitura do mesmo QR Code deve informar que o prêmio já foi pago ou que o pagamento está em processamento, sem oferecer uma segunda transferência.
+- O servidor deve impedir pagamentos simultâneos/duplicados do mesmo prêmio e rejeitar qualquer tentativa feita por loja diferente da loja emissora.
+- O fluxo deve respeitar a propriedade do cupom e as regras de expiração da seção 11.6. O saque administrativo da loja após 30 dias é separado dessas duas opções de pagamento ao consumidor.
 
 ### 16.4 Reaproveitamento da área atual do cambista
 
