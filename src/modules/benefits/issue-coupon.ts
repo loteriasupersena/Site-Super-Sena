@@ -1,5 +1,6 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
+import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 
 const MAX_INT = 2_147_483_647;
@@ -78,15 +79,10 @@ export async function issueCoupon(input: {
 
     // Billing cycles are store-specific and independent from the global draw queue.
     // A payment closes the store's outstanding cycle; it never changes draw batches.
-    const latestPaidBilling = await tx.storeBilling.findFirst({
-      where: { storeId: store.id, status: "PAID", paidAt: { not: null } },
-      orderBy: { paidAt: "desc" },
-      select: { paidAt: true },
-    });
     const outstandingCouponCount = await tx.coupon.count({
       where: {
         storeId: store.id,
-        ...(latestPaidBilling?.paidAt ? { issuedAt: { gt: latestPaidBilling.paidAt } } : {}),
+        billingLinks: { none: { billing: { status: "PAID" } } },
       },
     });
     if (outstandingCouponCount >= store.couponLimit) {
