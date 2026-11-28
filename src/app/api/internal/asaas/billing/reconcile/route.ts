@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
 import { listAsaasPaymentsByQrCode } from "@/modules/payments/asaas";
+import { releasePaidStoreBillingCounter } from "@/modules/benefits/release-paid-store-billing-counter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,20 +47,26 @@ export async function POST(request: NextRequest) {
       }
       const payment = matches[0];
       if (!payment?.id) continue;
-      const updated = await authPrisma.storeBilling.updateMany({
-        where: {
-          id: billing.id,
-          status: { in: ["PENDING", "PROCESSING"] },
-          OR: [{ providerPaymentId: null }, { providerPaymentId: payment.id }],
-        },
-        data: {
-          status: "PAID",
-          providerPaymentId: payment.id,
-          lastProviderStatus: payment.status,
-          paidAt: new Date(),
-        },
+      const changed = await authPrisma.$transaction(async (tx) => {
+        const updated = await tx.storeBilling.updateMany({
+          where: {
+            id: billing.id,
+            status: { in: ["PENDING", "PROCESSING"] },
+            OR: [{ providerPaymentId: null }, { providerPaymentId: payment.id }],
+          },
+          data: {
+            status: "PAID",
+            providerPaymentId: payment.id,
+            lastProviderStatus: payment.status,
+            paidAt: new Date(),
+          },
+        });
+        if (updated.count === 1) {
+          await releasePaidStoreBillingCounter(tx, billing.id);
+        }
+        return updated.count;
       });
-      if (updated.count === 1) confirmed++;
+      if (changed === 1) confirmed++;
     } catch {
       errors++;
     }
