@@ -110,7 +110,7 @@ export async function issueCoupon(input: {
         return { coupon: raced, batch, replayed: true };
       }
 
-      const slots = await tx.$queryRaw<Array<{
+      let slot: {
         currentBatchId: string;
         currentBatchSequence: number;
         currentBatchCount: number;
@@ -118,24 +118,41 @@ export async function issueCoupon(input: {
         batchSize: number;
         winnersPerBatch: number;
         ruleVersion: number;
-      }>>`
-        UPDATE "CouponQueueState" AS queue
-        SET "currentBatchCount" = queue."currentBatchCount" + 1,
-            "updatedAt" = NOW()
-        FROM "CouponBatch" AS batch
-        WHERE queue."id" = ${GLOBAL_QUEUE_STATE_ID}
-          AND batch."id" = queue."currentBatchId"
-          AND queue."currentBatchCount" < batch."batchSize"
-        RETURNING
-          queue."currentBatchId",
-          queue."currentBatchSequence",
-          queue."currentBatchCount",
-          queue."nextBatchSequence",
-          batch."batchSize",
-          batch."winnersPerBatch",
-          batch."ruleVersion"
-      `;
-      const slot = slots[0];
+      } | undefined;
+
+      // A caller can wait behind the transaction that fills the final slot.
+      // PostgreSQL then rechecks the conditional UPDATE against the now-full
+      // batch and correctly returns no row. Retry so that caller takes a slot
+      // from the newly-created batch instead of treating normal contention as
+      // a broken global queue.
+      for (let attempt = 0; attempt < 20 && !slot; attempt += 1) {
+        const slots = await tx.$queryRaw<Array<{
+          currentBatchId: string;
+          currentBatchSequence: number;
+          currentBatchCount: number;
+          nextBatchSequence: number;
+          batchSize: number;
+          winnersPerBatch: number;
+          ruleVersion: number;
+        }>>`
+          UPDATE "CouponQueueState" AS queue
+          SET "currentBatchCount" = queue."currentBatchCount" + 1,
+              "updatedAt" = NOW()
+          FROM "CouponBatch" AS batch
+          WHERE queue."id" = ${GLOBAL_QUEUE_STATE_ID}
+            AND batch."id" = queue."currentBatchId"
+            AND queue."currentBatchCount" < batch."batchSize"
+          RETURNING
+            queue."currentBatchId",
+            queue."currentBatchSequence",
+            queue."currentBatchCount",
+            queue."nextBatchSequence",
+            batch."batchSize",
+            batch."winnersPerBatch",
+            batch."ruleVersion"
+        `;
+        slot = slots[0];
+      }
       if (!slot) throw new Error("COUPON_QUEUE_STATE_UNAVAILABLE");
 
       const coupon = await tx.coupon.create({
