@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - work/plataforma-beneficios-limpa
   pull_request:
     branches:
       - main
