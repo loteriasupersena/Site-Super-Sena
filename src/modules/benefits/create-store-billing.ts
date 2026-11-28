@@ -35,6 +35,7 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
     const coupons = await tx.coupon.findMany({
       where: {
         storeId: store.id,
+        platformFeeCents: { gt: 0 },
         billingLinks: { none: {} },
       },
       select: { id: true, platformFeeCents: true },
