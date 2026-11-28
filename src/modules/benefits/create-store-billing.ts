@@ -1,6 +1,5 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { createAsaasStaticPixQrCode } from "@/modules/payments/asaas";
 
@@ -71,7 +70,7 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
       },
     });
     return { billing, created: true };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 
   if (reservation.billing.providerQrCodeId && reservation.billing.pixCopyPaste && reservation.billing.pixQrCodeBase64) {
     return reservation.billing;
