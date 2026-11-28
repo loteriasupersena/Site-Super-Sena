@@ -26,7 +26,7 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
     currentBatchCount: number;
     nextBatchSequence: number;
   } | null = null;
-  let initialBatch: { id: string; sequenceNumber: number; status: "OPEN" | "DRAWN"; completedAt: Date | null; winnerCouponId: string | null } | null = null;
+  let initialBatch: { id: string; sequenceNumber: number; status: "OPEN" | "DRAWN"; completedAt: Date | null } | null = null;
   let initialMembers: Array<{ id: string; status: "ACTIVE" | "WINNER" | "REDEEMED" | "EXPIRED" | "STORE_CLAIMABLE" | "STORE_REDEEMED"; drawnAt: Date | null; customerRedemptionDeadline: Date | null }> = [];
 
   beforeAll(async () => {
@@ -45,7 +45,6 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
       sequenceNumber: batch.sequenceNumber,
       status: batch.status,
       completedAt: batch.completedAt,
-      winnerCouponId: batch.winnerCouponId,
     };
     initialMembers = await authPrisma.coupon.findMany({
       where: { batchId: batch.id },
@@ -70,7 +69,7 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
       if (touchedBatchIds.length) {
         await authPrisma.couponBatch.updateMany({
           where: { id: { in: touchedBatchIds } },
-          data: { winnerCouponId: null, status: "OPEN", completedAt: null },
+          data: { status: "OPEN", completedAt: null },
         });
       }
       await authPrisma.coupon.deleteMany({ where: { storeId: { in: storeIds } } });
@@ -83,7 +82,6 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
         data: {
           status: initialBatch.status,
           completedAt: initialBatch.completedAt,
-          winnerCouponId: initialBatch.winnerCouponId,
         },
       });
       for (const member of initialMembers) {
@@ -179,18 +177,19 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
       select: {
         id: true,
         status: true,
-        winnerCouponId: true,
+        batchSize: true,
+        winnersPerBatch: true,
         _count: { select: { coupons: true } },
       },
     });
     expect(testBatches.length).toBeGreaterThanOrEqual(10);
     for (const batch of testBatches) {
       if (batch.status === "DRAWN") {
-        expect(batch._count.coupons).toBe(100);
-        expect(batch.winnerCouponId).toBeTruthy();
+        expect(batch._count.coupons).toBe(batch.batchSize);
+        expect(await authPrisma.coupon.count({ where: { batchId: batch.id, status: "WINNER" } })).toBe(batch.winnersPerBatch);
       } else {
-        expect(batch._count.coupons).toBeLessThan(100);
-        expect(batch.winnerCouponId).toBeNull();
+        expect(batch._count.coupons).toBeLessThan(batch.batchSize);
+        expect(await authPrisma.coupon.count({ where: { batchId: batch.id, status: "WINNER" } })).toBe(0);
       }
     }
 
