@@ -255,7 +255,7 @@ export async function issueCoupon(input: {
       }
 
       return { coupon: savedCoupon, batch, replayed: false };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 15_000, timeout: 30_000 });
   } catch (error) {
     const existing = await authPrisma.coupon.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
