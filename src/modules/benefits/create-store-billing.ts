@@ -19,7 +19,7 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
   if (input.dueAt && Number.isNaN(input.dueAt.getTime())) throw new Error("STORE_BILLING_DUE_DATE_INVALID");
 
   const reservation = await authPrisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.storeId}))`;
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(20261128, hashtext(${input.storeId}))`;
     const store = await tx.store.findUnique({
       where: { id: input.storeId },
       select: { id: true, status: true },
