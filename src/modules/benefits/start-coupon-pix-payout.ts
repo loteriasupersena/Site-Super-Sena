@@ -94,7 +94,7 @@ export async function startCouponPixPayout(input: {
       },
     });
     return { payout, pixKey, pixKeyType };
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable", maxWait: 15_000, timeout: 30_000 });
 
   const transfer = await createAsaasPixTransfer({
     amountCents: reserved.payout.amountCents,
