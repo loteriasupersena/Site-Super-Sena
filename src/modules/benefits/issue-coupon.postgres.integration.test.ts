@@ -59,7 +59,14 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
         where: { storeId: { in: storeIds } },
         select: { id: true, batchId: true },
       });
-      const touchedBatchIds = [...new Set(testCoupons.map((coupon) => coupon.batchId))];
+      const batchesCreatedDuringTest = await authPrisma.couponBatch.findMany({
+        where: { sequenceNumber: { gte: initialQueue.nextBatchSequence } },
+        select: { id: true },
+      });
+      const touchedBatchIds = [...new Set([
+        ...testCoupons.map((coupon) => coupon.batchId),
+        ...batchesCreatedDuringTest.map((batch) => batch.id),
+      ])];
       if (touchedBatchIds.length) {
         await authPrisma.couponBatch.updateMany({
           where: { id: { in: touchedBatchIds } },
