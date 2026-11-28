@@ -58,11 +58,15 @@ export function simulateBenefitsEconomics(input: BenefitsEconomicsInput): Benefi
   const platformRevenueCents = Math.round(purchaseVolumeCents * platformRateBasisPoints / 10_000);
   const prizeWinnersInCompletedBatches = completeBatches * winnersPerBatch;
   const completedBatchPrizeCents = prizeWinnersInCompletedBatches * averagePurchaseCents;
-  // Reserve the proportional expected prize cost for every coupon, including
-  // coupons in the still-open batch, to avoid overstating available margin.
-  const expectedPrizeReserveCents = Math.ceil(couponVolume * winnersPerBatch / batchSize) * averagePurchaseCents;
-  const expectedWinnerCount = Math.ceil(couponVolume * winnersPerBatch / batchSize);
-  const payoutFeesCents = expectedWinnerCount * pixPayoutFeeCents;
+  // Expected cost is proportional, not rounded up to a whole winner per
+  // partial batch. Round only the final monetary reserve up to one cent.
+  const expectedWinnerNumerator = couponVolume * winnersPerBatch;
+  const expectedPrizeReserveCents = Math.ceil(
+    expectedWinnerNumerator * averagePurchaseCents / batchSize,
+  );
+  const payoutFeesCents = Math.ceil(
+    expectedWinnerNumerator * pixPayoutFeeCents / batchSize,
+  );
   const estimatedBalanceCents = platformRevenueCents - expectedPrizeReserveCents - payoutFeesCents;
   const breakEvenRateBasisPoints = Math.ceil(
     ((expectedPrizeReserveCents + payoutFeesCents) / purchaseVolumeCents) * 10_000,
