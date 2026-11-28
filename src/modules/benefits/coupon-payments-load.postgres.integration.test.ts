@@ -11,6 +11,7 @@ vi.mock("@/modules/payments/asaas", () => providerMocks);
 import { authPrisma } from "@/lib/auth/session";
 import { encryptStorePixKey } from "@/lib/wallet/store-pix-key";
 import { createStoreBillingPixCharge } from "./create-store-billing";
+import { releasePaidStoreBillingCounter } from "./release-paid-store-billing-counter";
 import { startCouponPixPayout } from "./start-coupon-pix-payout";
 
 const enabled = process.env.RUN_POSTGRES_INTEGRATION === "1";
@@ -216,6 +217,26 @@ suite("PostgreSQL coupon payout and store billing concurrency", () => {
         expect(await authPrisma.storeBillingCoupon.count({ where: { billingId: billing!.id, couponId: store.couponId } })).toBe(1);
       }
       expect(providerMocks.createAsaasStaticPixQrCode).toHaveBeenCalledTimes(LOAD);
+
+      const paidResults = await Promise.allSettled(billings.map((billing) =>
+        authPrisma.$transaction(async (tx) => {
+          const changed = await tx.storeBilling.updateMany({
+            where: { id: billing.id, status: { in: ["PROCESSING", "PENDING"] } },
+            data: { status: "PAID", paidAt: new Date(), providerPaymentId: "it-paid-" + billing.id },
+          });
+          if (changed.count === 1) await releasePaidStoreBillingCounter(tx, billing.id);
+          return changed.count;
+        }, { maxWait: 15_000, timeout: 30_000 }),
+      ));
+      expect(paidResults.filter((result) => result.status === "rejected").map((result) => String((result as PromiseRejectedResult).reason))).toEqual([]);
+      expect(paidResults.every((result) => result.status === "fulfilled" && result.value === 1)).toBe(true);
+      const paidStores = await authPrisma.store.findMany({
+        where: { id: { in: stores.map((store) => store.id) } },
+        select: { outstandingCouponCount: true },
+      });
+      expect(paidStores).toHaveLength(LOAD);
+      expect(paidStores.every((store) => store.outstandingCouponCount === 0)).toBe(true);
+      expect(await authPrisma.storeBilling.count({ where: { id: { in: billings.map((billing) => billing.id) }, status: "PAID" } })).toBe(LOAD);
     } finally {
       await authPrisma.storeBillingCoupon.deleteMany({ where: { billing: { storeId: { in: stores.map((store) => store.id) } } } });
       await authPrisma.storeBilling.deleteMany({ where: { storeId: { in: stores.map((store) => store.id) } } });
