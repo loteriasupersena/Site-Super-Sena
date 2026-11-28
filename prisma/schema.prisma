@@ -679,15 +679,27 @@ model CouponQueueState {
   updatedAt             DateTime @updatedAt
 }
 
+model CouponDrawConfig {
+  id              String   @id
+  batchSize       Int
+  winnersPerBatch Int
+  version         Int      @default(1)
+  updatedById     String?
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model CouponBatch {
-  id             String            @id @default(cuid())
-  sequenceNumber Int               @unique
-  status         CouponBatchStatus @default(OPEN)
-  createdAt      DateTime          @default(now())
-  completedAt    DateTime?
-  winnerCouponId String?           @unique
-  coupons        Coupon[]          @relation("CouponBatchMembers")
-  winnerCoupon   Coupon?           @relation("CouponBatchWinner", fields: [winnerCouponId], references: [id], onDelete: Restrict)
+  id              String            @id @default(cuid())
+  sequenceNumber  Int               @unique
+  status          CouponBatchStatus @default(OPEN)
+  batchSize       Int               @default(100)
+  winnersPerBatch Int               @default(1)
+  ruleVersion     Int               @default(1)
+  createdAt       DateTime          @default(now())
+  completedAt     DateTime?
+  coupons         Coupon[]          @relation("CouponBatchMembers")
 
   @@index([status, sequenceNumber])
 }
@@ -713,7 +725,6 @@ model Coupon {
   issuedBy                   User         @relation("CouponIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
   storeClaimedBy             User?        @relation("CouponStoreClaimer", fields: [storeClaimedById], references: [id], onDelete: Restrict)
   batch                      CouponBatch  @relation("CouponBatchMembers", fields: [batchId], references: [id], onDelete: Restrict)
-  winningBatch               CouponBatch? @relation("CouponBatchWinner")
   payout                      CouponPayout?
   billingLinks                StoreBillingCoupon[]
 
