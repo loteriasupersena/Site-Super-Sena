@@ -237,7 +237,7 @@ export function ReceiptVerification({ receiptCode }: { receiptCode: string }) {
           <br /><br />
           Após a conclusão, o resgate daquele prêmio é encerrado e não será aceita uma nova solicitação de pagamento para o mesmo bilhete.
           <br /><br />
-          Eventuais questionamentos serão tratados nos casos em que houver obrigação legal de análise ou determinação de autoridade competente.
+          Eventuais questionamentos serão tratados nos casos em que houver obrigação legal de análise.
         </div>
       </details>}
       <p style={{ margin: "14px 0 0", color: "#6b7280", fontSize: 12, textAlign: "center" }}>Super Sena · loteriasupersena.com.br</p>
