@@ -1,5 +1,6 @@
 import { AreaShell } from "@/components/area-shell";
 import { StorePixKeyManager } from "@/components/store/store-pix-key-manager";
+import { StoreBillingManager } from "@/components/store/store-billing-manager";
 import { StoreTerminalManager } from "@/components/store/store-terminal-manager";
 import { requireRole } from "@/lib/auth/require-role";
 import { authPrisma } from "@/lib/auth/session";
@@ -37,6 +38,7 @@ export default async function StorePage() {
             </>
           )}
         </section>
+        {store?.status === "ACTIVE" && <StoreBillingManager />}
         {store?.status === "ACTIVE" && <StoreTerminalManager />}
         {store?.status === "ACTIVE" && <StorePixKeyManager />}
       </div>
