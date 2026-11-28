@@ -45,7 +45,7 @@ export function AdminStoreManager() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   async function saveStorePercent(storeId: string) {
     setError(""); setNotice("");
