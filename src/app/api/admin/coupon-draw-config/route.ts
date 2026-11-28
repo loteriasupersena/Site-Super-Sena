@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   try {
     const [config, queue] = await Promise.all([
       authPrisma.couponDrawConfig.findUnique({ where: { id: CONFIG_ID } }),
-      authPrisma.couponQueueState.findUnique({ where: { id: "global" }, include: { } }),
+      authPrisma.couponQueueState.findUnique({ where: { id: "global" } }),
     ]);
     if (!config || !queue?.currentBatchId) throw new Error("Coupon draw config or queue unavailable");
     const activeBatch = await authPrisma.couponBatch.findUnique({ where: { id: queue.currentBatchId } });
