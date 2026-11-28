@@ -11,7 +11,7 @@ function makePublicCode() {
   return randomBytes(18).toString("base64url");
 }
 
-function chooseDistinct<T>(items: T[], count: number): T[] {
+export function chooseDistinct<T>(items: T[], count: number): T[] {
   if (!Number.isSafeInteger(count) || count < 1 || count > items.length) {
     throw new Error("COUPON_DRAW_WINNER_COUNT_INVALID");
   }
