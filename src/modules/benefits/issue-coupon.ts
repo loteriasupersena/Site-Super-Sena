@@ -5,9 +5,22 @@ import { authPrisma } from "@/lib/auth/session";
 
 const MAX_INT = 2_147_483_647;
 const GLOBAL_QUEUE_STATE_ID = "global";
+const GLOBAL_DRAW_CONFIG_ID = "global";
 
 function makePublicCode() {
   return randomBytes(18).toString("base64url");
+}
+
+function chooseDistinct<T>(items: T[], count: number): T[] {
+  if (!Number.isSafeInteger(count) || count < 1 || count > items.length) {
+    throw new Error("COUPON_DRAW_WINNER_COUNT_INVALID");
+  }
+  const pool = [...items];
+  for (let index = 0; index < count; index += 1) {
+    const selected = index + randomInt(pool.length - index);
+    [pool[index], pool[selected]] = [pool[selected]!, pool[index]!];
+  }
+  return pool.slice(0, count);
 }
 
 export function calculatePlatformFeeCents(amountCents: number, rateBasisPoints: number) {
@@ -18,13 +31,8 @@ export function calculatePlatformFeeCents(amountCents: number, rateBasisPoints: 
 }
 
 /**
- * Issues one coupon while keeping financial accounting tenant-local.
- *
- * The store counter is updated atomically, so the limit check does not scan
- * historical coupons. Global draw allocation uses one compact database row:
- * the row update assigns exactly one slot, while the transaction guarantees
- * the coupon insert, draw completion and next-batch rotation commit together.
- * No provider request or other network work occurs inside this transaction.
+ * Issues one coupon into the single global queue. Each batch carries an immutable
+ * snapshot of its draw rule; changes to the global config only affect the next batch.
  */
 export async function issueCoupon(input: {
   issuedById: string;
@@ -61,9 +69,7 @@ export async function issueCoupon(input: {
       });
       if (!store || store.status !== "ACTIVE") throw new Error("COUPON_STORE_INACTIVE");
 
-      const existing = await tx.coupon.findUnique({
-        where: { idempotencyKey: input.idempotencyKey },
-      });
+      const existing = await tx.coupon.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
       if (existing) {
         if (existing.storeId !== store.id || existing.issuedById !== actor.id) {
           throw new Error("COUPON_IDEMPOTENCY_KEY_CONFLICT");
@@ -76,9 +82,6 @@ export async function issueCoupon(input: {
         input.purchaseAmountCents,
         store.commissionRateBasisPoints,
       );
-
-      // Atomic per-store quota reservation. The update itself serializes only
-      // requests belonging to this store; different stores do not contend here.
       if (platformFeeCents > 0) {
         const reserved = await tx.store.updateMany({
           where: {
@@ -91,12 +94,7 @@ export async function issueCoupon(input: {
         if (reserved.count !== 1) throw new Error("COUPON_STORE_BILLING_LIMIT_REACHED");
       }
 
-      // A retry may have passed the first idempotency check before another
-      // transaction committed the same key. Recheck before taking the global
-      // queue slot so duplicate requests do not serialize the draw allocator.
-      const raced = await tx.coupon.findUnique({
-        where: { idempotencyKey: input.idempotencyKey },
-      });
+      const raced = await tx.coupon.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
       if (raced) {
         if (raced.storeId !== store.id || raced.issuedById !== actor.id) {
           throw new Error("COUPON_IDEMPOTENCY_KEY_CONFLICT");
@@ -112,26 +110,30 @@ export async function issueCoupon(input: {
         return { coupon: raced, batch, replayed: true };
       }
 
-      // A single compact atomic update allocates the next global slot. This
-      // preserves one worldwide order and prevents two requests from claiming
-      // the final slot of the same 100-coupon batch.
       const slots = await tx.$queryRaw<Array<{
         currentBatchId: string;
         currentBatchSequence: number;
         currentBatchCount: number;
         nextBatchSequence: number;
+        batchSize: number;
+        winnersPerBatch: number;
+        ruleVersion: number;
       }>>`
-        UPDATE "CouponQueueState"
-        SET "currentBatchCount" = "currentBatchCount" + 1,
+        UPDATE "CouponQueueState" AS queue
+        SET "currentBatchCount" = queue."currentBatchCount" + 1,
             "updatedAt" = NOW()
-        WHERE "id" = ${GLOBAL_QUEUE_STATE_ID}
-          AND "currentBatchId" IS NOT NULL
-          AND "currentBatchCount" < 100
+        FROM "CouponBatch" AS batch
+        WHERE queue."id" = ${GLOBAL_QUEUE_STATE_ID}
+          AND batch."id" = queue."currentBatchId"
+          AND queue."currentBatchCount" < batch."batchSize"
         RETURNING
-          "currentBatchId",
-          "currentBatchSequence",
-          "currentBatchCount",
-          "nextBatchSequence"
+          queue."currentBatchId",
+          queue."currentBatchSequence",
+          queue."currentBatchCount",
+          queue."nextBatchSequence",
+          batch."batchSize",
+          batch."winnersPerBatch",
+          batch."ruleVersion"
       `;
       const slot = slots[0];
       if (!slot) throw new Error("COUPON_QUEUE_STATE_UNAVAILABLE");
@@ -155,31 +157,55 @@ export async function issueCoupon(input: {
         sequenceNumber: number;
         status: "OPEN" | "DRAWN";
         completedAt: Date | null;
+        batchSize: number;
+        winnersPerBatch: number;
+        ruleVersion: number;
       };
 
-      if (slot.currentBatchCount === 100) {
+      if (slot.currentBatchCount === slot.batchSize) {
         const members = await tx.coupon.findMany({
           where: { batchId: slot.currentBatchId },
           select: { id: true },
         });
-        if (members.length !== 100) throw new Error("COUPON_BATCH_COMPLETION_INVARIANT");
+        if (members.length !== slot.batchSize) throw new Error("COUPON_BATCH_COMPLETION_INVARIANT");
 
-        const winner = members[randomInt(members.length)];
+        const winners = chooseDistinct(members, slot.winnersPerBatch);
+        const winnerIds = winners.map((winner) => winner.id);
         const now = new Date();
         const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        const updatedWinner = await tx.coupon.update({
-          where: { id: winner.id },
+        await tx.coupon.updateMany({
+          where: { id: { in: winnerIds }, batchId: slot.currentBatchId, status: "ACTIVE" },
           data: { status: "WINNER", drawnAt: now, customerRedemptionDeadline: deadline },
         });
-        if (winner.id === coupon.id) savedCoupon = updatedWinner;
+        if (winnerIds.includes(coupon.id)) {
+          savedCoupon = await tx.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+        }
 
         const drawnBatch = await tx.couponBatch.update({
           where: { id: slot.currentBatchId },
-          data: { status: "DRAWN", completedAt: now, winnerCouponId: winner.id },
+          data: { status: "DRAWN", completedAt: now },
         });
 
+        // Lock the singleton config while taking the next batch's immutable snapshot.
+        const configs = await tx.$queryRaw<Array<{
+          batchSize: number;
+          winnersPerBatch: number;
+          version: number;
+        }>>`
+          SELECT "batchSize", "winnersPerBatch", "version"
+          FROM "CouponDrawConfig"
+          WHERE "id" = ${GLOBAL_DRAW_CONFIG_ID}
+          FOR SHARE
+        `;
+        const nextRule = configs[0];
+        if (!nextRule) throw new Error("COUPON_DRAW_CONFIG_UNAVAILABLE");
         const nextBatch = await tx.couponBatch.create({
-          data: { sequenceNumber: slot.nextBatchSequence },
+          data: {
+            sequenceNumber: slot.nextBatchSequence,
+            batchSize: nextRule.batchSize,
+            winnersPerBatch: nextRule.winnersPerBatch,
+            ruleVersion: nextRule.version,
+          },
         });
         await tx.couponQueueState.update({
           where: { id: GLOBAL_QUEUE_STATE_ID },
@@ -195,6 +221,9 @@ export async function issueCoupon(input: {
           sequenceNumber: drawnBatch.sequenceNumber,
           status: "DRAWN",
           completedAt: drawnBatch.completedAt,
+          batchSize: slot.batchSize,
+          winnersPerBatch: slot.winnersPerBatch,
+          ruleVersion: slot.ruleVersion,
         };
       } else {
         batch = {
@@ -202,15 +231,15 @@ export async function issueCoupon(input: {
           sequenceNumber: slot.currentBatchSequence,
           status: "OPEN",
           completedAt: null,
+          batchSize: slot.batchSize,
+          winnersPerBatch: slot.winnersPerBatch,
+          ruleVersion: slot.ruleVersion,
         };
       }
 
       return { coupon: savedCoupon, batch, replayed: false };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   } catch (error) {
-    // Concurrent retries with the same idempotency key may race before either
-    // transaction commits. The unique index chooses one winner; the loser
-    // returns the already-created coupon instead of issuing a second one.
     const existing = await authPrisma.coupon.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
     });
