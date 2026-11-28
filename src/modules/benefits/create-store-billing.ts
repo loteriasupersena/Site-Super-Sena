@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { createAsaasStaticPixQrCode } from "@/modules/payments/asaas";
 
@@ -54,7 +55,7 @@ export async function createStoreBillingPixCharge(input: { storeId: string; dueA
       orderBy: { createdAt: "desc" },
       select: { periodKey: true },
     });
-    const previousSequence = Number(previous?.periodKey.match(/^CYCLE-(\d+)$/)?.[1] ?? 0);
+    const previousSequence = Number(previous?.periodKey.match(/^CYCLE-(\\d+)$/)?.[1] ?? 0);
     const periodKey = "CYCLE-" + String(previousSequence + 1).padStart(8, "0");
     const externalReference = referenceFor(store.id, periodKey);
     const billing = await tx.storeBilling.create({
