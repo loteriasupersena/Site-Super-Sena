@@ -71,6 +71,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const result = await authPrisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "CouponDrawConfig" WHERE "id" = ${CONFIG_ID} FOR UPDATE`;
       const previous = await tx.couponDrawConfig.findUnique({ where: { id: CONFIG_ID } });
       if (!previous) throw new Error("COUPON_DRAW_CONFIG_UNAVAILABLE");
       const updated = await tx.couponDrawConfig.update({
