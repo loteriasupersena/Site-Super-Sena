@@ -39,6 +39,23 @@ describe("simulateBenefitsEconomics", () => {
     expect(result.estimatedBalanceCents).toBe(15_000);
   });
 
+  it("uses proportional expected cost for a small open batch", () => {
+    const result = simulateBenefitsEconomics({
+      couponVolume: 1,
+      averagePurchaseCents: 5_000,
+      platformRateBasisPoints: 200,
+      batchSize: 100,
+      winnersPerBatch: 1,
+      pixPayoutFeeCents: 150,
+    });
+
+    expect(result.completeBatches).toBe(0);
+    expect(result.remainingCoupons).toBe(1);
+    expect(result.expectedPrizeReserveCents).toBe(50);
+    expect(result.payoutFeesCents).toBe(2);
+    expect(result.estimatedBalanceCents).toBe(48);
+  });
+
   it("accounts for a fixed Pix payout fee per expected winner", () => {
     const result = simulateBenefitsEconomics({
       couponVolume: 100,
