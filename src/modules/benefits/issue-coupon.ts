@@ -91,6 +91,27 @@ export async function issueCoupon(input: {
         if (reserved.count !== 1) throw new Error("COUPON_STORE_BILLING_LIMIT_REACHED");
       }
 
+      // A retry may have passed the first idempotency check before another
+      // transaction committed the same key. Recheck before taking the global
+      // queue slot so duplicate requests do not serialize the draw allocator.
+      const raced = await tx.coupon.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+      });
+      if (raced) {
+        if (raced.storeId !== store.id || raced.issuedById !== actor.id) {
+          throw new Error("COUPON_IDEMPOTENCY_KEY_CONFLICT");
+        }
+        if (platformFeeCents > 0) {
+          const released = await tx.store.updateMany({
+            where: { id: store.id, outstandingCouponCount: { gte: 1 } },
+            data: { outstandingCouponCount: { decrement: 1 } },
+          });
+          if (released.count !== 1) throw new Error("COUPON_STORE_COUNTER_INVARIANT");
+        }
+        const batch = await tx.couponBatch.findUnique({ where: { id: raced.batchId } });
+        return { coupon: raced, batch, replayed: true };
+      }
+
       // A single compact atomic update allocates the next global slot. This
       // preserves one worldwide order and prevents two requests from claiming
       // the final slot of the same 100-coupon batch.
