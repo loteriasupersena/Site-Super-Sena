@@ -1,77 +1,88 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { Prisma } from "@/generated/prisma/client";
 import { authPrisma } from "@/lib/auth/session";
 import { createAsaasStaticPixQrCode } from "@/modules/payments/asaas";
 
-function referenceFor(storeId: string, periodKey: string) {
-  const digest = createHash("sha256").update(storeId + ":" + periodKey).digest("hex");
+function referenceFor(storeId: string, cycleKey: string) {
+  const digest = createHash("sha256").update(storeId + ":" + cycleKey).digest("hex");
   return "meu-vale-pix-store-billing-" + digest;
 }
 
 /**
- * Reserves one invoice per store/period before contacting Asaas.
- * An uncertain provider request is deliberately not repeated automatically.
+ * Creates one charge for the store's currently unbilled coupons.
+ * Coupon membership is frozen before contacting Asaas; later coupons belong
+ * to a later charge. A pending charge is returned instead of duplicated.
  */
-export async function createStoreBillingPixCharge(input: {
-  storeId: string;
-  periodKey: string;
-  amountCents: number;
-  dueAt?: Date;
-}) {
-  if (!input.storeId.trim() || !/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(input.periodKey)) {
-    throw new Error("STORE_BILLING_INPUT_INVALID");
-  }
-  if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0) {
-    throw new Error("STORE_BILLING_AMOUNT_INVALID");
-  }
-  if (input.dueAt && Number.isNaN(input.dueAt.getTime())) {
-    throw new Error("STORE_BILLING_DUE_DATE_INVALID");
-  }
+export async function createStoreBillingPixCharge(input: { storeId: string; dueAt?: Date }) {
+  if (!input.storeId.trim()) throw new Error("STORE_BILLING_INPUT_INVALID");
+  if (input.dueAt && Number.isNaN(input.dueAt.getTime())) throw new Error("STORE_BILLING_DUE_DATE_INVALID");
 
-  const externalReference = referenceFor(input.storeId, input.periodKey);
-  const idempotencyKey = "store-billing:" + externalReference;
-  let created = false;
-  let billing = await authPrisma.storeBilling.findUnique({
-    where: { storeId_periodKey: { storeId: input.storeId, periodKey: input.periodKey } },
-  });
+  const reservation = await authPrisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.storeId}))`;
+    const store = await tx.store.findUnique({
+      where: { id: input.storeId },
+      select: { id: true, status: true },
+    });
+    if (!store || store.status !== "ACTIVE") throw new Error("STORE_BILLING_STORE_INACTIVE");
 
-  if (!billing) {
-    try {
-      billing = await authPrisma.storeBilling.create({
-        data: {
-          storeId: input.storeId,
-          periodKey: input.periodKey,
-          amountCents: input.amountCents,
-          status: "PROCESSING",
-          idempotencyKey,
-          externalReference,
-          dueAt: input.dueAt,
-        },
-      });
-      created = true;
-    } catch (error) {
-      const code = error && typeof error === "object" && "code" in error
-        ? String((error as { code?: unknown }).code) : "";
-      if (code !== "P2002") throw error;
-      billing = await authPrisma.storeBilling.findUnique({
-        where: { storeId_periodKey: { storeId: input.storeId, periodKey: input.periodKey } },
-      });
+    const open = await tx.storeBilling.findFirst({
+      where: { storeId: store.id, status: { in: ["PROCESSING", "PENDING"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (open) return { billing: open, created: false };
+
+    const coupons = await tx.coupon.findMany({
+      where: {
+        storeId: store.id,
+        billingLinks: { none: {} },
+      },
+      select: { id: true, platformFeeCents: true },
+      orderBy: [{ issuedAt: "asc" }, { id: "asc" }],
+    });
+    if (coupons.length === 0) throw new Error("STORE_BILLING_NO_UNBILLED_COUPONS");
+
+    const amountCents = coupons.reduce((sum, coupon) => sum + coupon.platformFeeCents, 0);
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 2_147_483_647) {
+      throw new Error("STORE_BILLING_AMOUNT_INVALID");
     }
-  }
 
-  if (!billing) throw new Error("STORE_BILLING_RESERVATION_FAILED");
-  if (billing.amountCents !== input.amountCents) throw new Error("STORE_BILLING_PERIOD_AMOUNT_CONFLICT");
-  if (billing.providerQrCodeId && billing.pixCopyPaste && billing.pixQrCodeBase64) return billing;
-  if (!created) throw new Error("STORE_BILLING_PROVIDER_REQUEST_UNCERTAIN");
+    const previous = await tx.storeBilling.findFirst({
+      where: { storeId: store.id },
+      orderBy: { createdAt: "desc" },
+      select: { periodKey: true },
+    });
+    const previousSequence = Number(previous?.periodKey.match(/^CYCLE-(\d+)$/)?.[1] ?? 0);
+    const periodKey = "CYCLE-" + String(previousSequence + 1).padStart(8, "0");
+    const externalReference = referenceFor(store.id, periodKey);
+    const billing = await tx.storeBilling.create({
+      data: {
+        storeId: store.id,
+        periodKey,
+        amountCents,
+        status: "PROCESSING",
+        idempotencyKey: "store-billing:" + externalReference,
+        externalReference,
+        dueAt: input.dueAt,
+        couponLinks: { create: coupons.map((coupon) => ({ couponId: coupon.id })) },
+      },
+    });
+    return { billing, created: true };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  if (reservation.billing.providerQrCodeId && reservation.billing.pixCopyPaste && reservation.billing.pixQrCodeBase64) {
+    return reservation.billing;
+  }
+  if (!reservation.created) throw new Error("STORE_BILLING_PROVIDER_REQUEST_UNCERTAIN");
 
   const qr = await createAsaasStaticPixQrCode({
-    amountCents: billing.amountCents,
-    externalReference: billing.externalReference,
+    amountCents: reservation.billing.amountCents,
+    externalReference: reservation.billing.externalReference,
     description: "MEU VALE PIX - cobrança da loja",
   });
 
   return authPrisma.storeBilling.update({
-    where: { id: billing.id },
+    where: { id: reservation.billing.id },
     data: {
       provider: "ASAAS",
       providerQrCodeId: qr.id,
