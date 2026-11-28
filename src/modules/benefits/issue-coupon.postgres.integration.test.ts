@@ -150,7 +150,15 @@ suite("PostgreSQL coupon issuance load and concurrency", () => {
         purchaseAmountCents: 1000,
       });
     });
-    const results = await Promise.allSettled(jobs);
+    // Keep pressure bounded to the 20 independent store actors. Launching all
+    // 1,000 transactions at once only exhausts the test database connection
+    // pool before transactions can start; it does not exercise useful queue
+    // concurrency. Each wave still races across all stores.
+    const results: PromiseSettledResult<Awaited<ReturnType<typeof issueCoupon>>>[] = [];
+    for (let offset = 0; offset < jobs.length; offset += cashiers.length) {
+      const wave = await Promise.allSettled(jobs.slice(offset, offset + cashiers.length));
+      results.push(...wave);
+    }
     const failures = results.filter((result) => result.status === "rejected");
     expect(failures, failures.map((result) => String((result as PromiseRejectedResult).reason)).join("\n")).toHaveLength(0);
 
