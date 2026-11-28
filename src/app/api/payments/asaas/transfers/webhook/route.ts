@@ -107,7 +107,14 @@ export async function POST(request: NextRequest) {
         update: { eventType: status ?? notificationEvent, payloadDigest, processingError: null },
       });
 
-      if (payout.status === "PAID") {
+      // Re-read inside the serializable transaction. The preflight payout above
+      // may be stale when distinct webhook event IDs arrive concurrently.
+      const currentPayout = await tx.couponPayout.findUnique({
+        where: { id: payout.id },
+        select: { status: true },
+      });
+      if (!currentPayout) throw new Error("COUPON_PAYOUT_NOT_FOUND");
+      if (currentPayout.status === "PAID") {
         await tx.asaasWebhookEvent.update({
           where: { providerEventId: eventId },
           data: { processedAt: new Date(), processingError: null },
