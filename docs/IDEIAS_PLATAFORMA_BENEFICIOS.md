@@ -282,7 +282,7 @@ O painel do administrador geral deve manter como referência o painel administra
 - A câmera de alguns equipamentos tem qualidade limitada e pode apresentar dificuldade para ler o QR Code diretamente no papel. Quando isso acontecer, o consumidor poderá apresentar uma imagem/print do QR Code ampliada na tela do celular para facilitar a leitura.
 - O ganhador apresenta o QR Code original impresso ou sua representação digital na tela do celular.
 - Um funcionário ou responsável da loja usa o APK da maquininha credenciada para ler o QR Code.
-- Após a leitura, o APK consulta o servidor e apresenta a situação do prêmio, seu valor, validade e modalidades de resgate permitidas para o estabelecimento que está atendendo.
+- Após a leitura, o APK consulta o servidor e apresenta a situação do prêmio e sua validade. Se estiver premiado, válido e ainda não pago, apresenta exatamente as duas opções da seção 11.3: **Saque para a loja** ou **Transferência Pix para o cliente**.
 - **A leitura do QR Code impresso e a leitura da segunda via digital levam ao mesmo fluxo de resgate**, sem diferença de permissões ou de valor.
 - **Somente uma maquininha autenticada na loja emissora poderá concluir o resgate do cupom**, e o servidor deverá conferir esse vínculo antes de aceitar a operação.
 - Não haverá mensagens ou contato ativo da plataforma com o ganhador. Durante os 30 dias, o consumidor pode resgatar presencialmente somente na loja emissora; após esse prazo, somente o administrador dessa mesma loja pode sacar o prêmio liberado por Pix automático para a chave cadastrada da loja.
