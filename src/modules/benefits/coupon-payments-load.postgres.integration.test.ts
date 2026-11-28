@@ -34,9 +34,12 @@ suite("PostgreSQL coupon payout and store billing concurrency", () => {
   const storeIds: string[] = [];
   const couponIds: string[] = [];
   const billingIds: string[] = [];
+  const previousPixEncryptionKey = process.env.STORE_PIX_KEY_ENCRYPTION_KEY;
   let batchId = "";
 
   beforeAll(async () => {
+    // Integration-only key: never use a production secret in the test database.
+    process.env.STORE_PIX_KEY_ENCRYPTION_KEY = "11".repeat(32);
     await authPrisma.$connect();
     const batch = await authPrisma.couponBatch.create({
       data: { sequenceNumber: 900_000 + Math.floor(Math.random() * 50_000), batchSize: 100_000, winnersPerBatch: 1, ruleVersion: 1 },
@@ -118,6 +121,8 @@ suite("PostgreSQL coupon payout and store billing concurrency", () => {
     if (userIds.length) await authPrisma.user.deleteMany({ where: { id: { in: userIds } } });
     if (batchId) await authPrisma.couponBatch.deleteMany({ where: { id: batchId } });
     await authPrisma.$disconnect();
+    if (previousPixEncryptionKey === undefined) delete process.env.STORE_PIX_KEY_ENCRYPTION_KEY;
+    else process.env.STORE_PIX_KEY_ENCRYPTION_KEY = previousPixEncryptionKey;
   });
 
   it("reserves 300 customer redemptions and 300 store claims concurrently without duplicate payouts", async () => {
