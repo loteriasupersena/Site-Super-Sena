@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   eventUpdate: vi.fn(),
   couponUpdateMany: vi.fn(),
   couponFind: vi.fn(),
-  payoutUpdate: vi.fn(),
+  payoutUpdate: vi.fn(),\n  payoutFindInTx: vi.fn(),
   auditCreate: vi.fn(),
   transaction: vi.fn(),
 }));
@@ -39,12 +39,12 @@ describe("Asaas coupon transfer webhook", () => {
     mocks.eventUpdate.mockResolvedValue({});
     mocks.couponUpdateMany.mockResolvedValue({ count: 1 });
     mocks.couponFind.mockResolvedValue({ status: "REDEEMED" });
-    mocks.payoutUpdate.mockResolvedValue({});
+    mocks.payoutUpdate.mockResolvedValue({});\n    mocks.payoutFindInTx.mockResolvedValue({ status: "PROCESSING" });
     mocks.auditCreate.mockResolvedValue({});
     const tx = {
       asaasWebhookEvent: { findUnique: mocks.eventFind, upsert: mocks.eventUpsert, update: mocks.eventUpdate },
       coupon: { updateMany: mocks.couponUpdateMany, findUnique: mocks.couponFind },
-      couponPayout: { update: mocks.payoutUpdate },
+      couponPayout: { update: mocks.payoutUpdate, findUnique: mocks.payoutFindInTx },
       auditEvent: { create: mocks.auditCreate },
     };
     mocks.transaction.mockImplementation(async (callback: (value: typeof tx) => unknown) => callback(tx));
