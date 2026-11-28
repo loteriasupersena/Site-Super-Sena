@@ -541,7 +541,7 @@ Esta seção registra o que já foi codificado na branch de desenvolvimento. Ela
 
 > Direção arquitetural para preparar o produto para milhares de maquininhas e grandes picos de emissão. Este documento não declara capacidade já comprovada nem autoriza produção.
 
-##### 1. Objetivo
+### 1. Objetivo
 
 A plataforma deve atender centenas e milhares de maquininhas autenticadas e operando simultaneamente. Deve ser possível aumentar API, workers e banco de dados sem reconstruir as regras de negócio.
 
@@ -549,7 +549,7 @@ A plataforma deve atender centenas e milhares de maquininhas autenticadas e oper
 
 A meta não é prometer ausência absoluta de falhas. É absorver picos, preservar operações financeiras e sorteios, recuperar trabalho automaticamente e permitir que outra equipe opere o sistema com documentação.
 
-##### 2. Princípios obrigatórios
+### 2. Princípios obrigatórios
 
 1. Aplicação stateless: qualquer réplica da API atende qualquer maquininha; estado de sessão não depende da memória local.
 2. Escala horizontal: aumentar réplicas da API e workers independentemente.
@@ -561,13 +561,13 @@ A meta não é prometer ausência absoluta de falhas. É absorver picos, preserv
 8. Operação simples: deploy, migração, restauração, monitoramento e recuperação documentados e automatizados.
 9. Evolução incremental: começar com monólito modular bem separado e extrair serviços quando métricas justificarem. Microserviços prematuros aumentam custo e não garantem escala.
 
-##### 3. Leitura da implementação atual
+### 3. Leitura da implementação atual
 
 A branch já tem bases úteis: Next.js em container, PostgreSQL/Prisma, sessão persistida, idempotência, contador financeiro por loja, estado persistente da fila de cupons, índices, testes PostgreSQL opt-in e pipeline de qualidade.
 
 Ainda há gargalos que precisam ser tratados antes de declarar o sistema preparado para milhares de equipamentos.
 
-##### 3.1 Coordenador global de lotes
+#### 3.1 Coordenador global de lotes
 
 O serviço issueCoupon atualiza uma única linha CouponQueueState para atribuir cada posição. Isso preserva a ordem global e lotes exatos de 100, mas serializa as emissões nesse registro. Ao chegar ao centésimo cupom, a transação também consulta os membros, sorteia, fecha o lote e cria o próximo.
 
@@ -580,7 +580,7 @@ Comparar opções com teste de carga e prova de correção:
 - broker durável, como Kafka/Redpanda ou serviço gerenciado equivalente, quando o volume justificar;
 - particionamento por campanha somente se a regra comercial permitir sorteios independentes. Particionar por loja mudaria a regra global e não pode ocorrer silenciosamente.
 
-##### 3.2 Worker acoplado ao processo web
+#### 3.2 Worker acoplado ao processo web
 
 O start-production inicia Next.js e um worker interno no mesmo container. Ao escalar réplicas web, cada réplica pode iniciar seu próprio scheduler, multiplicando rotinas periódicas.
 
@@ -593,7 +593,7 @@ Direção: separar os processos:
 
 Nenhuma rotina pode depender da suposição implícita de que existe apenas uma réplica.
 
-##### 3.3 Conexões e banco
+#### 3.3 Conexões e banco
 
 Cada processo cria seu próprio Prisma Client. Multiplicar réplicas sem orçamento de conexões pode ultrapassar a capacidade do PostgreSQL.
 
@@ -608,9 +608,9 @@ Direção:
 
 Não adicionar réplicas web sem calcular o total de conexões que cada uma abre.
 
-##### 4. Arquitetura-alvo
+### 4. Arquitetura-alvo
 
-##### 4.1 Caminho de emissão
+#### 4.1 Caminho de emissão
 
 1. Maquininha envia emissão autenticada com chave de idempotência estável.
 2. API valida identidade, loja, limites e formato; grava intenção e evento de outbox em transação curta.
@@ -622,19 +622,19 @@ Não adicionar réplicas web sem calcular o total de conexões que cada uma abre
 
 O APK deve lidar com perda de conexão, timeout e repetição: a mesma chave de idempotência é reutilizada até receber resultado definitivo. Gerar uma chave nova a cada tentativa pode duplicar a operação.
 
-##### 4.2 Filas e eventos
+#### 4.2 Filas e eventos
 
 Criar camada de eventos/outbox com identificador único, tipo e versão, entidade e loja, payload mínimo validado, instante de criação, tentativas, próximo retry, lease, estado, erro resumido e dead-letter.
 
 Consumidores devem ser idempotentes. Mensagens podem ser entregues mais de uma vez. A garantia prática é entrega pelo menos uma vez com processamento idempotente, não presumir entrega exatamente uma vez em toda a infraestrutura.
 
-##### 4.3 Separação dos domínios
+#### 4.3 Separação dos domínios
 
 Manter módulos claros para identidade e autorização; lojas e maquininhas; emissão e consulta de cupons; sequenciamento e sorteios; cobranças e conciliação; resgate e pagamentos; auditoria e relatórios.
 
 A separação lógica vem antes da separação física em serviços.
 
-##### 4.4 Cache e leitura
+#### 4.4 Cache e leitura
 
 - CDN para assets estáticos.
 - Cache distribuído para dados públicos e pouco mutáveis, com TTL e invalidação explícitos.
@@ -642,7 +642,7 @@ A separação lógica vem antes da separação física em serviços.
 - Consultas com paginação por cursor, limites e índices; nunca retornar histórico ilimitado.
 - Evitar polling agressivo do APK; usar backoff, jitter e atualização incremental. Avaliar push quando necessário.
 
-##### 5. Resiliência e operação
+### 5. Resiliência e operação
 
 - Health checks separados para liveness e readiness.
 - Timeouts em chamadas externas e no banco.
@@ -655,7 +655,7 @@ A separação lógica vem antes da separação física em serviços.
 - Backup automático, recuperação point-in-time quando disponível e testes periódicos de restauração.
 - Migrações compatíveis com deploy gradual, usando expand/contract.
 
-##### 6. Observabilidade e governança
+### 6. Observabilidade e governança
 
 Painéis operacionais devem mostrar:
 - requisições por segundo, latência p50/p95/p99 e taxa de erro;
@@ -671,7 +671,7 @@ Adicionar logs estruturados com correlation ID, loja, maquininha/usuário e chav
 
 Documentar como diagnosticar fila parada, banco saturado, provedor indisponível, emissão duplicada, cobrança divergente e restauração de backup.
 
-##### 7. Plano de validação de capacidade
+### 7. Plano de validação de capacidade
 
 Não declarar "suporta milhares" sem testes reproduzíveis em ambiente isolado, com dados realistas.
 
@@ -691,9 +691,9 @@ Cada rodada registra RPS oferecido/concluído, p50/p95/p99, erros, timeouts, dup
 
 Definir SLOs após medir linha de base e custo operacional. Metas provisórias para discussão: aceite de emissão p95 abaixo de 300 ms; processamento assíncrono p95 abaixo de 2 s em carga normal; disponibilidade mensal de 99,9%. Não são garantias até que sejam testadas.
 
-##### 8. Fases de implementação
+### 8. Fases de implementação
 
-##### Fase 1 — Fundação e segurança operacional
+#### Fase 1 — Fundação e segurança operacional
 - concluir auditoria dos caminhos críticos;
 - corrigir testes, tipos e migrações;
 - separar web, scheduler e worker;
@@ -701,14 +701,14 @@ Definir SLOs após medir linha de base e custo operacional. Metas provisórias p
 - health checks, logs, métricas e alertas;
 - idempotência de ponta a ponta.
 
-##### Fase 2 — Emissão desacoplada
+#### Fase 2 — Emissão desacoplada
 - introduzir outbox persistente;
 - retirar sorteio e processamento pesado do request HTTP;
 - implementar sequenciador durável;
 - garantir recuperação, retentativa, dead-letter e auditoria;
 - migrar sem perder ou duplicar cupons.
 
-##### Fase 3 — Escala horizontal
+#### Fase 3 — Escala horizontal
 - API stateless em múltiplas réplicas;
 - workers com concorrência configurável;
 - scheduler com lease;
@@ -716,14 +716,14 @@ Definir SLOs após medir linha de base e custo operacional. Metas provisórias p
 - pooler e limites de conexões;
 - testes com 1.000 e 2.000 maquininhas virtuais.
 
-##### Fase 4 — Crescimento elevado
+#### Fase 4 — Crescimento elevado
 - avaliar broker gerenciado e particionamento permitido pelas regras;
 - réplicas de leitura para relatórios;
 - particionamento/arquivamento de tabelas de grande volume;
 - autoscaling baseado em métricas de fila e saturação;
 - testes de falha, recuperação e capacidade acima do pico esperado.
 
-##### 9. Critérios para considerar pronta para grande escala
+### 9. Critérios para considerar pronta para grande escala
 
 A plataforma só será considerada pronta quando:
 - múltiplas réplicas web atendem a mesma base sem estado local;
@@ -736,7 +736,7 @@ A plataforma só será considerada pronta quando:
 - backups foram restaurados em ensaio;
 - runbooks permitem que outra equipe opere o produto sem depender do autor original.
 
-##### 10. Regra global de sorteio
+### 10. Regra global de sorteio
 
 A regra atual é um fluxo global de cupons, formando lotes de exatamente 100 entre todas as lojas. Isso cria uma ordem global e um ponto de coordenação. Qualquer proposta de dividir o sorteio por loja ou campanha muda a regra do produto e exige aprovação explícita.
 
