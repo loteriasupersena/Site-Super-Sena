@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authPrisma } from "@/lib/auth/session";
 import { getAsaasPayment } from "@/modules/payments/asaas";
+import { releasePaidStoreBillingCounter } from "@/modules/benefits/release-paid-store-billing-counter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,7 +105,9 @@ export async function POST(request: NextRequest) {
           paidAt: new Date(),
         },
       });
-      if (changed.count === 0 && billing.status !== "PAID") {
+      if (changed.count === 1) {
+        await releasePaidStoreBillingCounter(tx, billing.id);
+      } else if (billing.status !== "PAID") {
         throw new Error("STORE_BILLING_STATE_CONFLICT");
       }
 
